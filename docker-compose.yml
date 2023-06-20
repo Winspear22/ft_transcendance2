@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  postgresql:
+    container_name: postgresql
+    build:
+      context: ./src/postgreSQL
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - dataflow_network
+
+  pgadmin:
+    container_name: pgadmin
+    build:
+      context: ./src/pgadmin
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - postgresql
+    env_file: .env
+    networks:
+      - dataflow_network
+
+  nestjs:
+    container_name: nestjs
+    build:
+      context: ./src/nestjs
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgresql
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
+    volumes:
+      - ./src/nestjs:/app
+    networks:
+      - dataflow_network
+
+  vuejs:
+    container_name: vuejs
+    build:
+      context: ./src/vuejs
+      dockerfile: Dockerfile
+    volumes:
+      - ./src/vuejs:/app
+    ports:
+      #- "4200:4200"
+      - "4200:8080"
+    networks:
+      - dataflow_network
+
+
+networks:
+  dataflow_network:
+    driver: bridge
+
+volumes:
+  db-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /home/adnen/Desktop/VolumeTranscendance
