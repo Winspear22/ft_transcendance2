@@ -21,7 +21,7 @@ services:
       context: ./src/pgadmin
     restart: always
     ports:
-      - "8080:80"
+      - "8081:80"
     depends_on:
       - postgresql
     env_file: .env
@@ -55,7 +55,7 @@ services:
       - ./src/vuejs:/app
     ports:
       #- "4200:4200"
-      - "4200:8080"
+      - "8080:8080"
     networks:
       - dataflow_network
 

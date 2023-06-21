@@ -11,10 +11,10 @@ ENV PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
 ENV PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
 
 RUN echo "\033[1;36m============================================\033[0m" && \
-    echo "\033[1;31m-------------Expose du port 8080------------\033[0m" && \
+    echo "\033[1;31m-------------Expose du port 8081------------\033[0m" && \
     echo "\033[1;36m============================================\033[0m"
 
-EXPOSE 8080
+EXPOSE 8081
 
 RUN echo "\033[1;36m============================================\033[0m" && \
     echo "\033[1;31m----------Fin du Dockerfile pgAdmin---------\033[0m" && \

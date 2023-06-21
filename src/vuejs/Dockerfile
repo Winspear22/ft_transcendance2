@@ -11,7 +11,7 @@ WORKDIR /app
 RUN npm install -g @vue/cli
 
 # Expose port 4200 for the app
-EXPOSE 4200
+EXPOSE 8080
 
 # First install dependencies, then build the project
 ENTRYPOINT ["/bin/sh", "-c", "npm install && npm run serve"]
