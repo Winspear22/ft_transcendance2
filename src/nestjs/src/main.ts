@@ -13,6 +13,7 @@ import * as cookieParser from 'cookie-parser';
 async function bootstrap() 
 {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
   app.use(cookieParser());
   app.use(session({name: 'cookie-pong', resave: false, saveUninitialized: false, secret: 'toto'}));
   app.use(passport.initialize());

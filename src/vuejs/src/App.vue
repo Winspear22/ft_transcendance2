@@ -3,6 +3,7 @@
     <h1>Authentification OAuth avec NestJS</h1>
     <button @click="authenticateWith42">Se connecter avec 42</button>
     <button @click="authenticateWithGoogle">Se connecter avec Google</button>
+    <button @click="logout">Se deconnecter</button>
   </div>
 </template>
 
@@ -16,6 +17,9 @@ export default {
     authenticateWithGoogle() {
       window.location.href = 'http://localhost:3000/login/google';
     },
+    logout() {
+      window.location.href = 'http://localhost:3000/logout';
+    }
   },
 };
 </script>

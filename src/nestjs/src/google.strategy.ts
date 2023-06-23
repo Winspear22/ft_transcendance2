@@ -7,9 +7,9 @@ import { Injectable } from '@nestjs/common';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     constructor() {
         super({
-            clientID: '569755030922-9bgs13jlnnc186dnbbqci2m5stdgi8ns.apps.googleusercontent.com',
-            clientSecret: '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',
-            callbackURL: 'http://localhost:3000/auth/google/callback',
+            clientID: '569755030922-1n8j0cp7bqs1t8qd0euh97krnhau52fb.apps.googleusercontent.com',
+            clientSecret: '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',
+            callbackURL: 'http://localhost:8080/auth/google/callback',
             scope: ['email', 'profile'],
         });
     }
