@@ -31,11 +31,11 @@ export class AppController {
     console.log('Message from Vue.js:', data);
   }
   /*-----------------------------------*/
-  @Get()
+  /*@Get()
   home(@User() user: Profile) 
   {
     return { user };
-  }
+  }*/
 
   @Get('login')
   logIn() 
@@ -75,12 +75,13 @@ export class AppController {
   @UseGuards(AuthGuard('google'))
   googleAuthRedirect(@Req() req, @Res() res: Response) {
     this.appService.googleLogin(req);
-    res.redirect('/');
+    res.redirect('/'); // Ici se trouve l'adresse ou on redirige apres une connexion a success
   }
 }
 
 @Controller('login')
-export class LoginController {
+export class LoginController 
+{
   @Get('42')
   @UseGuards(FtOauthGuard)
   ftAuth() {}

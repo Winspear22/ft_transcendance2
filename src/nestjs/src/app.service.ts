@@ -5,7 +5,7 @@ export class AppService
 {
   getHello(): string 
   {
-    return 'Hello World!';
+    return 'Bravo, tu t\'es connecte avec succes a 42 et a google !';
   }
 
   googleLogin(req) 
