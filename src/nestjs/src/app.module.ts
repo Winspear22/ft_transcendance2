@@ -9,6 +9,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoginController } from './app.controller';
 import { FtStrategy } from './ft.strategy';
 import { SessionSerializer } from './session.serializer';
+import { UserService } from './user.service';
+import { UserEntity } from './user.entity';
 
 @Module({
   imports: [
@@ -19,12 +21,13 @@ import { SessionSerializer } from './session.serializer';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [],
+      entities: [UserEntity],
       synchronize: true, // Garder à 'false' en production
     }),
+    TypeOrmModule.forFeature([UserEntity]), // Ajoutez cette ligne
     HttpModule,
   ],
   controllers: [AppController, LoginController],
-  providers: [AppService, GoogleStrategy, GoogleAuthGuard, EventGateway, FtStrategy, SessionSerializer], // Ajoutez GoogleStrategy et GoogleAuthGuard ici
+  providers: [AppService, UserService, GoogleStrategy, GoogleAuthGuard, EventGateway, FtStrategy, SessionSerializer], // Ajoutez GoogleStrategy et GoogleAuthGuard ici
 })
 export class AppModule {}

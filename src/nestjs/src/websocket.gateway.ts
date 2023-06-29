@@ -1,6 +1,6 @@
 import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
 
-@WebSocketGateway({cors: true})
+@WebSocketGateway(/*{cors: true}*/)
 export class EventGateway {
   
   @SubscribeMessage('login')

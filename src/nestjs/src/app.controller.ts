@@ -7,26 +7,13 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { FtOauthGuard } from './ft-oauth.guard';
 import { Request } from 'express';
-
-
-/*import { Request as ExpressRequest } from 'express';
-
-interface Request extends ExpressRequest {
-  isAuthenticated(): boolean;
-  logOut(): void;
-}*/
+import { UserService } from './user.service';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @Get()
-  home(@User() user: Profile) 
-  {
-    return { user };
-  }
-
-  @Get('login')
   logIn() 
   {
     return;
@@ -36,41 +23,29 @@ export class AppController {
   @UseGuards(AuthenticatedGuard)
   profile(@User() user: Profile) 
   {
+    console.log(user.id);
+    console.log(user.username);
     return { user };
   }
 
-  /*@Get('logout')
-  @Redirect('/')
-  logOut(@Req() req: Request) 
-  {
-    req.logOut();
-  }*/
-
-  @Get('auth/42')
-  @UseGuards(AuthGuard('42'))  // Utilisation uniquement du guard pour 42
-  async auth42(@Req() req) 
-  {
-
-  }
-
-  @Get('auth/google')
-  @UseGuards(AuthGuard('google'))  // Utilisation uniquement du guard pour Google
-  async authGoogle(@Req() req) 
-  {
-
-  }
-
-  @Get('auth/google/callback')
-  @UseGuards(AuthGuard('google'))
-  googleAuthRedirect(@Req() req, @Res() res: Response) {
-    this.appService.googleLogin(req);
-    res.redirect('/'); // Ici se trouve l'adresse ou on redirige apres une connexion a success
+  @Get('logout')
+  logOut(@Req() req: Request, @Res() res: Response) {
+      req.session.destroy(err => {
+          if (err) {
+              return res.send('Logout failed')
+          }
+          
+          res.clearCookie('connect.sid');
+          res.redirect('/');
+      });
   }
 }
 
 @Controller('login')
 export class LoginController 
 {
+  constructor(private userService: UserService) {} 
+
   @Get('42')
   @UseGuards(FtOauthGuard)
   ftAuth() {}
@@ -78,25 +53,41 @@ export class LoginController
   @Get('42/return')
   @UseGuards(FtOauthGuard)
   @Redirect('/login/google')  // Redirige vers Google après le succès de 42
-  ftAuthCallback() {}
+  ftAuthCallback()
+  {
+    console.log("JE SUIS DANS 42OAuTH");
+    console.log("JE SUIS DANS 42OAuTH");
+    console.log("JE SUIS DANS 42OAuTH");
+    console.log("JE SUIS DANS 42OAuTH");
+    console.log("JE SUIS DANS 42OAuTH");
+    console.log("JE SUIS DANS 42OAuTH");
+
+  }
 
   @Get('google')
   @UseGuards(AuthGuard('google'))  // Authentification Google OAuth
-  googleAuth() {}
+  async googleAuth(@User() user: Profile, @Res() response: Response): Promise<void> {
+    console.log("jevais créer l'utilisateur ");
 
-  @Get('google/return')
+    const new_user = await this.userService.createUser(user.username); // Utilisez le nom d'utilisateur à partir des informations de l'utilisateur
+    console.log("J'ai crée l'utilisateur, il est ici : ");
+    console.log(new_user); // Loggez l'utilisateur pour vérifier qu'il a bien été créé
+  }
+  /*@Get('google/return')
   @UseGuards(AuthGuard('google'))  // Callback de Google OAuth
   @Redirect('/')
-  googleAuthCallback() {}
-}
-
-  /*Comment cela aurait ete code sans l'@User
-  @Get('profile')
-  @UseGuards(AuthenticatedGuard)
-  @Render('profile')
-  profile(@Req() request: Request) 
+  async googleAuthCallback(@Req() req: any, @Res() response: Response): Promise<void> 
   {
-    const user = request.user;
-    return { user };
-  }
-*/
+    const new_user = await this.userService.createUser(); // Créez et sauvegardez le nouvel utilisateur
+    console.log(new_user); // Loggez l'utilisateur pour vérifier qu'il a bien été créé
+  }*/
+
+  /*@Get('google/return')
+  @UseGuards(AuthGuard('google'))  // Callback de Google OAuth
+  @Redirect('/')
+  async googleAuthCallback(@User() user: Profile, @Res() response: Response): Promise<void> {
+    const new_user = await this.userService.createUser(user.username); // Utilisez le nom d'utilisateur à partir des informations de l'utilisateur
+    console.log("J'ai crée l'utilisateur, il est ici : ");
+    console.log(new_user); // Loggez l'utilisateur pour vérifier qu'il a bien été créé
+  }*/
+}

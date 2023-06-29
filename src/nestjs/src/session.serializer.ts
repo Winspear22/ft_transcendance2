@@ -18,3 +18,4 @@ export class SessionSerializer extends PassportSerializer {
     return done(null, payload);
   }
 }
+
