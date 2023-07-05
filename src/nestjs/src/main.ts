@@ -14,14 +14,16 @@ async function bootstrap()
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.enableCors({
-    origin: '*', // Autorisez seulement ce domaine
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Méthodes autorisées
+    origin: true,
+    credentials: true
   });
     app.use(cookieParser());
-  app.use(session({ resave: false, saveUninitialized: false, secret: 'toto'}));
+  //app.use(session({ resave: false, saveUninitialized: false, secret: 'toto'}));
 
-  app.use(passport.initialize());
-  app.use(passport.session());
+  //app.use(passport.initialize());
+  //app.use(passport.session());
+  console.log(process.env.SECRET_JWT);
+
   await app.listen(3000);
 }
 bootstrap();

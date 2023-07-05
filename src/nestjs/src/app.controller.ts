@@ -1,93 +1,63 @@
-import { Controller, Get, Req, UseGuards, Redirect, Res } from '@nestjs/common';
-import { AppService } from './app.service';
-import { Profile } from 'passport-42'
-import { User } from './user.decorator'
-import { AuthenticatedGuard } from './authenticated.guard';
+import { Controller, Get, Req, UseGuards, Post, Res, Param } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
-import { FtOauthGuard } from './ft-oauth.guard';
+import { IntraAuthGuard } from './ft-oauth.guard';
+
 import { Request } from 'express';
-import { UserService } from './user.service';
+import { UserEntity } from './user.entity';
+import { JwtPayload } from './request.interface';
+import { JwtService } from '@nestjs/jwt';
+import { HttpService } from '@nestjs/axios';
+
+
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+	constructor (
+		private httpService: HttpService,
+		private jwtService: JwtService,
+	) {}
 
-  @Get()
-  logIn() 
-  {
-    return;
-  }
+	@Get('42/login')
+	@UseGuards(IntraAuthGuard)
+	login() {
+	}
 
-  @Get('profile')
-  @UseGuards(AuthenticatedGuard)
-  profile(@User() user: Profile) 
-  {
-    console.log(user.id);
-    console.log(user.username);
-    return { user };
-  }
+	@Get('login/42/return')
+	@UseGuards(IntraAuthGuard)
+	async redirect(@Res({passthrough: true}) res: Response, @Req() req: Request) {
+		const username = req.user['username'];
+		let auth: boolean = false;
+		const payload: JwtPayload = { username, auth };
+		const accessToken: string = await this.jwtService.sign(payload);
+		res.cookie('jwt', accessToken, {httpOnly: true});
+		res.redirect(process.env.IP_FRONTEND);
+	}
 
-  @Get('logout')
-  logOut(@Req() req: Request, @Res() res: Response) {
-      req.session.destroy(err => {
-          if (err) {
-              return res.send('Logout failed')
-          }
-          
-          res.clearCookie('connect.sid');
-          res.redirect('/');
-      });
-  }
-}
+	@UseGuards(AuthGuard('jwt'))
+	@Get('2fa')
+	async getQrcode(@Req() req) {
+		const user: UserEntity = req.user;
+	  	const resp = await this.httpService.get(
+		  `https://www.authenticatorApi.com/pair.aspx?AppName=${process.env.TWO_FACTOR_AUTH_APP_NAME}&AppInfo=${user.username}&SecretCode=${user.id}`,
+		).toPromise();
+	  return resp.data;
+	}
 
-@Controller('login')
-export class LoginController 
-{
-  constructor(private userService: UserService) {} 
-
-  @Get('42')
-  @UseGuards(FtOauthGuard)
-  ftAuth() {}
-
-  @Get('42/return')
-  @UseGuards(FtOauthGuard)
-  @Redirect('/login/google')  // Redirige vers Google après le succès de 42
-  ftAuthCallback()
-  {
-    console.log("JE SUIS DANS 42OAuTH");
-    console.log("JE SUIS DANS 42OAuTH");
-    console.log("JE SUIS DANS 42OAuTH");
-    console.log("JE SUIS DANS 42OAuTH");
-    console.log("JE SUIS DANS 42OAuTH");
-    console.log("JE SUIS DANS 42OAuTH");
-
-  }
-
-  @Get('google')
-  @UseGuards(AuthGuard('google'))  // Authentification Google OAuth
-  async googleAuth(@User() user: Profile, @Res() response: Response): Promise<void> {
-    console.log("jevais créer l'utilisateur ");
-
-    const new_user = await this.userService.createUser(user.username); // Utilisez le nom d'utilisateur à partir des informations de l'utilisateur
-    console.log("J'ai crée l'utilisateur, il est ici : ");
-    console.log(new_user); // Loggez l'utilisateur pour vérifier qu'il a bien été créé
-  }
-  /*@Get('google/return')
-  @UseGuards(AuthGuard('google'))  // Callback de Google OAuth
-  @Redirect('/')
-  async googleAuthCallback(@Req() req: any, @Res() response: Response): Promise<void> 
-  {
-    const new_user = await this.userService.createUser(); // Créez et sauvegardez le nouvel utilisateur
-    console.log(new_user); // Loggez l'utilisateur pour vérifier qu'il a bien été créé
-  }*/
-
-  /*@Get('google/return')
-  @UseGuards(AuthGuard('google'))  // Callback de Google OAuth
-  @Redirect('/')
-  async googleAuthCallback(@User() user: Profile, @Res() response: Response): Promise<void> {
-    const new_user = await this.userService.createUser(user.username); // Utilisez le nom d'utilisateur à partir des informations de l'utilisateur
-    console.log("J'ai crée l'utilisateur, il est ici : ");
-    console.log(new_user); // Loggez l'utilisateur pour vérifier qu'il a bien été créé
-  }*/
+	@UseGuards(AuthGuard('jwt'))
+	@Post('2fa/:secret')
+	async validate(@Param('secret') secret, @Req() req, @Res({passthrough: true}) res: Response) {
+		const user: UserEntity = req.user;
+		const resp = await this.httpService.get(
+		  `https://www.authenticatorApi.com/Validate.aspx?Pin=${secret}&SecretCode=${user.id}`,
+		).toPromise();
+		if (resp.data === 'True') {
+			const username = user.username;
+			const auth: boolean = true;
+			const payload: JwtPayload = { username, auth };
+			const accessToken: string = await this.jwtService.sign(payload);
+			res.cookie('jwt', accessToken, {httpOnly: true});
+		}
+	  	return resp.data;
+	}
 }

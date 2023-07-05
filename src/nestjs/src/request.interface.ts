@@ -13,3 +13,7 @@ export interface RequestWithLogin extends ExpressRequest
     logIn(user: any, options?: any, done?: (err: any, user: any) => void): void;
 }
 
+export interface JwtPayload {
+  username: string;
+  auth: boolean;
+}

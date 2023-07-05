@@ -6,12 +6,11 @@ import { GoogleStrategy } from './google.strategy';
 import { GoogleAuthGuard } from './google-auth.guard';
 import { EventGateway } from './websocket.gateway';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LoginController } from './app.controller';
-import { FtStrategy } from './ft.strategy';
+//import { FtStrategy } from './ft.strategy';
 import { SessionSerializer } from './session.serializer';
-import { UserService } from './user.service';
 import { UserEntity } from './user.entity';
-
+import { UserModule } from './user.module'; // Assurez-vous que le chemin est correct
+import { IntraStrategy } from './ft.strategy'
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -22,12 +21,12 @@ import { UserEntity } from './user.entity';
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
       entities: [UserEntity],
-      synchronize: true, // Garder à 'false' en production
+      synchronize: true,
     }),
-    TypeOrmModule.forFeature([UserEntity]), // Ajoutez cette ligne
+    UserModule, // Ajoutez cette ligne
     HttpModule,
   ],
-  controllers: [AppController, LoginController],
-  providers: [AppService, UserService, GoogleStrategy, GoogleAuthGuard, EventGateway, FtStrategy, SessionSerializer], // Ajoutez GoogleStrategy et GoogleAuthGuard ici
+  controllers: [AppController],
+  providers: [AppService, GoogleStrategy, GoogleAuthGuard, EventGateway, IntraStrategy, SessionSerializer],
 })
 export class AppModule {}

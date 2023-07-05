@@ -1,48 +1,55 @@
 <template>
   <div id="app">
     <h1>Authentification OAuth avec NestJS</h1>
-    <button @click="authenticateWith42">Se connecter avec 42</button>
-    <button @click="authenticateWithGoogle">Se connecter avec Google</button>
-    <button @click="logout">Se deconnecter</button>
-    <div v-if="user">
-      <p>ID: {{ user.id }}</p>
-      <p>Xlogin: {{ user.username }}</p>
+    <button @click="loginWith42">Se connecter avec 42</button>
+    <button v-if="isAuthenticated" @click="logout">Se deconnecter</button>
+    <div v-if="isAuthenticated">
+      <p>Bravo, {{ username }}, tu t'es connecté avec succès !</p>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
   name: 'App',
   data() {
     return {
-      user: null,
+      isAuthenticated: false,
+      username: '',
     };
   },
   methods: {
-    authenticateWith42() {
-      window.location.href = 'http://localhost:3000/login/42';
-    },
-    authenticateWithGoogle() {
-      window.location.href = 'http://localhost:3000/login/google';
+    loginWith42() {
+      window.location.href = 'http://localhost:3000/42/login';
     },
     logout() {
-      window.location.href = 'http://localhost:8080';
+      this.isAuthenticated = false;
+      this.username = '';
+      axios.post('http://localhost:3000/logout')
+        .then(() => {
+          this.$router.push('/');
+        })
+        .catch(error => {
+          console.error(error);
+        });
     }
   },
   async created() {
     try {
-      const response = await fetch('http://localhost:3000/profile');
-      if (!response.ok) {
+      const response = await axios.get('http://localhost:3000/profile', { withCredentials: true });
+
+      if (!response.data) {
         throw new Error(`HTTP error! status: ${response.status}`);
       } else {
-        this.user = await response.json();
+        this.username = response.data.username;
+        this.isAuthenticated = true;
       }
     } catch (error) {
       console.log(error);
     }
   },
-
 };
 </script>
 
