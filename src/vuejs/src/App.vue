@@ -36,20 +36,6 @@ export default {
         });
     }
   },
-  async created() {
-    try {
-      const response = await axios.get('http://localhost:3000/profile', { withCredentials: true });
-
-      if (!response.data) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      } else {
-        this.username = response.data.username;
-        this.isAuthenticated = true;
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  },
 };
 </script>
 

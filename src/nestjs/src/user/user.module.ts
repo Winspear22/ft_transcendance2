@@ -6,12 +6,11 @@ import { UserService } from './user.service';
 import { UsersRepository } from './user.repository';
 import { PassportModule, PassportStrategy } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity, UsersRepository]),
-    //TypeOrmModule.forFeature([UsersRepository]),
     PassportModule.register({defaultStrategy: 'jwt'}),
     JwtModule.register({
       secret: 'superSecret2021',

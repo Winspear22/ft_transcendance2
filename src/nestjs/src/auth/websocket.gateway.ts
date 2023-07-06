@@ -1,5 +1,5 @@
 import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
-
+/* NE SERT A RIEN POUR LE MOMENT */
 @WebSocketGateway(/*{cors: true}*/)
 export class EventGateway {
   
