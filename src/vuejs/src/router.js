@@ -1,17 +1,27 @@
-import Vue from 'vue';
-import VueRouter from 'vue-router';
-import HelloWorld from './components/HelloWorld.vue';
-import AboutSection from './components/AboutSection.vue';
-
-Vue.use(VueRouter);
+import { createRouter, createWebHistory } from 'vue-router'
+import authLogin from './components/authLogin.vue';
 
 const routes = [
-  { path: '/', component: HelloWorld },
-  { path: '/aboutsection', component: AboutSection }
-];
+	{
+		path: '/login',
+		name: 'Login',
+		component: authLogin,
+		meta: {
+			title: 'Se connecter'
+		}
+	},
+	// ajoutez d'autres routes ici
+]
 
-const router = new VueRouter({
-  routes
+const router = createRouter({
+	history: createWebHistory(),
+	routes,
+})
+
+router.beforeEach((to, from, next) => {
+	document.title = to.meta.title || 'P O N G';
+	next();
 });
 
-export default router;
+export default router
+
