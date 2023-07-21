@@ -1,71 +1,55 @@
-/*import { Controller, Get, Req, UseGuards, Post, Res, Param } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express';
-import { IntraAuthGuard } from './auth/guard/ft-oauth.guard';
-import { Request } from 'express';
-import { UserEntity } from './user/user.entity';
-import { JwtPayload } from './auth/request.interface';
-import { JwtService } from '@nestjs/jwt';
-import { HttpService } from '@nestjs/axios';*/
-
-import { Controller, Get, Req, UseGuards, Post, Res, Param } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Req, UseGuards, Res, Post } from '@nestjs/common';
+import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
 import { IntraAuthGuard } from './guard/ft-oauth.guard';
 import { Request } from 'express';
-import { UserEntity } from '../user/user.entity';
 import { JwtPayload } from './interface/request.interface';
 import { JwtService } from '@nestjs/jwt';
 import { HttpService } from '@nestjs/axios';
-
+import { AuthService } from './auth.service';
+import { UserService } from 'src/user/user.service';
 
 @Controller()
 export class AuthController {
-	constructor (
-		private httpService: HttpService,
-		private jwtService: JwtService,
-	) {}
+  constructor(
+    private httpService: HttpService,
+    private jwtService: JwtService,
+    private authService: AuthService,
+    private userService: UserService,
+  ) {}
 
-	@Get('42/login')
-	@UseGuards(IntraAuthGuard)
-	login() {
-	}
+  @Public()
+  @Get('42/login')
+  @UseGuards(IntraAuthGuard)
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  login() {}
 
-	@Get('login/42/return')
-	@UseGuards(IntraAuthGuard)
-	async redirect(@Res({passthrough: true}) res: Response, @Req() req: Request) {
-		const username = req.user['username'];
-		let auth: boolean = false;
-		const payload: JwtPayload = { username, auth };
-		const accessToken: string = await this.jwtService.sign(payload);
-		res.cookie('jwt', accessToken, {httpOnly: true});
-		res.redirect(process.env.IP_FRONTEND);
-	}
+  @Public()
+  @Get('login/42/return')
+  @UseGuards(IntraAuthGuard)
+  async redirect(
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
+  ) {
+    const username = req.user['username'];
+    const auth = false;
+    const payload: JwtPayload = { username, auth };
+    const accessToken: string = await this.jwtService.sign(payload);
+    res.cookie('jwt', accessToken, { httpOnly: true });
+    console.log("VOICI L'ID DE L'UTILISATEUR === " + req.user['id']);
+    res.redirect(process.env.IP_FRONTEND);
+  }
 
-	@UseGuards(AuthGuard('jwt'))
-	@Get('2fa')
-	async getQrcode(@Req() req) {
-		const user: UserEntity = req.user;
-	  	const resp = await this.httpService.get(
-		  `https://www.authenticatorApi.com/pair.aspx?AppName=${process.env.TWO_FACTOR_AUTH_APP_NAME}&AppInfo=${user.username}&SecretCode=${user.id}`,
-		).toPromise();
-	  return resp.data;
-	}
-
-	@UseGuards(AuthGuard('jwt'))
-	@Post('2fa/:secret')
-	async validate(@Param('secret') secret, @Req() req, @Res({passthrough: true}) res: Response) {
-		const user: UserEntity = req.user;
-		const resp = await this.httpService.get(
-		  `https://www.authenticatorApi.com/Validate.aspx?Pin=${secret}&SecretCode=${user.id}`,
-		).toPromise();
-		if (resp.data === 'True') {
-			const username = user.username;
-			const auth: boolean = true;
-			const payload: JwtPayload = { username, auth };
-			const accessToken: string = await this.jwtService.sign(payload);
-			res.cookie('jwt', accessToken, {httpOnly: true});
-		}
-	  	return resp.data;
-	}
+  @Public()
+  @Post('generate')
+  //@UseGuards(JwtAuthenticationGuard)
+  async register(@Res() response: Response, @Req() request: Request) {
+    const userId = request.body.userId;
+    const user = await this.userService.findUserById(userId);
+    console.log('COUCOU JE SUIS DANS GENERATE');
+    const qrCode = await this.authService.generateTwoFactorAuthenticationSecret(
+      user,
+    );
+    return response.json(qrCode);
+  }
 }

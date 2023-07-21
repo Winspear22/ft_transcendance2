@@ -1,24 +1,24 @@
-import {
-    Entity,
-    Column,
-    PrimaryGeneratedColumn,
-    
-  } from 'typeorm';
-  
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+
 @Entity()
-export class UserEntity 
-{
+export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({unique: true})
+  @Column({ unique: true })
   username: string;
 
-  @Column("text", {default: ""})
+  @Column('text', { default: '' })
   login42: string;
 
-  @Column("text", {default: "empty"})
+  @Column('text', { default: 'empty' })
   profile_picture: string;
 
+  /* COMING FROM THE WANAGO TUTORIAL */
+
+  @Column({ nullable: true })
+  email: string;
+
+  @Column({ nullable: true })
+  public twoFactorAuthenticationSecret?: string;
 }
-  
