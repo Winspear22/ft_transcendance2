@@ -19,8 +19,8 @@ export class UserService {
     const { login42 } = userData;
     user = await this.usersRepository.findOneBy({ login42: login42 });
     // eslint-disable-next-line prettier/prettier
-    //if (user) 
-    //  return user;
+    if (user) 
+      return user;
     let { username } = userData;
     user = await this.usersRepository.findOneBy({ username });
     if (user) {
