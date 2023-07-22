@@ -1,4 +1,5 @@
-import { Controller, Get, Req, UseGuards, Res, Post, Body } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Res, Post, Body, UnauthorizedException,
+   HttpCode, HttpStatus } from '@nestjs/common';
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
 import { IntraAuthGuard } from './guard/ft-oauth.guard';
@@ -9,10 +10,17 @@ import { HttpService } from '@nestjs/axios';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 
+import { IsNotEmpty, IsString } from 'class-validator';
+
+export class TwoFactorAuthenticationCodeDto {
+  @IsString()
+  @IsNotEmpty()
+  twoFactorAuthenticationCode: string;
+}
+
 @Controller()
 export class AuthController {
   constructor(
-    private httpService: HttpService,
     private jwtService: JwtService,
     private authService: AuthService,
     private userService: UserService,
@@ -53,41 +61,49 @@ export class AuthController {
     return response.json(qrCode);
   }
 
-/*@Public()
-@Post('turn-on')
-async turnOnTwoFactorAuthentication(@Body() body, @Res({passthrough: true}) res: Response) {
-  console.log('le body ', body)
-  this.userService.isTwoFactorAuthenticationCodeValid(
-    body.TfaCode,
-    body.actualUser.login,
-    res,
-  );
-  this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
-}*/
-
-@Public()
-@Post('turn-on')
-async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
-  console.log('le body ', body)
-  const isCodeValid = await this.userService.isTwoFactorAuthenticationCodeValid(
-    body.TfaCode,
-    body.actualUser.login,
-    //res,
-  );
-  if(isCodeValid) {
-    await this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
-    res.status(200).json({ message: '2FA enabled' });
-  } else {
-    res.status(401).json({ message: 'Invalid 2FA code' });
+  @Public()
+  @Post('turn-on')
+  async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
+    console.log('le body ', body)
+    const isCodeValid = await this.userService.isTwoFactorAuthenticationCodeValid(
+      body.TfaCode,
+      body.actualUser.login,
+      //res,
+    );
+    if(isCodeValid) {
+      await this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
+      res.status(200).json({ message: '2FA enabled' });
+    } else {
+      res.status(401).json({ message: 'Invalid 2FA code' });
+    }
   }
-}
 
+  @Post('authenticate')
+  @HttpCode(200)
+  @UseGuards(IntraAuthGuard)
+  async authenticate(
+    @Req() request: Request,
+    @Body() { twoFactorAuthenticationCode } : TwoFactorAuthenticationCodeDto
+  ) {
+    const isCodeValid = this.userService.isTwoFactorAuthenticationCodeValid(
+      twoFactorAuthenticationCode, request.body.username
+    );
+    if (!isCodeValid) {
+      throw new UnauthorizedException('Wrong authentication code');
+    }
+ 
+    const accessTokenCookie = this.authService.getCookieWithJwtAccessToken(request.body.id, true);
+ 
+    request.res.setHeader('Set-Cookie', [accessTokenCookie]);
+ 
+    return request.user;
+  }
 
-@Public()
-@Post('deactivate')
-//@HttpCode(HttpStatus.OK)
-async Deactivate2FA(@Body() body) {
-  this.userService.Deactivate2FA(body.nickname)
-}
+  @Public()
+  @Post('deactivate')
+  @HttpCode(HttpStatus.OK)
+  async Deactivate2FA(@Body() body) {
+    this.userService.Deactivate2FA(body.nickname)
+  }
 
 }

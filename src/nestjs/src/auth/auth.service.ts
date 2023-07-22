@@ -4,10 +4,21 @@ import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { authenticator } from 'otplib';
 import { toDataURL, toFileStream } from 'qrcode';
+import { JwtService } from '@nestjs/jwt';
+
+export interface TokenPayload {
+  userId: number;
+  isSecondFactorAuthenticated?: boolean;
+}
+
+export default TokenPayload;
 
 @Injectable()
 export class AuthService {
-  constructor(private userService: UserService) {}
+  constructor(
+    private userService: UserService,
+    private jwtService: JwtService,
+    ) {}
 
   async validateUser(userData: User42Dto): Promise<UserEntity> {
     return this.userService.validateUser42(userData);
@@ -38,5 +49,14 @@ export class AuthService {
   async generateQrCodeDataURL(otpAuthUrl: string) {
     // generate the QrCode that will be used to add our application to the google authenticator app.
     return toDataURL(otpAuthUrl);
+  }
+
+  public getCookieWithJwtAccessToken(userId: number, isSecondFactorAuthenticated = false) {
+    const payload: TokenPayload = { userId, isSecondFactorAuthenticated };
+    const token = this.jwtService.sign(payload, {
+      secret: process.env.JWT_ACCESS_TOKEN_SECRET,//this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
+      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME//`${this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME')}s`
+    });
+    return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME}`;
   }
 }

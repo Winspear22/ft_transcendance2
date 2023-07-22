@@ -19,8 +19,8 @@ export class UserService {
     const { login42 } = userData;
     user = await this.usersRepository.findOneBy({ login42: login42 });
     // eslint-disable-next-line prettier/prettier
-    if (user) 
-      return user;
+    //if (user) 
+    //  return user;
     let { username } = userData;
     user = await this.usersRepository.findOneBy({ username });
     if (user) {
@@ -53,21 +53,12 @@ export class UserService {
     });
   }
 
-  /*async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string, res: Response) {
-    // verify the authentication code with the user's secret
-     // const us = await this.userServ.searchUser(user);
-     const us = await this.findUserByUsername(user);
-      const verif = await authenticator.check(TfaCode, us.twoFactorAuthenticationSecret)
-      if (!verif) {
-        throw new UnauthorizedException('Wrong authentication code');
-      }
-      return verif;
-  }  */
-
   async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string) {
     try {
       // verify the authentication code with the user's secret
       const us = await this.findUserByUsername(user);
+      console.log("JE SUIS === " + user);
+      console.log("Mon code === " + TfaCode);
       const verif = authenticator.check(TfaCode, us.twoFactorAuthenticationSecret)
       return verif;
     } catch (error) {
@@ -86,13 +77,6 @@ export class UserService {
       });
     }
   }
-
-  /*public isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, user: UserEntity) {
-    return authenticator.verify({
-      token: twoFactorAuthenticationCode,
-      secret: user.twoFactorAuthenticationSecret
-    })
-  }*/
 
   /*=====================================================================*/
 
