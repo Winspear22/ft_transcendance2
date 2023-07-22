@@ -64,4 +64,12 @@ async turnOnTwoFactorAuthentication(@Body() body, @Res({passthrough: true}) res:
   );
   this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
 }
+
+@Public()
+@Post('deactivate')
+//@HttpCode(HttpStatus.OK)
+async Deactivate2FA(@Body() body) {
+  this.userService.Deactivate2FA(body.nickname)
+}
+
 }

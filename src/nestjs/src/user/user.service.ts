@@ -64,6 +64,16 @@ export class UserService {
       return verif;
   }
 
+  async Deactivate2FA(username: string) {
+    const user = await this.usersRepository.findOneBy({ username });
+    if(user && user.isTwoFactorAuthenticationEnabled) {
+      await this.usersRepository.update(user.id, {
+        isTwoFactorAuthenticationEnabled: false,
+        twoFactorAuthenticationSecret: null, // Réinitialisation du champ secret.
+      });
+    }
+  }
+
   /*public isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, user: UserEntity) {
     return authenticator.verify({
       token: twoFactorAuthenticationCode,
