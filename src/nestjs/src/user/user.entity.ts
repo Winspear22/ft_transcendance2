@@ -21,4 +21,7 @@ export class UserEntity {
 
   @Column({ nullable: true })
   public twoFactorAuthenticationSecret?: string;
+
+  @Column({ default: false })
+  public isTwoFactorAuthenticationEnabled: boolean;
 }

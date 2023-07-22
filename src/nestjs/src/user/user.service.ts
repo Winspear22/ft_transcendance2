@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User42Dto } from './user42.dto';
 import { UserEntity } from './user.entity';
 import { Repository } from 'typeorm';
+import { authenticator } from 'otplib';
+import { Response } from 'express';
 
 @Injectable()
 export class UserService {
@@ -35,6 +37,9 @@ export class UserService {
     await this.usersRepository.save(user);
     return user;
   }
+  /*=====================================================================*/
+  /*-----------------------------2FA METHODES----------------------------*/
+  /*=====================================================================*/
 
   async setTwoFactorAuthenticationSecret(secret: string, userId: number) {
     return this.usersRepository.update(userId, {
@@ -42,7 +47,49 @@ export class UserService {
     });
   }
 
+  async turnOnTwoFactorAuthentication(userId: number) {
+    return this.usersRepository.update(userId, {
+      isTwoFactorAuthenticationEnabled: true
+    });
+  }
+
+  async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string, res: Response) {
+    // verify the authentication code with the user's secret
+     // const us = await this.userServ.searchUser(user);
+     const us = await this.findUserByUsername(user);
+      const verif = await authenticator.check(TfaCode, us.twoFactorAuthenticationSecret)
+      if (!verif) {
+        throw new UnauthorizedException('Wrong authentication code');
+      }
+      return verif;
+  }
+
+  /*public isTwoFactorAuthenticationCodeValid(twoFactorAuthenticationCode: string, user: UserEntity) {
+    return authenticator.verify({
+      token: twoFactorAuthenticationCode,
+      secret: user.twoFactorAuthenticationSecret
+    })
+  }*/
+
+  /*=====================================================================*/
+
+  /*=====================================================================*/
+  /*-------------------------------GETTERS-------------------------------*/
+  /*=====================================================================*/
+
   async findUserById(id: number): Promise<UserEntity> {
     return this.usersRepository.findOneBy({ id });
   }
+
+  async findUserByUsername(username: string): Promise<UserEntity> {
+      return this.usersRepository.findOneBy({ username });
+  }
+
+  async findUserByEmail(email: string): Promise<UserEntity> {
+    return this.usersRepository.findOneBy({ email });
+  }
+
+
+  /*=====================================================================*/
+
 }

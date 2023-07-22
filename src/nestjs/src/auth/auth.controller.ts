@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards, Res, Post } from '@nestjs/common';
+import { Controller, Get, Req, UseGuards, Res, Post, Body } from '@nestjs/common';
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
 import { IntraAuthGuard } from './guard/ft-oauth.guard';
@@ -52,4 +52,16 @@ export class AuthController {
     );
     return response.json(qrCode);
   }
+
+@Public()
+@Post('turn-on')
+async turnOnTwoFactorAuthentication(@Body() body, @Res({passthrough: true}) res: Response) {
+  console.log('le body ', body)
+  this.userService.isTwoFactorAuthenticationCodeValid(
+    body.TfaCode,
+    body.actualUser.login,
+    res,
+  );
+  this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
+}
 }
