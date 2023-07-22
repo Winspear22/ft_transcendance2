@@ -53,7 +53,7 @@ export class UserService {
     });
   }
 
-  async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string, res: Response) {
+  /*async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string, res: Response) {
     // verify the authentication code with the user's secret
      // const us = await this.userServ.searchUser(user);
      const us = await this.findUserByUsername(user);
@@ -62,7 +62,20 @@ export class UserService {
         throw new UnauthorizedException('Wrong authentication code');
       }
       return verif;
+  }  */
+
+  async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string) {
+    try {
+      // verify the authentication code with the user's secret
+      const us = await this.findUserByUsername(user);
+      const verif = authenticator.check(TfaCode, us.twoFactorAuthenticationSecret)
+      return verif;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   }
+  
 
   async Deactivate2FA(username: string) {
     const user = await this.usersRepository.findOneBy({ username });

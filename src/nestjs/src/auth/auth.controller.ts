@@ -53,7 +53,7 @@ export class AuthController {
     return response.json(qrCode);
   }
 
-@Public()
+/*@Public()
 @Post('turn-on')
 async turnOnTwoFactorAuthentication(@Body() body, @Res({passthrough: true}) res: Response) {
   console.log('le body ', body)
@@ -63,7 +63,25 @@ async turnOnTwoFactorAuthentication(@Body() body, @Res({passthrough: true}) res:
     res,
   );
   this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
+}*/
+
+@Public()
+@Post('turn-on')
+async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
+  console.log('le body ', body)
+  const isCodeValid = await this.userService.isTwoFactorAuthenticationCodeValid(
+    body.TfaCode,
+    body.actualUser.login,
+    //res,
+  );
+  if(isCodeValid) {
+    await this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
+    res.status(200).json({ message: '2FA enabled' });
+  } else {
+    res.status(401).json({ message: 'Invalid 2FA code' });
+  }
 }
+
 
 @Public()
 @Post('deactivate')
