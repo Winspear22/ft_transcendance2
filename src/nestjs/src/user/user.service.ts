@@ -1,21 +1,24 @@
 import {
   Injectable,
-  UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { User42Dto } from './user42.dto';
 import { UserEntity } from './user.entity';
 import { Repository } from 'typeorm';
 import { authenticator } from 'otplib';
 import { Response } from 'express';
+import { Request } from 'express';
 import * as colors from '../colors';
+import { JwtService } from '@nestjs/jwt';
+
+
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
+    private jwtService: JwtService,
   ) {}
 
   /*async validateUser42(userData: User42Dto): Promise<UserEntity> {
@@ -56,14 +59,13 @@ export class UserService {
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
     console.log(colors.GREEN + colors.BRIGHT, "------------------USER CREATED---------------", colors.RESET);
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, 'My User simple ID === ', colors.WHITE + colors.BRIGHT + newUser.id);
     console.log(colors.GREEN + colors.BRIGHT, "login = ", colors.WHITE + colors.BRIGHT, newUser.username);
     console.log(colors.GREEN + colors.BRIGHT, "email = ", colors.WHITE + colors.BRIGHT, newUser.email);
     console.log(colors.GREEN + colors.BRIGHT, "profile_picture = ", colors.WHITE + colors.BRIGHT, newUser.profile_picture);
     console.log(colors.GREEN + colors.BRIGHT, "2FA activated ? = ", colors.WHITE + colors.BRIGHT, newUser.isTwoFactorAuthenticationEnabled);
     console.log(colors.GREEN + colors.BRIGHT, "user status ? = ", colors.WHITE + colors.BRIGHT, newUser.user_status);
-    console.log(colors.GREEN + colors.BRIGHT, 'My User provider === ', colors.WHITE + colors.BRIGHT + newUser.provider);
-    console.log(colors.GREEN + colors.BRIGHT, 'My User providerId === ', colors.WHITE + colors.BRIGHT + colors.BRIGHT + newUser.id42);
+    console.log(colors.GREEN + colors.BRIGHT, 'My User origin === ', colors.WHITE + colors.BRIGHT + newUser.provider);
+    console.log(colors.GREEN + colors.BRIGHT, 'My User origin_id === ', colors.WHITE + colors.BRIGHT + colors.BRIGHT + newUser.id42);
     await this.usersRepository.save(newUser);
     //On ecrit l'id apres le save car c'est la fonction save qui attribut l'id.
     console.log(colors.GREEN + colors.BRIGHT, 'My User simple ID === ', colors.WHITE + colors.BRIGHT + newUser.id);
@@ -168,5 +170,72 @@ export class UserService {
   
   /*=====================================================================*/
 
+  /*=====================================================================*/
+  /*-------------------------COOKIES CREATION METHOD---------------------*/
+  /*=====================================================================*/
 
+  async CreateCookiesForNewUser(res: Response, username: string)
+  {
+    const User = this.findUserByUsername(username);
+    if ((await User).isTwoFactorAuthenticationEnabled === false)
+    {
+      const idAsString: string = (await User).id.toString();
+      const tokens = await this.CreateAndSignTokens(idAsString, (await User).username);
+      this.setCookie(
+        {
+          nickname: (await User).username,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+          avatar: (await User).profile_picture
+        },
+        res,
+      );
+      return res.redirect(process.env.IP_FRONTEND);
+    }
+    else
+    {
+      const url = `http://localhost:3000/tfa?param1=${(await User).username}`;
+      res.redirect(url);
+    }
+  }
+
+  async CreateAndSignTokens(userId: string, nickname: string) {
+    const [new_access_token, new_refresh_token] = await Promise.all([
+      this.jwtService.signAsync(
+        {
+          sub: userId,
+          nickname,
+        },
+        {
+          secret: process.env.ACCESS_TOKEN,
+          expiresIn: 60 * 15 * 20,
+        },
+      ),
+      this.jwtService.signAsync(
+        {
+          sub: userId,
+          nickname,
+        },
+        {
+          secret: process.env.REFRESH_TOKEN,
+          expiresIn: 60 * 60 * 24 * 7,
+        },
+      ),
+    ]);
+    return {access_token: new_access_token, refresh_token: new_refresh_token};
+  }
+
+  async setCookie(data: object, res: Response) {
+    const serializeData = JSON.stringify(data);
+    res.cookie('AdnenCookie', '', { expires: new Date(0) });
+    res.cookie('AdnenCookie', serializeData, {
+      httpOnly: false,
+      sameSite: 'lax',
+      secure: false,
+      maxAge: 1800000000,
+      domain: 'localhost',
+      path: '/',
+    });
+  }
+  /*=====================================================================*/
 }

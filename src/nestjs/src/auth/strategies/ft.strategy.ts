@@ -92,8 +92,9 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
     console.log(colors.MAGENTA, 'My User providerId === ', colors.WHITE + colors.BRIGHT + userDet.providerId);
     if (lolo) 
     {
+      console.log(colors.MAGENTA + colors.BRIGHT + "My Current User Statut = " + colors.RED + colors.BRIGHT +lolo.user_status);
       lolo = await this.userService.FindAndUpdateUser(lolo.username, { user_status: 'Online' });
-      console.log("user status = " + lolo.user_status);
+      console.log(colors.MAGENTA + colors.BRIGHT + "My Current User Statut = " + colors.GREEN + colors.BRIGHT +lolo.user_status);
       return cb(null, lolo);
     }
     const newUser = await this.userService.createUser(userDet);

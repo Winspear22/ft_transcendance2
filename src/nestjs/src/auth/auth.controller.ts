@@ -14,12 +14,14 @@ import {
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
 import { IntraAuthGuard } from './guard/ft-oauth.guard';
-import { Request } from 'express';
+import { Request as ExpressRequest } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 import { FtOauthGuard } from './guard/ft-oauth.guard';
 import { JwtPayload } from './interface/request.interface';
+import * as colors from '../colors';
+
 
 import { IsNotEmpty, IsString } from 'class-validator';
 
@@ -40,36 +42,35 @@ export class AuthController {
   @Public()
   @Get('42/login')
   @UseGuards(IntraAuthGuard)
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   login() {}
 
   @Public()
   @Get('login/42/return')
   @UseGuards(IntraAuthGuard)
-  async redirect(
-    @Res({ passthrough: true }) res: Response,
-    @Req() req: Request,
-  ) {
+  async redirect(@Res({ passthrough: true }) res: Response, @Req() req: ExpressRequest) 
+  {
+    /*console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+
+    console.log(colors.RED + colors.BRIGHT + req);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    */
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    //JSON.stringify(req)
+    console.log(req.user);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+
     const username = req.user['username'];
-    const auth = false;
-    const payload: JwtPayload = { username, auth };
-    const accessToken: string = await this.jwtService.sign(payload);
-    res.cookie('jwt', accessToken, { httpOnly: true });
-    console.log("VOICI L'ID DE L'UTILISATEUR === " + req.user['id']);
-    res.redirect(process.env.IP_FRONTEND);
-  }
-
-  @Delete('deleteallusers')
-  async deleteAllUsers(@Res() res: Response) {
-    await this.userService.deleteAllUsers();
-    res.status(200).json({ message: 'All the Users in the database were deleted.' });
-
+    await this.userService.CreateCookiesForNewUser(res, username);
   }
 
   @Public()
   @Post('generate')
   //@UseGuards(JwtAuthenticationGuard)
-  async register(@Res() response: Response, @Req() request: Request) {
+  async register(@Res() response: Response, @Req() request: ExpressRequest) {
     const userId = request.body.userId;
     const user = await this.userService.findUserById(userId);
     console.log('COUCOU JE SUIS DANS GENERATE');
@@ -103,7 +104,7 @@ export class AuthController {
   @HttpCode(200)
   @UseGuards(IntraAuthGuard)
   async authenticate(
-    @Req() request: Request,
+    @Req() request: ExpressRequest,
     @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
   ) {
     const isCodeValid = this.userService.isTwoFactorAuthenticationCodeValid(
@@ -129,5 +130,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async Deactivate2FA(@Body() body) {
     this.userService.Deactivate2FA(body.nickname);
+  }
+
+  @Delete('deleteallusers')
+  async deleteAllUsers(@Res() res: Response) {
+    await this.userService.deleteAllUsers();
+    res.status(200).json({ message: 'All the Users in the database were deleted.' });
   }
 }
