@@ -1,14 +1,25 @@
-import { Controller, Get, Req, UseGuards, Res, Post, Body, UnauthorizedException,
-   HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Req,
+  UseGuards,
+  Res,
+  Post,
+  Body,
+  Delete,
+  UnauthorizedException,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
 import { IntraAuthGuard } from './guard/ft-oauth.guard';
 import { Request } from 'express';
-import { JwtPayload } from './interface/request.interface';
 import { JwtService } from '@nestjs/jwt';
-import { HttpService } from '@nestjs/axios';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
+import { FtOauthGuard } from './guard/ft-oauth.guard';
+import { JwtPayload } from './interface/request.interface';
 
 import { IsNotEmpty, IsString } from 'class-validator';
 
@@ -48,6 +59,13 @@ export class AuthController {
     res.redirect(process.env.IP_FRONTEND);
   }
 
+  @Delete('deleteallusers')
+  async deleteAllUsers(@Res() res: Response) {
+    await this.userService.deleteAllUsers();
+    res.status(200).json({ message: 'All the Users in the database were deleted.' });
+
+  }
+
   @Public()
   @Post('generate')
   //@UseGuards(JwtAuthenticationGuard)
@@ -64,14 +82,17 @@ export class AuthController {
   @Public()
   @Post('turn-on')
   async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
-    console.log('le body ', body)
-    const isCodeValid = await this.userService.isTwoFactorAuthenticationCodeValid(
-      body.TfaCode,
-      body.actualUser.login,
-      //res,
-    );
-    if(isCodeValid) {
-      await this.userService.turnOnTwoFactorAuthentication(body.actualUser.user_id);
+    console.log('le body ', body);
+    const isCodeValid =
+      await this.userService.isTwoFactorAuthenticationCodeValid(
+        body.TfaCode,
+        body.actualUser.login,
+        //res,
+      );
+    if (isCodeValid) {
+      await this.userService.turnOnTwoFactorAuthentication(
+        body.actualUser.user_id,
+      );
       res.status(200).json({ message: '2FA enabled' });
     } else {
       res.status(401).json({ message: 'Invalid 2FA code' });
@@ -83,19 +104,23 @@ export class AuthController {
   @UseGuards(IntraAuthGuard)
   async authenticate(
     @Req() request: Request,
-    @Body() { twoFactorAuthenticationCode } : TwoFactorAuthenticationCodeDto
+    @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
   ) {
     const isCodeValid = this.userService.isTwoFactorAuthenticationCodeValid(
-      twoFactorAuthenticationCode, request.body.username
+      twoFactorAuthenticationCode,
+      request.body.username,
     );
     if (!isCodeValid) {
       throw new UnauthorizedException('Wrong authentication code');
     }
- 
-    const accessTokenCookie = this.authService.getCookieWithJwtAccessToken(request.body.id, true);
- 
+
+    const accessTokenCookie = this.authService.getCookieWithJwtAccessToken(
+      request.body.id,
+      true,
+    );
+
     request.res.setHeader('Set-Cookie', [accessTokenCookie]);
- 
+
     return request.user;
   }
 
@@ -103,7 +128,6 @@ export class AuthController {
   @Post('deactivate')
   @HttpCode(HttpStatus.OK)
   async Deactivate2FA(@Body() body) {
-    this.userService.Deactivate2FA(body.nickname)
+    this.userService.Deactivate2FA(body.nickname);
   }
-
 }

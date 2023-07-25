@@ -20,9 +20,9 @@ export class AuthService {
     private jwtService: JwtService,
     ) {}
 
-  async validateUser(userData: User42Dto): Promise<UserEntity> {
+  /*async validateUser(userData: User42Dto): Promise<UserEntity> {
     return this.userService.validateUser42(userData);
-  }
+  }*/
 
   public async generateTwoFactorAuthenticationSecret(user: UserEntity) {
     const secret = authenticator.generateSecret();
