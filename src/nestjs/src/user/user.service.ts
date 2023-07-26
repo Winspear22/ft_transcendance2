@@ -10,6 +10,8 @@ import { Response } from 'express';
 import { Request } from 'express';
 import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+
 
 
 
@@ -180,12 +182,21 @@ export class UserService {
     if ((await User).isTwoFactorAuthenticationEnabled === false)
     {
       const idAsString: string = (await User).id.toString();
+      /* On cree les token et on les signe */
       const tokens = await this.CreateAndSignTokens(idAsString, (await User).username);
-      this.setCookie(
+      /* On crypte le refresh token pour s'assurer qu'un utilisateur malveillant ne puisse pas obtenir d'access token 
+      sans avoir a s'authentifier */
+      const saltRounds = 12; // Nombre de cryptage de password
+      const salt = await bcrypt.genSalt(saltRounds);
+      const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
+      this.FindAndUpdateUser((await User).username, { MyHashedRefreshToken: hashedRefreshToken });
+      console.log(colors.GREEN + colors.BRIGHT + "User hashed refresh token : " + colors.FG_WHITE + hashedRefreshToken + colors.RESET);
+      /*On cree le cookie qui va contenir l'access token et le refresh token*/
+      this.CreateNewAccessCookie(
         {
-          nickname: (await User).username,
+          username: (await User).username,
           accessToken: tokens.access_token,
-          refreshToken: tokens.refresh_token,
+          refreshToken: hashedRefreshToken,//tokens.refresh_token,
           avatar: (await User).profile_picture
         },
         res,
@@ -199,43 +210,29 @@ export class UserService {
     }
   }
 
-  async CreateAndSignTokens(userId: string, nickname: string) {
+  async CreateAndSignTokens(id: string, username: string) {
     const [new_access_token, new_refresh_token] = await Promise.all([
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          nickname,
-        },
-        {
-          secret: process.env.ACCESS_TOKEN,
-          expiresIn: 60 * 15 * 20,
-        },
-      ),
-      this.jwtService.signAsync(
-        {
-          sub: userId,
-          nickname,
-        },
-        {
-          secret: process.env.REFRESH_TOKEN,
-          expiresIn: 60 * 60 * 24 * 7,
-        },
-      ),
-    ]);
+      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN,expiresIn: 60 * 15 * 20 }),
+      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.REFRESH_TOKEN, expiresIn: 60 * 60 * 24 * 7})]);
     return {access_token: new_access_token, refresh_token: new_refresh_token};
   }
 
-  async setCookie(data: object, res: Response) {
+  async CreateNewAccessCookie(data: object, res: Response) {
     const serializeData = JSON.stringify(data);
-    res.cookie('AdnenCookie', '', { expires: new Date(0) });
-    res.cookie('AdnenCookie', serializeData, {
-      httpOnly: false,
-      sameSite: 'lax',
-      secure: false,
-      maxAge: 1800000000,
-      domain: 'localhost',
-      path: '/',
+    console.log(colors.FG_RED + "DATA" + colors.RESET);
+    console.log(data);
+    //Je supprime le cookie precedant s'il existe
+    res.clearCookie('PongAccessAndRefreshCookie', { path: '/' });
+    //Je cree un nouveau cookie du meme nom avec des arguments de DATA et des options
+    res.cookie('PongAccessAndRefreshCookie', serializeData, {
+      sameSite: 'lax', // est une mesure de securite de type lax
+      httpOnly: false, // gere l'accessibilite du cookie par le naviguateur et javascript, true : inaccessible / false : accessible
+      secure: false, // doit etre mis sur false, sinon on ne peut pas envoyer sur des adresses http, que https
+      domain: 'localhost', // site sur lequel le cookie est fonctionnel et sur lequel il peut etre envoye
+      maxAge: 900000000, // periode de vie du cookie en miliseconde, ici 10 jours
+      path: '/', // signifie que le cookie sera envoye dans chacune des requetes http sur le site localhost en d'autres termes on sera authentifie partout
     });
+    
   }
   /*=====================================================================*/
 }
