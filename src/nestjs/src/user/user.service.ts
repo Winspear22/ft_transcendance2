@@ -11,6 +11,7 @@ import { Request } from 'express';
 import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
 
 
 @Injectable()
@@ -45,6 +46,19 @@ export class UserService {
     await this.usersRepository.save(user);
     return user;
   }*/
+
+  async verifyAccessToken(accessToken: string): Promise<UserEntity | null> {
+    try {
+      const decodedToken = jwt.verify("my_access_token", process.env.ACCESS_TOKEN);
+      // Si le token est valide, vous pouvez extraire les informations de l'utilisateur
+      // de l'objet decodedToken et les renvoyer ici.
+      return decodedToken as UserEntity; // Supposons que vous ayez un type d'interface User pour les informations de l'utilisateur.
+    } catch (error) {
+      // Si le token est invalide ou a expiré, renvoyer null ou traiter l'erreur de manière appropriée.
+      return null;
+    }
+  }
+
 
   async createUser(userDet: any): Promise<UserEntity> {
     const newUser = this.usersRepository.create({

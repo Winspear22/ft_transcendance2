@@ -44,12 +44,15 @@ export class AuthController {
   /*==========================================================================*/
   @Public()
   @Get('42/login')
-  @UseGuards(IntraAuthGuard)
-  login() {}
+  @UseGuards(FtOauthGuard)
+  async login() 
+  {
+    return ;
+  }
 
   @Public()
   @Get('login/42/return')
-  @UseGuards(IntraAuthGuard)
+  @UseGuards(FtOauthGuard)
   async redirect(@Res({ passthrough: true }) res: Response, @Req() req: ExpressRequest) 
   {
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
@@ -66,9 +69,35 @@ export class AuthController {
   /*==========================================================================*/
   /*--------------------------------LOGOUT ROUTE------------------------------*/
   /*==========================================================================*/
-
+  @Public()
   @Post('Logout')
-  logout(@Req() req: ExpressRequest) {
+  async logout(@Req() req: ExpressRequest) {
+    /*const accessToken = req.cookies['PongAccessAndRefreshCookie']; // Supposons que le token JWT est stocké dans un cookie 'access_token'
+    if (accessToken) {
+      const user = await this.userService.verifyAccessToken(accessToken);
+      req.user = user; // Ajoute l'utilisateur vérifié à l'objet req pour les prochaines routes
+    }
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------COOKIES---------------", colors.RESET);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+ */  const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
+
+ if (accessTokenCookie) {
+    try {
+      const userData = JSON.parse(accessTokenCookie);
+      const { username } = userData;
+
+      // Récupérer l'utilisateur associé au nom d'utilisateur depuis la base de données ou toute autre source de données
+      const user = await this.userService.findUserByUsername(username);
+
+      if (user) {
+        req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pour les prochaines routes
+      }
+    } catch (error) {
+      // Gérer les erreurs lors de la lecture ou du traitement du cookie
+      console.error(error);
+    }
+  }
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
     console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
