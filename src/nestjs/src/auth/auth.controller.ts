@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   HttpCode,
   HttpStatus,
+  ExecutionContext
 } from '@nestjs/common';
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
@@ -19,7 +20,6 @@ import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 import { FtOauthGuard } from './guard/ft-oauth.guard';
-import { JwtPayload } from './interface/request.interface';
 import * as colors from '../colors';
 
 
@@ -39,6 +39,9 @@ export class AuthController {
     private userService: UserService,
   ) {}
 
+  /*==========================================================================*/
+  /*------------------------------42 LOGIN ROUTES-----------------------------*/
+  /*==========================================================================*/
   @Public()
   @Get('42/login')
   @UseGuards(IntraAuthGuard)
@@ -49,23 +52,33 @@ export class AuthController {
   @UseGuards(IntraAuthGuard)
   async redirect(@Res({ passthrough: true }) res: Response, @Req() req: ExpressRequest) 
   {
-    /*console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-
-    console.log(colors.RED + colors.BRIGHT + req);
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    */
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
     console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    //JSON.stringify(req)
     console.log(req.user);
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
     const username = req.user['username'];
     await this.userService.CreateCookiesForNewUser(res, username);
   }
+  /*==========================================================================*/
+
+  /*==========================================================================*/
+  /*--------------------------------LOGOUT ROUTE------------------------------*/
+  /*==========================================================================*/
+
+  @Post('Logout')
+  logout(@Req() req: ExpressRequest) {
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    console.log(req.user);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+  }
+
+  /*==========================================================================*/
+
+
 
   @Public()
   @Post('generate')

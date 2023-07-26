@@ -13,8 +13,6 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
 
-
-
 @Injectable()
 export class UserService {
   constructor(
