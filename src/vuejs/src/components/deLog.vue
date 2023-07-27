@@ -1,17 +1,54 @@
 <template>
   <div>
-    Vous êtes connecté
-    <button @click="logout">Se déconnecter</button>
+    <button class="dual-color-button" @click="logout">
+      <span class="logout-one">Se déco</span>
+      <span class="logout-two">nnecter</span>
+    </button>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
+  props: ['token'], // Ajoutez cette ligne pour recevoir le token comme une prop
   methods: {
-    logout() {
-      // ...code de déconnexion
-      this.$emit('logout-success');
+    async logout() {
+      try {
+        // Utilisez le token dans les en-têtes de votre requête
+        const response = await axios.post('http://localhost:3000/Logout', { withCredentials: true }, {
+          headers: {
+            'Authorization': `Bearer ${this.token}`
+          }
+        });
+
+        console.log(response.status);
+        if (response.status === 201) {
+          this.$emit('logout-success');
+        }
+      } catch (error) {
+        console.error("Erreur lors de la déconnexion:", error);
+      }
     }
   }
 };
 </script>
+
+
+<style scoped>
+.dual-color-button {
+  background: linear-gradient(to right, #2459d5 50%, #2fe8ee 50%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 30px;
+}
+
+.logout-two {
+  color: #2459d5;
+}
+
+.logout-one {
+  color: #2fe8ee;
+}
+</style>

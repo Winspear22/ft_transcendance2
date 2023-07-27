@@ -1,9 +1,9 @@
 <template>
   <div>
     <button class ="dual-color-button" @click="login">
-	<span class="log-one">Se con</span>
-	<span class="log-two">necter</span>
-	</button>
+      <span class="log-one">se con</span>
+      <span class="log-two">necter</span>
+    </button>
     <p v-if="errorMessage.value">{{ errorMessage.value }}</p>
   </div>
 </template>
