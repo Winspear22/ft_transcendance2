@@ -52,7 +52,7 @@ export default {
 <style>
 
 body {
-  background: linear-gradient(to right, #BA55D3 50%, #7B68EE 50%);
+  background: linear-gradient(to right, #2459d5 50%, #2fe8ee 50%);
 }
 .container {
   display: flex;
@@ -67,11 +67,11 @@ body {
 }
 
 .part-one {
-  color: #7B68EE;
+  color: #2fe8ee;
 }
 
 .part-two {
-  color: #BA55D3;
+  color: #2459d5;
 }
 
 .centered-login {

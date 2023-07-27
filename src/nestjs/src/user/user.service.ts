@@ -11,7 +11,7 @@ import { Response } from 'express';
 import { Request } from 'express';
 import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 
 @Injectable()

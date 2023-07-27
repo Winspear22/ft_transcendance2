@@ -30,7 +30,7 @@ export default {
 
 <style scoped>
 .dual-color-button {
-  background: linear-gradient(to right, #BA55D3 50%, #7B68EE 50%);
+  background: linear-gradient(to right, #2459d5 50%, #2fe8ee 50%);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -38,10 +38,10 @@ export default {
 }
 
 .log-two {
-  color: #BA55D3;
+  color: #2459d5;
 }
 
 .log-one {
-  color: #7B68EE;
+  color: #2fe8ee;
 }
 </style>
