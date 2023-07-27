@@ -87,7 +87,6 @@ export class AuthController {
         const user = await this.userService.findUserByUsername(username);
         if (user)
           req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pour les prochaines routes
-        //           console.log(user);
         console.log(colors.BLUE + colors.BRIGHT,"Selected user username : " + colors.WHITE + user.username + colors.RESET);
         console.log(colors.BLUE + colors.BRIGHT,"Selected user status before logout : " + colors.GREEN + user.user_status + colors.RESET);
         console.log(colors.BLUE + colors.BRIGHT,"Selected user refresh token before logout : " + colors.WHITE + user.MyHashedRefreshToken + colors.RESET);
@@ -95,10 +94,7 @@ export class AuthController {
         this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
         console.log(colors.CYAN + colors.BRIGHT,"Selected user username : " + colors.WHITE + user.username + colors.RESET);
         console.log(colors.CYAN + colors.BRIGHT,"Selected user status after logout : " + colors.RED + user.user_status + colors.RESET);
-        console.log(colors.CYAN + colors.BRIGHT,"Selected user refresh token after logout : " + colors.WHITE + user.MyHashedRefreshToken + colors.RESET);
-
-        //console.log(user);
-    
+        console.log(colors.CYAN + colors.BRIGHT,"Selected user refresh token after logout : " + colors.WHITE + user.MyHashedRefreshToken + colors.RESET);    
       } 
       catch (error) 
       {
@@ -109,6 +105,50 @@ export class AuthController {
 
   }
 
+  /*==========================================================================*/
+  
+  /*==========================================================================*/
+  /*-------------------------------REFRESH ROUTE------------------------------*/
+  /*==========================================================================*/
+  /*@Public()
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RtGuard)
+  @Post('refresh')
+  async refresh(
+    @GetCurrentUserId() userNick: string,
+    @GetCurrentUser('refreshToken') refreshToken: string,
+  ) {
+    return this.authService.refresh(userNick, refreshToken);
+  }*/
+
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  //@UseGuards(RtGuard) //A quoi sert le Guard
+  @Post('refresh')
+  async CreateNewRefreshToken(@Req() req: ExpressRequest)
+  {
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------REFRESH ROUTE--------------", colors.RESET);
+    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+
+    const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
+    if (accessTokenCookie) 
+    {
+      try 
+      {
+        const userData = JSON.parse(accessTokenCookie);
+        const { username } = userData;
+        const user = await this.userService.findUserByUsername(username);
+        if (user)
+          req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pou
+        return this.userService.CreateNewRefreshTokens(user.username, user.MyHashedRefreshToken);
+      }
+      catch (error) 
+      {
+          console.error(error);
+      }
+    }
+  }
   /*==========================================================================*/
 
 

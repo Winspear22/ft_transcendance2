@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -21,44 +22,6 @@ export class UserService {
     private usersRepository: Repository<UserEntity>,
     private jwtService: JwtService,
   ) {}
-
-  /*async validateUser42(userData: User42Dto): Promise<UserEntity> {
-    let user: UserEntity = undefined;
-
-    const { login42 } = userData;
-    user = await this.usersRepository.findOneBy({ login42: login42 });
-    // eslint-disable-next-line prettier/prettier
-    if (user) 
-      return user;
-    let { username } = userData;
-    user = await this.usersRepository.findOneBy({ username });
-    if (user) {
-      const rand = Math.random().toString(16).substr(2, 5);
-      username = username + '-' + rand;
-      userData.username = username;
-    }
-    const newUser: UserEntity = await this.createUser42(userData);
-    return newUser;
-  }
-
-  async createUser42(userData: User42Dto): Promise<UserEntity> {
-    const user: UserEntity = this.usersRepository.create(userData);
-    await this.usersRepository.save(user);
-    return user;
-  }*/
-
-  async verifyAccessToken(accessToken: string): Promise<UserEntity | null> {
-    try {
-      const decodedToken = jwt.verify("my_access_token", process.env.ACCESS_TOKEN);
-      // Si le token est valide, vous pouvez extraire les informations de l'utilisateur
-      // de l'objet decodedToken et les renvoyer ici.
-      return decodedToken as UserEntity; // Supposons que vous ayez un type d'interface User pour les informations de l'utilisateur.
-    } catch (error) {
-      // Si le token est invalide ou a expiré, renvoyer null ou traiter l'erreur de manière appropriée.
-      return null;
-    }
-  }
-
 
   async createUser(userDet: any): Promise<UserEntity> {
     const newUser = this.usersRepository.create({
@@ -222,14 +185,16 @@ export class UserService {
     }
   }
 
-  async CreateAndSignTokens(id: string, username: string) {
+  async CreateAndSignTokens(id: string, username: string) 
+  {
     const [new_access_token, new_refresh_token] = await Promise.all([
       this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN,expiresIn: 60 * 15 * 20 }),
       this.jwtService.signAsync({ sub: id, username }, { secret: process.env.REFRESH_TOKEN, expiresIn: 60 * 60 * 24 * 7})]);
     return {access_token: new_access_token, refresh_token: new_refresh_token};
   }
 
-  async CreateNewAccessCookie(data: object, res: Response) {
+  async CreateNewAccessCookie(data: object, res: Response) 
+  {
     const serializeData = JSON.stringify(data);
     console.log(colors.FG_RED + "DATA" + colors.RESET);
     console.log(data);
@@ -244,7 +209,47 @@ export class UserService {
       maxAge: 900000000, // periode de vie du cookie en miliseconde, ici 10 jours
       path: '/', // signifie que le cookie sera envoye dans chacune des requetes http sur le site localhost en d'autres termes on sera authentifie partout
     });
+  }
+
+  async CreateNewRefreshTokens(username: string, RefreshTokenInRequest: string) 
+  {
+    const User = await this.findUserByUsername(username);
+    if (User.MyHashedRefreshToken === null || User === undefined)
+      throw new ForbiddenException('Error. Forbidden access : no refresh token present in request.');
+    if (User === undefined)
+      throw new ForbiddenException('Error. Forbidden access : no user present in request.');
+      console.log(colors.CYAN + colors.BRIGHT,"Selected user username : " + colors.WHITE + User.username + colors.RESET);
+      console.log(colors.CYAN + colors.BRIGHT,"Selected user current refresh token : " + colors.WHITE + User.MyHashedRefreshToken + colors.RESET);
+      console.log(colors.CYAN + colors.BRIGHT,"Request refresh token : " + colors.WHITE + RefreshTokenInRequest + colors.RESET);
+
+      //const RefreshTokenVerify = await bcrypt.compare(User.MyHashedRefreshToken, RefreshTokenInRequest);
+      const hashedRefreshTokenInRequest = await bcrypt.hash(RefreshTokenInRequest, User.MyHashedRefreshToken);
+
+      // Comparer les deux refresh tokens hachés
+      const RefreshTokensMatch = await bcrypt.compare(User.MyHashedRefreshToken, hashedRefreshTokenInRequest);
     
+      if (RefreshTokensMatch == true)
+    {
+      console.log(colors.CYAN + colors.BRIGHT,"Selected user username : " + colors.WHITE + User.username + colors.RESET);
+      console.log(colors.CYAN + colors.BRIGHT,"Selected user current refresh token : " + colors.WHITE + User.MyHashedRefreshToken + colors.RESET);
+      const tokens = await this.CreateAndSignTokens(User.id.toString(), User.username);
+      const saltRounds = 12; // Nombre de cryptage de password
+      const salt = await bcrypt.genSalt(saltRounds);
+      const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
+      this.FindAndUpdateUser((await User).username, { MyHashedRefreshToken: hashedRefreshToken });
+      console.log(colors.CYAN + colors.BRIGHT,"Selected user new refresh token : " + colors.GREEN + User.MyHashedRefreshToken + colors.RESET);
+
+      return tokens;
+    }
+    else
+      throw new ForbiddenException('Error. Refresh tokens mismatch.');
+  
+    //if (!us || !us.rtHash) throw new ForbiddenException('1 - Access Denied');
+    //const rtMatches = await argon.verify(us.rtHash, refreshToken);
+    //if (rtMatches == false) throw new ForbiddenException('2 - Access Denied');
+    //const tokens = await this.signTokens(us.user_id, us.login);
+    //await this.updateRtHash(us.user_id, tokens.refresh_token);
+    //return tokens;
   }
   /*=====================================================================*/
 }
