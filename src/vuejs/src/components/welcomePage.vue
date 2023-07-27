@@ -1,11 +1,11 @@
 <template>
   <div id="app" class="container">
     <h1 class="centered-title">
-	<span class="part-one">P O</span>
-	<span class="part-two"> N G</span>
-	</h1>
+      <span class="part-one">P O</span>
+      <span class="part-two"> N G</span>
+    </h1>
     <authLogin @login-success="handleLoginSuccess" v-if="!isLoggedIn" class="centered-login"></authLogin>
-    <div v-if="isLoggedIn">
+    <div v-else>
       <deLog @logout-success="handleLogoutSuccess"></deLog>
       <p>Vous êtes connecté</p>
     </div>
@@ -13,9 +13,10 @@
 </template>
 
 <script>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import authLogin from './authLogin.vue';
 import deLog from './deLog.vue';
+import axios from 'axios';
 
 export default {
   components: {
@@ -33,11 +34,21 @@ export default {
       isLoggedIn.value = false;
     }
 
+    onMounted(async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/check-auth', { withCredentials: true });
+        if (response.data.success) {
+          isLoggedIn.value = true;
+        }
+      } catch (error) {
+        isLoggedIn.value = false;
+      }
+    });
+
     return { isLoggedIn, handleLoginSuccess, handleLogoutSuccess };
   }
 };
 </script>
-
 <style>
 
 body {

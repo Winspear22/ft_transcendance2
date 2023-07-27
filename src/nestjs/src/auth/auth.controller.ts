@@ -104,22 +104,23 @@ export class AuthController {
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
   }
-
+  @Public()
+  @Get('check-auth')
+  async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) {
+    const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
+    if (accessTokenCookie) {
+      // Ajoutez ici la logique pour vérifier si le cookie est valide.
+      // Vous pouvez également déchiffrer le cookie ici pour obtenir les informations de l'utilisateur si nécessaire.
+      return res.json({ success: true });
+    } else {
+      return res.json({ success: false });
+    }
+  }
   /*==========================================================================*/
   
   /*==========================================================================*/
   /*-------------------------------REFRESH ROUTE------------------------------*/
   /*==========================================================================*/
-  /*@Public()
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(RtGuard)
-  @Post('refresh')
-  async refresh(
-    @GetCurrentUserId() userNick: string,
-    @GetCurrentUser('refreshToken') refreshToken: string,
-  ) {
-    return this.authService.refresh(userNick, refreshToken);
-  }*/
 
   @Public()
   @HttpCode(HttpStatus.OK)

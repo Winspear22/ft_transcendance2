@@ -12,7 +12,6 @@ import { Request } from 'express';
 import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import * as jwt from 'jsonwebtoken';
 
 
 @Injectable()
@@ -243,13 +242,6 @@ export class UserService {
     }
     else
       throw new ForbiddenException('Error. Refresh tokens mismatch.');
-  
-    //if (!us || !us.rtHash) throw new ForbiddenException('1 - Access Denied');
-    //const rtMatches = await argon.verify(us.rtHash, refreshToken);
-    //if (rtMatches == false) throw new ForbiddenException('2 - Access Denied');
-    //const tokens = await this.signTokens(us.user_id, us.login);
-    //await this.updateRtHash(us.user_id, tokens.refresh_token);
-    //return tokens;
   }
   /*=====================================================================*/
 }
