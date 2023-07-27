@@ -71,38 +71,42 @@ export class AuthController {
   /*==========================================================================*/
   @Public()
   @Post('Logout')
-  async logout(@Req() req: ExpressRequest) {
-    /*const accessToken = req.cookies['PongAccessAndRefreshCookie']; // Supposons que le token JWT est stocké dans un cookie 'access_token'
-    if (accessToken) {
-      const user = await this.userService.verifyAccessToken(accessToken);
-      req.user = user; // Ajoute l'utilisateur vérifié à l'objet req pour les prochaines routes
-    }
+  async logout(@Req() req: ExpressRequest) 
+  { 
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, "------------------COOKIES---------------", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE LOGOUT--------------", colors.RESET);
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
- */  const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
 
- if (accessTokenCookie) {
-    try {
-      const userData = JSON.parse(accessTokenCookie);
-      const { username } = userData;
+    const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
+    if (accessTokenCookie) 
+    {
+      try 
+      {
+        const userData = JSON.parse(accessTokenCookie);
+        const { username } = userData;
+        const user = await this.userService.findUserByUsername(username);
+        if (user)
+          req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pour les prochaines routes
+        //           console.log(user);
+        console.log(colors.BLUE + colors.BRIGHT,"Selected user username : " + colors.WHITE + user.username + colors.RESET);
+        console.log(colors.BLUE + colors.BRIGHT,"Selected user status before logout : " + colors.GREEN + user.user_status + colors.RESET);
+        console.log(colors.BLUE + colors.BRIGHT,"Selected user refresh token before logout : " + colors.WHITE + user.MyHashedRefreshToken + colors.RESET);
+        this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
+        this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
+        console.log(colors.CYAN + colors.BRIGHT,"Selected user username : " + colors.WHITE + user.username + colors.RESET);
+        console.log(colors.CYAN + colors.BRIGHT,"Selected user status after logout : " + colors.RED + user.user_status + colors.RESET);
+        console.log(colors.CYAN + colors.BRIGHT,"Selected user refresh token after logout : " + colors.WHITE + user.MyHashedRefreshToken + colors.RESET);
 
-      // Récupérer l'utilisateur associé au nom d'utilisateur depuis la base de données ou toute autre source de données
-      const user = await this.userService.findUserByUsername(username);
-
-      if (user) {
-        req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pour les prochaines routes
+        //console.log(user);
+    
+      } 
+      catch (error) 
+      {
+        console.error(error);
       }
-    } catch (error) {
-      // Gérer les erreurs lors de la lecture ou du traitement du cookie
-      console.error(error);
     }
-  }
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    console.log(req.user);
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+
   }
 
   /*==========================================================================*/
