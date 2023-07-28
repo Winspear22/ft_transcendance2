@@ -8,11 +8,12 @@
 
 <script>
 export default {
-    props: {
-        userInfo: {
-            type: Object
-        }
+  props: {
+    userInfo: {
+      type: Object,
+      default: () => ({})
     }
+  }
 };
 </script>
 

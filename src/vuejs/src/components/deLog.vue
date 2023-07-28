@@ -11,18 +11,12 @@
 import axios from 'axios';
 
 export default {
-  props: ['token'], // Ajoutez cette ligne pour recevoir le token comme une prop
   methods: {
     async logout() {
       try {
-        // Utilisez le token dans les en-têtes de votre requête
-        const response = await axios.post('http://localhost:3000/Logout', { withCredentials: true }, {
-          headers: {
-            'Authorization': `Bearer ${this.token}`
-          }
-        });
+        const response = await axios.post('http://localhost:3000/Logout', {}, { withCredentials: true });
 
-        console.log(response.status);
+        console.log("reponse logout please : ", response.status);
         if (response.status === 201) {
           this.$emit('logout-success');
         }
