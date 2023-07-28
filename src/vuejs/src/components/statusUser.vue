@@ -39,8 +39,7 @@
               if (response.data.infoUser.user_status == "Online") {
                   isLoggedIn.value = true;
                   userInfo.value = response.data.infoUser;
-                  cookies.value = response.data.cookie;
-                  console.log(response.data.infoUser);
+                  cookies.value = response.data.cookie; // Verifier si j'ai vraiment besoin du cookie.. Probable fuite de secu 
               } else {
                   isLoggedIn.value = false;
               }
