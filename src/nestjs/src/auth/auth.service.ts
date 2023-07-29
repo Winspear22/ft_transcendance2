@@ -26,6 +26,7 @@ export class AuthService {
 
   public async generateTwoFactorAuthenticationSecret(user: UserEntity) {
     const secret = authenticator.generateSecret();
+    console.log("secret == ", secret);
     const otpauthUrl = authenticator.keyuri(
       user.email,
       process.env.TWO_FACTOR_AUTHENTICATION_APP_NAME,
@@ -39,7 +40,10 @@ export class AuthService {
       secret,
       otpauthUrl
     }*/
-    return qrCode;
+    return {
+      secret,
+      qrCode
+    };
   }
 
   public async pipeQrCodeStream(stream: Response, otpauthUrl: string) {

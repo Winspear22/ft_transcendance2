@@ -172,10 +172,10 @@ export class AuthController {
     const userId = request.body.userId;
     const user = await this.userService.findUserById(userId);
     console.log('COUCOU JE SUIS DANS GENERATE');
-    const qrCode = await this.authService.generateTwoFactorAuthenticationSecret(
+    const result = await this.authService.generateTwoFactorAuthenticationSecret(
       user,
     );
-    return response.json(qrCode);
+    return response.json(result);
   }
 
   @Public()
