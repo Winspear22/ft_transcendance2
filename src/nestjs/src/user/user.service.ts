@@ -1,7 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException,
+  NotFoundException, HttpException, HttpStatus
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './user.entity';
@@ -12,7 +12,24 @@ import { Request } from 'express';
 import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
+export class AuthDto {
+  @IsString()
+  @IsNotEmpty()
+  nickname: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(6)
+  password: string;
+
+  @IsString()
+  avatar: string;
+
+  @IsOptional()
+  type: string
+}
 
 @Injectable()
 export class UserService {
@@ -35,13 +52,7 @@ export class UserService {
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
     console.log(colors.GREEN + colors.BRIGHT, "------------------USER CREATED---------------", colors.RESET);
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, "login = ", colors.WHITE + colors.BRIGHT, newUser.username);
-    console.log(colors.GREEN + colors.BRIGHT, "email = ", colors.WHITE + colors.BRIGHT, newUser.email);
-    console.log(colors.GREEN + colors.BRIGHT, "profile_picture = ", colors.WHITE + colors.BRIGHT, newUser.profile_picture);
-    console.log(colors.GREEN + colors.BRIGHT, "2FA activated ? = ", colors.WHITE + colors.BRIGHT, newUser.isTwoFactorAuthenticationEnabled);
-    console.log(colors.GREEN + colors.BRIGHT, "user status ? = ", colors.WHITE + colors.BRIGHT, newUser.user_status);
-    console.log(colors.GREEN + colors.BRIGHT, 'My User origin === ', colors.WHITE + colors.BRIGHT + newUser.provider);
-    console.log(colors.GREEN + colors.BRIGHT, 'My User origin_id === ', colors.WHITE + colors.BRIGHT + colors.BRIGHT + newUser.id42);
+    this.DisplayUserIdentity(newUser);
     await this.usersRepository.save(newUser);
     //On ecrit l'id apres le save car c'est la fonction save qui attribut l'id.
     console.log(colors.GREEN + colors.BRIGHT, 'My User simple ID === ', colors.WHITE + colors.BRIGHT + newUser.id);
@@ -66,14 +77,12 @@ export class UserService {
 
   async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string) {
     try {
-      // verify the authentication code with the user's secret
       const us = await this.findUserByUsername(user);
-      console.log('JE SUIS === ' + user);
-      console.log('Mon code === ' + TfaCode);
       const verif = authenticator.check(
         TfaCode,
         us.twoFactorAuthenticationSecret,
       );
+      console.log(verif);
       return verif;
     } catch (error) {
       console.error(error);
@@ -94,7 +103,7 @@ export class UserService {
   /*=====================================================================*/
 
   /*=====================================================================*/
-  /*-----------------------------USER GETTERS----------------------------*/
+  /*-----------------------------USER FINDERS----------------------------*/
   /*=====================================================================*/
 
   async findUserById(id: number): Promise<UserEntity> {
@@ -109,6 +118,17 @@ export class UserService {
     return this.usersRepository.findOneBy({ email });
   }
 
+  /*=====================================================================*/
+  /*-----------------------------USER GETTERS----------------------------*/
+  /*=====================================================================*/
+
+  async getUserStatusByUsername(username: string): Promise<string | undefined> {
+    const user = await this.findUserByUsername(username);
+    if (user) {
+      return user.user_status;
+    }
+    return undefined;
+  }
   /*=====================================================================*/
 
   /*=====================================================================*/
@@ -156,16 +176,13 @@ export class UserService {
     if ((await User).isTwoFactorAuthenticationEnabled === false)
     {
       const idAsString: string = (await User).id.toString();
-      /* On cree les token et on les signe */
       const tokens = await this.CreateAndSignTokens(idAsString, (await User).username);
-      /* On crypte le refresh token pour s'assurer qu'un utilisateur malveillant ne puisse pas obtenir d'access token 
-      sans avoir a s'authentifier */
-      const saltRounds = 12; // Nombre de cryptage de password
+
+      const saltRounds = 12;
       const salt = await bcrypt.genSalt(saltRounds);
       const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
       this.FindAndUpdateUser((await User).username, { MyHashedRefreshToken: hashedRefreshToken });
       console.log(colors.GREEN + colors.BRIGHT + "User hashed refresh token : " + colors.FG_WHITE + hashedRefreshToken + colors.RESET);
-      /*On cree le cookie qui va contenir l'access token et le refresh token*/
       this.CreateNewAccessCookie(
         {
           username: (await User).username,
@@ -175,11 +192,22 @@ export class UserService {
         },
         res,
       );
+      console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+      console.log(colors.GREEN + colors.BRIGHT, "----------------NORMAL REDIRECTD--------------", colors.RESET);
+      console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+
       return res.redirect(process.env.IP_FRONTEND);
     }
     else
     {
-      const url = `http://localhost:3000/tfa?param1=${(await User).username}`;
+      console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+      console.log(colors.GREEN + colors.BRIGHT, "------------------2FA REDIRECTD---------------", colors.RESET);
+      console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
+      //const message = "auth ok";
+      //res.status(200).json(message);
+      //return res.redirect(process.env.IP_FRONTEND);
+     
+      const url = `http://localhost:8080/tfa`;
       res.redirect(url);
     }
   }
@@ -195,11 +223,7 @@ export class UserService {
   async CreateNewAccessCookie(data: object, res: Response) 
   {
     const serializeData = JSON.stringify(data);
-    console.log(colors.FG_RED + "DATA" + colors.RESET);
-    console.log(data);
-    //Je supprime le cookie precedant s'il existe
     res.clearCookie('PongAccessAndRefreshCookie', { path: '/' });
-    //Je cree un nouveau cookie du meme nom avec des arguments de DATA et des options
     res.cookie('PongAccessAndRefreshCookie', serializeData, {
       sameSite: 'lax', // est une mesure de securite de type lax
       httpOnly: false, // gere l'accessibilite du cookie par le naviguateur et javascript, true : inaccessible / false : accessible
@@ -217,20 +241,12 @@ export class UserService {
       throw new ForbiddenException('Error. Forbidden access : no refresh token present in request.');
     if (User === undefined)
       throw new ForbiddenException('Error. Forbidden access : no user present in request.');
-      console.log(colors.CYAN + colors.BRIGHT,"Selected user username : " + colors.WHITE + User.username + colors.RESET);
-      console.log(colors.CYAN + colors.BRIGHT,"Selected user current refresh token : " + colors.WHITE + User.MyHashedRefreshToken + colors.RESET);
-      console.log(colors.CYAN + colors.BRIGHT,"Request refresh token : " + colors.WHITE + RefreshTokenInRequest + colors.RESET);
-
+      
       //const RefreshTokenVerify = await bcrypt.compare(User.MyHashedRefreshToken, RefreshTokenInRequest);
       const hashedRefreshTokenInRequest = await bcrypt.hash(RefreshTokenInRequest, User.MyHashedRefreshToken);
-
-      // Comparer les deux refresh tokens hachés
       const RefreshTokensMatch = await bcrypt.compare(User.MyHashedRefreshToken, hashedRefreshTokenInRequest);
-    
       if (RefreshTokensMatch == true)
     {
-      console.log(colors.CYAN + colors.BRIGHT,"Selected user username : " + colors.WHITE + User.username + colors.RESET);
-      console.log(colors.CYAN + colors.BRIGHT,"Selected user current refresh token : " + colors.WHITE + User.MyHashedRefreshToken + colors.RESET);
       const tokens = await this.CreateAndSignTokens(User.id.toString(), User.username);
       const saltRounds = 12; // Nombre de cryptage de password
       const salt = await bcrypt.genSalt(saltRounds);
@@ -244,4 +260,72 @@ export class UserService {
       throw new ForbiddenException('Error. Refresh tokens mismatch.');
   }
   /*=====================================================================*/
+
+  async DisplayUserIdentity(user: UserEntity)
+  {
+    console.log(colors.RED + colors.BRIGHT + "========================" + colors.RESET)
+    console.log(colors.CYAN + colors.BRIGHT + "------USER IDENTITY-----" + colors.RESET)
+    console.log(colors.RED + colors.BRIGHT + "========================" + colors.RESET)
+    console.log(colors.BLUE + colors.BRIGHT,"Selected user id : " + colors.WHITE + user.id + colors.RESET);
+    console.log(colors.BLUE + colors.BRIGHT,"Selected user username : " + colors.WHITE + user.username + colors.RESET);
+    console.log(colors.BLUE + colors.BRIGHT,"Selected user email : " + colors.WHITE + user.email + colors.RESET);
+    console.log(colors.BLUE + colors.BRIGHT,"Selected user profile picture : " + colors.WHITE + user.profile_picture + colors.RESET);
+    console.log(colors.BLUE + colors.BRIGHT,"Selected user 2FA option : " + colors.WHITE + user.isTwoFactorAuthenticationEnabled + colors.RESET);
+    if (await this.getUserStatusByUsername(user.username) == "Online")
+      console.log(colors.BLUE + colors.BRIGHT,"Selected user connection status : " + colors.GREEN + user.user_status + colors.RESET);
+    else
+      console.log(colors.BLUE + colors.BRIGHT,"Selected user connection status : " + colors.RED + user.user_status + colors.RESET);
+
+    console.log(colors.BLUE + colors.BRIGHT,"Selected user 42 ID : " + colors.WHITE + user.id42 + colors.RESET);
+  }
+
+  /*======================================================================*/
+
+  async signin(dto: AuthDto, res: Response): Promise<object> {
+    try {
+      const user = await this.findUserByUsername(dto.nickname)
+      if (!user) {
+        throw new HttpException('No user found', HttpStatus.FORBIDDEN);
+      }
+      if (user.profile_picture !== dto.avatar && dto.avatar !== '') {
+        //await this.userRepository.save(user);
+        await this.usersRepository.save(user);
+      }
+
+      const tokens = await this.CreateAndSignTokens(user.id.toString(), user.username);//this.signTokens(user.user_id, user.login);
+      await this.CreateNewRefreshTokens(user.username, user.MyHashedRefreshToken);
+      this.CreateNewAccessCookie(
+        {
+          nickname: user.username,
+          accessToken: tokens.access_token,
+          refreshToken: tokens.refresh_token,
+        },
+        res,
+      ); 
+      // Send the response as JSON with status 200
+      console.log("JE SUIS iciiiiiiii");
+
+      return { faEnabled: user.isTwoFactorAuthenticationEnabled, tokens, avatar: user.profile_picture };
+    } catch (e: any) {
+      throw e;
+    }
+  }
+
+  async loginWith2fa(user: string, res: Response): Promise<object> {
+    try {
+      console.log("JE SUIS LAAAAAAAAAAAA");
+      const usr = await this.findUserByUsername(user);
+      return this.signin(
+        {
+          nickname: usr.username,
+          password: usr.MyHashedRefreshToken,
+          avatar: usr.profile_picture,
+          type: 'tfa',
+        },
+        res,
+      );
+    } catch (e) {
+      console.log('TFA EROOOOR ', e);
+    }
+  }
 }

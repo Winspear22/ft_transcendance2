@@ -55,12 +55,9 @@ export class AuthController {
   @UseGuards(FtOauthGuard)
   async redirect(@Res({ passthrough: true }) res: Response, @Req() req: ExpressRequest) 
   {
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE---------------", colors.RESET);
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    console.log(req.user);
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-
+    this.authService.WriteCommandsNames("REQUEST 42 CALLBACK");
+    const user = await this.userService.findUserByUsername(req.user['username']);
+    this.userService.DisplayUserIdentity(user);
     const username = req.user['username'];
     await this.userService.CreateCookiesForNewUser(res, username);
   }
@@ -73,10 +70,7 @@ export class AuthController {
   @Post('Logout')
   async logout(@Req() req: ExpressRequest) 
   { 
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, "------------------REQUETE LOGOUT--------------", colors.RESET);
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-
+    this.authService.WriteCommandsNames("REQUEST LOGOUT");
     const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
     if (accessTokenCookie) 
     {
@@ -84,24 +78,17 @@ export class AuthController {
       {
         const userData = JSON.parse(accessTokenCookie);
         const { username } = userData;
-        const user = await this.userService.findUserByUsername(username);
-        if (user)
-          req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pour les prochaines routes
-        console.log(colors.BLUE + colors.BRIGHT,"Selected user username : " + colors.WHITE + user.username + colors.RESET);
-        console.log(colors.BLUE + colors.BRIGHT,"Selected user status before logout : " + colors.GREEN + user.user_status + colors.RESET);
-        console.log(colors.BLUE + colors.BRIGHT,"Selected user refresh token before logout : " + colors.WHITE + user.MyHashedRefreshToken + colors.RESET);
+        let user = await this.userService.findUserByUsername(username);
         this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
         this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
-        console.log(colors.CYAN + colors.BRIGHT,"Selected user username : " + colors.WHITE + user.username + colors.RESET);
-        console.log(colors.CYAN + colors.BRIGHT,"Selected user status after logout : " + colors.RED + user.user_status + colors.RESET);
-        console.log(colors.CYAN + colors.BRIGHT,"Selected user refresh token after logout : " + colors.WHITE + user.MyHashedRefreshToken + colors.RESET);    
+        let user2 = await this.userService.findUserByUsername(username);
+        await this.userService.DisplayUserIdentity(user2);
       } 
       catch (error) 
       {
         console.error(error);
       }
     }
-    console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
   }
   @Public()
@@ -109,8 +96,6 @@ export class AuthController {
   async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) {
     const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
     if (accessTokenCookie) {
-      // Ajoutez ici la logique pour vérifier si le cookie est valide.
-      // Vous pouvez également déchiffrer le cookie ici pour obtenir les informations de l'utilisateur si nécessaire.
       try 
       {
         const userData = JSON.parse(accessTokenCookie);
@@ -198,7 +183,7 @@ export class AuthController {
     }
   }
 
-  @Post('authenticate')
+  /*@Post('authenticate')
   @HttpCode(200)
   @UseGuards(IntraAuthGuard)
   async authenticate(
@@ -221,7 +206,39 @@ export class AuthController {
     request.res.setHeader('Set-Cookie', [accessTokenCookie]);
 
     return request.user;
+  }*/
+
+  @Public()
+  @Post('authenticate')
+  @HttpCode(HttpStatus.OK)
+  async authenticate(@Req() request, @Body() body, @Res({ passthrough: true }) res: Response) {
+    let payload = null;
+    this.authService.WriteCommandsNames("AUTHENTICATE");
+    //console.log('le body ', body)
+    try
+    {
+      this.authService.WriteCommandsNames("1 STEP");
+      
+      const validation = await this.userService.isTwoFactorAuthenticationCodeValid(
+        body.twoFactorAuthenticationCode,
+        body.username,
+      );
+      if (validation)
+      {
+        this.authService.WriteCommandsNames("2 STEP");
+
+        console.log("validation OK", validation)
+        payload = await	this.userService.loginWith2fa(body.username, res);
+        console.log("Payload", payload)
+
+        return payload;
+      }
+    }
+    catch{
+      console.log("validation Ko")
+    }
   }
+
 
   @Public()
   @Post('deactivate')

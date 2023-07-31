@@ -5,6 +5,7 @@ import { UserService } from '../user/user.service';
 import { authenticator } from 'otplib';
 import { toDataURL, toFileStream } from 'qrcode';
 import { JwtService } from '@nestjs/jwt';
+import * as colors from '../colors'
 
 export interface TokenPayload {
   userId: number;
@@ -20,10 +21,6 @@ export class AuthService {
     private jwtService: JwtService,
     ) {}
 
-  /*async validateUser(userData: User42Dto): Promise<UserEntity> {
-    return this.userService.validateUser42(userData);
-  }*/
-
   public async generateTwoFactorAuthenticationSecret(user: UserEntity) {
     const secret = authenticator.generateSecret();
     console.log("secret == ", secret);
@@ -36,10 +33,6 @@ export class AuthService {
     await this.userService.setTwoFactorAuthenticationSecret(secret, user.id);
 
     const qrCode = await this.generateQrCodeDataURL(otpauthUrl);
-    /*return {
-      secret,
-      otpauthUrl
-    }*/
     return {
       secret,
       qrCode
@@ -63,4 +56,10 @@ export class AuthService {
     });
     return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME}`;
   }
+
+  async WriteCommandsNames(name: string)
+  {
+    console.log(colors.GREEN + colors.BRIGHT, '---' + name + '---', colors.BRIGHT);  
+  }
+
 }

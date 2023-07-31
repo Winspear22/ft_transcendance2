@@ -1,14 +1,3 @@
-/*import { HttpModule } from '@nestjs/axios';
-import { Module } from '@nestjs/common';
-import { AuthController } from './auth/auth.controller';
-import { AuthService } from './auth/auth.service';
-import { EventGateway } from './auth/websocket.gateway';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from './user/user.entity';
-import { UserModule } from './user/user.module'; // Assurez-vous que le chemin est correct
-import { IntraStrategy } from './auth/strategies/ft.strategy'
-*/
-
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
