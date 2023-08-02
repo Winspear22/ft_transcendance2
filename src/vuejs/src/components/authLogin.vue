@@ -44,4 +44,7 @@ export default {
 .log-one {
   color: #2fe8ee;
 }
+.dual-color-button:hover {
+  background: linear-gradient(to right, #1d4fb3 50%, #27d0d8 50%);  /* Teintes légèrement plus foncées pour l'effet de survol */
+}
 </style>

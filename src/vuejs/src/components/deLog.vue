@@ -1,8 +1,7 @@
 <template>
   <div>
-    <button class="dual-color-button" @click="logout">
-      <span class="logout-one">Se déco</span>
-      <span class="logout-two">nnecter</span>
+    <button class="delogButton" @click="logout">
+      <span>Se déconnecter</span>
     </button>
   </div>
 </template>
@@ -16,7 +15,6 @@ export default {
       try {
         const response = await axios.post('http://localhost:3000/Logout', {}, { withCredentials: true });
 
-        console.log("reponse logout please : ", response.status);
         if (response.status === 201) {
           this.$emit('logout-success');
         }
@@ -30,19 +28,19 @@ export default {
 
 
 <style scoped>
-.dual-color-button {
-  background: linear-gradient(to right, #2459d5 50%, #2fe8ee 50%);
-  color: white;
+.delogButton {
+  background-color: #2459d5;  /* Couleur de fond bleue */
+  color: #2fe8ee;             /* Écriture en bleu clair */
   border: none;
   padding: 10px 20px;
-  font-size: 30px;
+  font-size: 10px;
+  cursor: pointer;            /* Le curseur devient une main pour indiquer qu'il s'agit d'un bouton cliquable */
+  border-radius: 5px;         /* Ajoutez un léger arrondi au bouton pour un style moderne */
+  transition: background-color 0.3s; /* Transition pour le changement de couleur lors du survol */
+  margin: 0;
 }
 
-.logout-two {
-  color: #2459d5;
-}
-
-.logout-one {
-  color: #2fe8ee;
+.delogButton:hover {
+  background-color: #1d4fb3;  /* Une teinte légèrement plus foncée de bleu pour l'effet de survol */
 }
 </style>

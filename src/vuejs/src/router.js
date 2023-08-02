@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import authLogin from './components/authLogin.vue';
 import deLog from './components/deLog.vue';
-import welcomePage from './components/welcomePage.vue';
+import displayPong from './components/displayPong.vue';
 
 const routes = [
     {
@@ -23,7 +23,7 @@ const routes = [
     {
         path: '/',
         name: 'Home',
-        component: welcomePage,
+        component: displayPong,
         meta: {
             title: 'P O N G'
         }

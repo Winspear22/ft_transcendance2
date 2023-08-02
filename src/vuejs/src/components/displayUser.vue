@@ -3,11 +3,19 @@
       <img :src="userInfo.profile_picture" alt="User profile picture" class="user-image" />
       <p>{{ userInfo.username }}</p>
       <p>{{ userInfo.email }}</p>
+      <displayQrcode v-if="userInfo && userInfo.id" :userInfo="userInfo" />
+      <deLog></deLog>
     </div>
 </template>
 
 <script>
+import deLog from './deLog.vue';
+import displayQrcode from './displayQrcode.vue';
 export default {
+  components: {
+    deLog,
+    displayQrcode
+  },
   props: {
     userInfo: {
       type: Object,
@@ -22,7 +30,7 @@ export default {
     position: absolute;
     top: 10px;
     left: 10px;
-    padding: 20px;              
+    padding: 10px;              
     border: 2px solid #2fe8ee;  
     border-radius: 10px;        
     box-sizing: border-box;     
@@ -31,6 +39,7 @@ export default {
     align-items: center;        /* Centrer horizontalement */
     justify-content: center;    /* Centrer verticalement */
     color: #2fe8ee; 
+    width: 200px;
 }
 
 .user-info p {
