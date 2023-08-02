@@ -7,6 +7,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from '../user/user.entity';
 import { UserModule } from '../user/user.module';
 import { IntraStrategy } from './strategies/ft.strategy'
+import { ChatGateway } from '../chat/chat.gateway';
+
 
 @Module({
   imports: [
@@ -24,6 +26,6 @@ import { IntraStrategy } from './strategies/ft.strategy'
     HttpModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, EventGateway, IntraStrategy],
+  providers: [AuthService, EventGateway, IntraStrategy, ChatGateway],
 })
 export class AuthModule {}
