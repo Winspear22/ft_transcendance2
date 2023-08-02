@@ -27,7 +27,7 @@ export default {
         return {
             qrCode: null,
             secret: null,
-            isChecked: false  // Pour contrôler l'affichage du QR code
+            isChecked: false
         };
     },
     props: {
@@ -38,16 +38,13 @@ export default {
     },
     async created() {
     try {
-        // 1. Faites d'abord appel à l'endpoint "generate"
         const generateResponse = await axios.post('http://localhost:3000/generate', { userId: this.userInfo.id }, { withCredentials: true });
         
         console.log("APRES GENERATE");
-        // Si nous avons reçu un QRCode de "generate"
         if (generateResponse.data.qrCode) {
             this.qrCode = generateResponse.data.qrCode;
             this.secret = generateResponse.data.secret;
             
-            // Ensuite, appelez "turn-on"
             const turnOnResponse = await axios.post('http://localhost:3000/turn-on', { 
                 TfaCode: this.secret,
                 login: this.userInfo.username,
@@ -56,7 +53,7 @@ export default {
             console.log("REPONSE TURN_ON ==", turnOnResponse);
             if (turnOnResponse.status !== 200) {
                 console.error("Erreur lors de l'activation:", turnOnResponse.statusText);
-                this.qrCode = null; // Optionnel : vous pouvez réinitialiser le QRCode si vous le souhaitez
+                this.qrCode = null; 
             }
         } else {
             console.error("QRCode non reçu depuis 'generate'.");

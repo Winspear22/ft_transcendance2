@@ -173,7 +173,7 @@ export class AuthController {
         body.login,
         //res,
       );
-    console.log(isCodeValid);
+    console.log("IS LOGGED VALID", isCodeValid);
     if (isCodeValid) {
       await this.userService.turnOnTwoFactorAuthentication(
         body.user_id,
