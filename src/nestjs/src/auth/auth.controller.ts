@@ -170,12 +170,13 @@ export class AuthController {
     const isCodeValid =
       await this.userService.isTwoFactorAuthenticationCodeValid(
         body.TfaCode,
-        body.actualUser.login,
+        body.login,
         //res,
       );
+    console.log(isCodeValid);
     if (isCodeValid) {
       await this.userService.turnOnTwoFactorAuthentication(
-        body.actualUser.user_id,
+        body.user_id,
       );
       res.status(200).json({ message: '2FA enabled' });
     } else {
