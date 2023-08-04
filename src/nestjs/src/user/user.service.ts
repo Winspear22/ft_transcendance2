@@ -199,6 +199,7 @@ export class UserService {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
       return res.redirect(process.env.IP_FRONTEND);
+      //return res.redirect('http://localhost:8080/home);
     }
     else
     {
