@@ -21,7 +21,7 @@ export default {
 
         async function checkUserStatus() {
             try {
-                const response = await axios.get('http://localhost:3000/check-auth', { withCredentials: true });
+                const response = await axios.get('http://localhost:3000/auth/check-auth', { withCredentials: true });
                 if (response.data.infoUser.user_status === "Online") {
                     isLoggedIn.value = true;
                     userInfo.value = response.data.infoUser;

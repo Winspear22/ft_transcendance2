@@ -13,7 +13,7 @@ export default {
   methods: {
     async logout() {
       try {
-        const response = await axios.post('http://localhost:3000/Logout', {}, { withCredentials: true });
+        const response = await axios.post('http://localhost:3000/auth/Logout', {}, { withCredentials: true });
 
         if (response.status === 201) {
           this.$emit('logout-success');

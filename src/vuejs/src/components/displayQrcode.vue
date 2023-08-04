@@ -38,14 +38,14 @@ export default {
     },
     async created() {
     try {
-        const generateResponse = await axios.post('http://localhost:3000/generate', { userId: this.userInfo.id }, { withCredentials: true });
+        const generateResponse = await axios.post('http://localhost:3000/auth/generate', { userId: this.userInfo.id }, { withCredentials: true });
         
         console.log("APRES GENERATE");
         if (generateResponse.data.qrCode) {
             this.qrCode = generateResponse.data.qrCode;
             this.secret = generateResponse.data.secret;
             
-            const turnOnResponse = await axios.post('http://localhost:3000/turn-on', { 
+            const turnOnResponse = await axios.post('http://localhost:3000/auth/turn-on', { 
                 TfaCode: this.secret,
                 login: this.userInfo.username,
                 user_id: this.userInfo.id

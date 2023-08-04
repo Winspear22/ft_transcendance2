@@ -7,14 +7,11 @@ import {
   Post,
   Body,
   Delete,
-  UnauthorizedException,
   HttpCode,
   HttpStatus,
-  ExecutionContext
 } from '@nestjs/common';
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
-import { IntraAuthGuard } from './guard/ft-oauth.guard';
 import { Request as ExpressRequest } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
@@ -31,10 +28,9 @@ export class TwoFactorAuthenticationCodeDto {
   twoFactorAuthenticationCode: string;
 }
 
-@Controller()
+@Controller('auth')
 export class AuthController {
   constructor(
-    private jwtService: JwtService,
     private authService: AuthService,
     private userService: UserService,
   ) {}
