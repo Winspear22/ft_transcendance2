@@ -167,47 +167,23 @@ export class AuthController {
   @Post('turn-on')
   async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
     console.log('le body ', body);
+    this.authService.WriteCommandsNames("ACTIVATE 2FA");
     const isCodeValid =
       await this.userService.isTwoFactorAuthenticationCodeValid(
         body.TfaCode,
-        body.login,
-        //res,
+        body.username,
       );
     console.log("IS LOGGED VALID", isCodeValid);
     if (isCodeValid) {
+      console.log("user id : ", body.username);
       await this.userService.turnOnTwoFactorAuthentication(
-        body.user_id,
+        body.username,
       );
       res.status(200).json({ message: '2FA enabled' });
     } else {
       res.status(401).json({ message: 'Invalid 2FA code' });
     }
   }
-
-  /*@Post('authenticate')
-  @HttpCode(200)
-  @UseGuards(IntraAuthGuard)
-  async authenticate(
-    @Req() request: ExpressRequest,
-    @Body() { twoFactorAuthenticationCode }: TwoFactorAuthenticationCodeDto,
-  ) {
-    const isCodeValid = this.userService.isTwoFactorAuthenticationCodeValid(
-      twoFactorAuthenticationCode,
-      request.body.username,
-    );
-    if (!isCodeValid) {
-      throw new UnauthorizedException('Wrong authentication code');
-    }
-
-    const accessTokenCookie = this.authService.getCookieWithJwtAccessToken(
-      request.body.id,
-      true,
-    );
-
-    request.res.setHeader('Set-Cookie', [accessTokenCookie]);
-
-    return request.user;
-  }*/
 
   @Public()
   @Post('authenticate')
@@ -240,12 +216,14 @@ export class AuthController {
     }
   }
 
-
   @Public()
   @Post('deactivate')
   @HttpCode(HttpStatus.OK)
-  async Deactivate2FA(@Body() body) {
-    this.userService.Deactivate2FA(body.nickname);
+  async Deactivate2FA(@Body() body, @Res() res: Response ) 
+  {
+    this.authService.WriteCommandsNames("DEACTIVATE 2FA");
+    const response = await this.userService.Deactivate2FA(body.username);
+    res.status(200).json(response);
   }
 
   @Delete('deleteallusers')

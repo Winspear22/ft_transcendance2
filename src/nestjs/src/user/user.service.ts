@@ -69,19 +69,17 @@ export class UserService {
     });
   }
 
-  async turnOnTwoFactorAuthentication(userId: number) {
-    return this.usersRepository.update(userId, {
-      isTwoFactorAuthenticationEnabled: true,
-    });
+  async turnOnTwoFactorAuthentication(username: string) 
+  {
+    return this.FindAndUpdateUser(username, { isTwoFactorAuthenticationEnabled: true });
   }
 
-  async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string) {
+  async isTwoFactorAuthenticationCodeValid(TfaCode: string, username: string) {
     try {
-      const us = await this.findUserByUsername(user);
-      console.log("TfaCode", TfaCode, "us", us.twoFactorAuthenticationSecret);
+      const user = await this.findUserByUsername(username);
       const verif = authenticator.check(
         TfaCode,
-        us.twoFactorAuthenticationSecret,
+        user.twoFactorAuthenticationSecret,
       );
       return verif;
     } catch (error) {
@@ -92,11 +90,15 @@ export class UserService {
 
   async Deactivate2FA(username: string) {
     const user = await this.usersRepository.findOneBy({ username });
+  
     if (user && user.isTwoFactorAuthenticationEnabled) {
       await this.usersRepository.update(user.id, {
         isTwoFactorAuthenticationEnabled: false,
-        twoFactorAuthenticationSecret: null, // Réinitialisation du champ secret.
+        twoFactorAuthenticationSecret: null,
       });
+      return { message: '2FA disabled' };
+    } else {
+      return { message: '2FA not disabled' };
     }
   }
 
@@ -205,10 +207,10 @@ export class UserService {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
       //const message = "auth ok";
       //res.status(200).json(message);
-      //return res.redirect(process.env.IP_FRONTEND);
+      return res.redirect(process.env.IP_FRONTEND);
      
-      const url = `http://localhost:8080/tfa`;
-      res.redirect(url);
+      //const url = `http://localhost:8080/tfa`;
+      //res.redirect(url);
     }
   }
 

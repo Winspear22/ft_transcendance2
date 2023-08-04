@@ -50,6 +50,8 @@ export default {
                 login: this.userInfo.username,
                 user_id: this.userInfo.id
                }, { withCredentials: true });
+               // console.log(turnOnResponse.login, " ", turnOnResponse.user_id);
+
             console.log("REPONSE TURN_ON ==", turnOnResponse);
             if (turnOnResponse.status !== 200) {
                 console.error("Erreur lors de l'activation:", turnOnResponse.statusText);
@@ -58,7 +60,11 @@ export default {
         } else {
             console.error("QRCode non reçu depuis 'generate'.");
         }
-    } catch (error) {
+        console.log(this.userInfo.username);
+        console.log(this.userInfo.id);
+    } 
+
+    catch (error) {
         console.error("Erreur lors des appels API:", error);
     }
 }
