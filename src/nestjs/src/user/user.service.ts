@@ -78,11 +78,11 @@ export class UserService {
   async isTwoFactorAuthenticationCodeValid(TfaCode: string, user: string) {
     try {
       const us = await this.findUserByUsername(user);
+      console.log("TfaCode", TfaCode, "us", us.twoFactorAuthenticationSecret);
       const verif = authenticator.check(
         TfaCode,
         us.twoFactorAuthenticationSecret,
       );
-      console.log(verif);
       return verif;
     } catch (error) {
       console.error(error);
