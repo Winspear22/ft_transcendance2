@@ -1,19 +1,16 @@
 <template>
   <div>
-    <h1 class="centered-title">
+    <h1 class="PONG">
       <span class="PO">P O</span>
       <span class="NG"> N G</span>
     </h1>
   </div>
 </template>
 
-<script>
-
-</script>
-
 <style scoped>
-.centered-title {
+.PONG {
   text-align: center;
+  font-size: 5vw; /* Cela ajustera la taille en fonction de la largeur de la fenêtre. */
 }
 
 .PO {
@@ -23,4 +20,5 @@
 .NG {
   color: #2459d5;
 }
+
 </style>

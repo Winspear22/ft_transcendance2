@@ -1,43 +1,15 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import authLogin from './components/authLogin.vue';
-import deLog from './components/deLog.vue';
-import displayPong from './components/displayPong.vue';
+import loginPage from './components/loginPage.vue';
 
-const routes = [
-    {
-        path: '/login',
-        name: 'Login',
-        component: authLogin,
-        meta: {
-            title: 'Se connecter'
-        }
-    },
-    {
-        path: '/return',
-        name: 'Logout',
-        component: deLog,
-        meta: {
-            title: 'Se deconnecter'
-        }
-    },
+
+const appRoutes = [
     {
         path: '/',
         name: 'Home',
-        component: displayPong,
+        component: loginPage,
         meta: {
             title: 'P O N G'
         }
     }
 ]
 
-const router = createRouter({
-    history: createWebHistory(),
-    routes,
-})
-
-router.beforeEach((to, from, next) => {
-    document.title = to.meta.title || 'Titre par défaut';
-    next();
-});
-
-export default router
+export default appRoutes;
