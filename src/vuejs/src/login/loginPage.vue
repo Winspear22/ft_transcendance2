@@ -7,9 +7,9 @@
 </template>
 
 <script>
-    import userData from './userData.vue'
+    import userData from '../components/userData.vue'
     import loginButton from './loginButton.vue'
-    import displayPong from './displayPong.vue'
+    import displayPong from '../components/displayPong.vue'
 
     export default {
         data() {
@@ -27,9 +27,13 @@
         handleUserData(data) {
             this.isUserLoggedIn = data.isLoggedIn;
             console.log('Received from UserData component:', data);
+            this.$emit('info-user', {
+                isLoggedIn: data.isLoggedIn,
+                infoUser: data.infoUser
+            });
         }
-    },
-};
+        },
+    };
 </script>
 
 <style>
