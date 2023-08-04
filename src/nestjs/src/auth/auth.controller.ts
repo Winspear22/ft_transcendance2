@@ -13,7 +13,6 @@ import {
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
 import { Request as ExpressRequest } from 'express';
-import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 import { FtOauthGuard } from './guard/ft-oauth.guard';
