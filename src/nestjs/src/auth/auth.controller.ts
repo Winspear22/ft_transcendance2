@@ -17,7 +17,8 @@ import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 import { FtOauthGuard } from './guard/ft-oauth.guard';
 import * as colors from '../colors';
-
+import { decode } from 'jsonwebtoken';
+import { JwtPayload } from './interface/jwtpayload.interface';
 
 import { IsNotEmpty, IsString } from 'class-validator';
 
@@ -78,6 +79,14 @@ export class AuthController {
         this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
         let user2 = await this.userService.findUserByUsername(username);
         await this.userService.DisplayUserIdentity(user2);
+        const { accessToken } = userData;
+        console.log(colors.RED + "token dans LOGOUT ==== ", colors.WHITE, accessToken, colors.RESET );
+
+        const decodedToken: any = decode(accessToken) as JwtPayload;
+        console.log(accessToken);
+        const expiryDate = new Date(decodedToken.exp * 1000);
+        await this.userService.blacklistToken(accessToken, expiryDate);
+
       } 
       catch (error) 
       {
