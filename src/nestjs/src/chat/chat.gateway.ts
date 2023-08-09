@@ -65,21 +65,21 @@ export class ChatGateway
       return this.handleDisconnect(client);
     }
 
-    console.log("payload === ", payload);
+    //console.log("payload === ", payload);
 
     const user = await this.userService.findUserByUsername(username);
     client.data.user = user;
-    console.log(client.data.user);
+    //console.log(client.data.user);
 
     if (user)
-      return user;
+      console.log("User connected : ", user.username);
+      //return user;
     else
     {
       console.log('User does not exist');
       return this.handleDisconnect(client);
     }
   }
-
 
   handleDisconnect(client: Socket)
   {
