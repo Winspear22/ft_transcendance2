@@ -80,7 +80,7 @@ export class AuthController {
         let user2 = await this.userService.findUserByUsername(username);
         await this.userService.DisplayUserIdentity(user2);
         const { accessToken } = userData;
-        console.log(colors.RED + "token dans LOGOUT ==== ", colors.WHITE, accessToken, colors.RESET );
+        console.log(colors.BLUE + "token dans LOGOUT ==== ", colors.WHITE, accessToken, colors.RESET );
 
         const decodedToken: any = decode(accessToken) as JwtPayload;
         console.log(accessToken);
