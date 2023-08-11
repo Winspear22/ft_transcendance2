@@ -26,7 +26,6 @@
 
         handleUserData(data) {
             this.isUserLoggedIn = data.isLoggedIn;
-            console.log('Received from UserData component:', data);
             this.$emit('info-user', {
                 isLoggedIn: data.isLoggedIn,
                 infoUser: data.infoUser
@@ -36,14 +35,8 @@
     };
 </script>
 
-<style>
-body {
-  margin: 0;
-  height: 100%;
-  background: linear-gradient(to right, #2459d5 20%, #2fe8ee 80%);
-}
-
-div { /* ou utilisez une classe spécifique pour cibler cette div si vous préférez */
+<style scoped>
+div {
   display: flex;
   flex-direction: column;
   justify-content: center;

@@ -1,32 +1,35 @@
 <template>
   <div id="app" class="container">
     <loginPage v-if="!isUserLoggedIn" @info-user="updateUserInfo"></loginPage>
-    <welcomePage v-else :userData="infoUser"></welcomePage>
   </div>
 </template>
 
 <script>
 import loginPage from './login/loginPage.vue';
-import welcomePage from './welcome/welcomePage.vue';
 
 export default {
   components: {
-    loginPage,
-    welcomePage
+    loginPage
   },
   data() {
     return {
-      isUserLoggedIn: false
+      isUserLoggedIn: false,
+      infoUser: null
     };
   },
   methods: {
     updateUserInfo(data) {
-      this.isUserLoggedIn = data.isUserLoggedIn,
-      this.infoUser = data.infoUser
+      this.isUserLoggedIn = data.isUserLoggedIn;
+      this.infoUser = data.infoUser;
     }
-  }
+  },
 };
 </script>
 
 <style>
+body {
+  margin: 0;
+  height: 100%;
+  background: linear-gradient(to right, #2459d5 20%, #2fe8ee 80%);
+}
 </style>
