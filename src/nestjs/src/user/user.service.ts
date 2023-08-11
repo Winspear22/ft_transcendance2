@@ -13,7 +13,7 @@ import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
-
+import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 export class AuthDto {
   @IsString()
   @IsNotEmpty()
@@ -37,6 +37,8 @@ export class UserService {
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
     private jwtService: JwtService,
+    @InjectRepository(BlacklistedToken)
+    private blacklistedTokenRepository: Repository<BlacklistedToken>
   ) {}
 
   async createUser(userDet: any): Promise<UserEntity> {
@@ -218,7 +220,7 @@ export class UserService {
   async CreateAndSignTokens(id: string, username: string) 
   {
     const [new_access_token, new_refresh_token] = await Promise.all([
-      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN,expiresIn: 60 * 15 * 20 }),
+      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN, expiresIn: 60 * 15 * 20 }),
       this.jwtService.signAsync({ sub: id, username }, { secret: process.env.REFRESH_TOKEN, expiresIn: 60 * 60 * 24 * 7})]);
     return {access_token: new_access_token, refresh_token: new_refresh_token};
   }
@@ -330,5 +332,20 @@ export class UserService {
     } catch (e) {
       console.log('TFA EROOOOR ', e);
     }
+  }
+
+
+  async blacklistToken(token: string, expiryDate: Date): Promise<void> {
+    const blacklistedToken = new BlacklistedToken();
+    blacklistedToken.token = token;
+    blacklistedToken.expiryDate = expiryDate;
+    await this.blacklistedTokenRepository.save(blacklistedToken);
+  }
+
+  async isTokenBlacklisted(token: string): Promise<boolean> 
+  {
+    console.log("token dans isblacklisted ==== ",  token);
+    const found = await this.blacklistedTokenRepository.findOneBy({ token });
+    return !!found;
   }
 }

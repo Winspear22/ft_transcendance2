@@ -8,8 +8,8 @@ import { UserEntity } from '../user/user.entity';
 import { UserModule } from '../user/user.module';
 import { IntraStrategy } from './strategies/ft.strategy'
 import { ChatGateway } from '../chat/chat.gateway';
-
-
+import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
+import { ChatService } from 'src/chat/chat.service';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -19,13 +19,14 @@ import { ChatGateway } from '../chat/chat.gateway';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [UserEntity],
+      entities: [UserEntity, BlacklistedToken],  // Ajoutez BlacklistedTokenEntity ici
       synchronize: true,
     }),
-    UserModule, // Ajoutez cette ligne
+    UserModule,
     HttpModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, EventGateway, IntraStrategy, ChatGateway],
+  providers: [AuthService, EventGateway, IntraStrategy, ChatGateway, ChatService],
 })
 export class AuthModule {}
+
