@@ -1,5 +1,15 @@
 <template>
     <div class="setting-container">
-      <h1>Paramètres</h1>
+      <displayPong></displayPong>
     </div>
 </template>
+
+<script>
+import displayPong from './displayPong';
+
+export default {
+    components: {
+        displayPong
+    },
+};
+</script>

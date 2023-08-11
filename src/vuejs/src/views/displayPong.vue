@@ -10,7 +10,7 @@
   <style scoped>
   .PONG {
     text-align: center;
-    font-size: 5vw; /* Cela ajustera la taille en fonction de la largeur de la fenêtre. */
+    font-size: 2vw; /* Cela ajustera la taille en fonction de la largeur de la fenêtre. */
   }
   
   .PO {
