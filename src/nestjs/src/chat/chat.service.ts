@@ -25,16 +25,18 @@ export class ChatService {
         {id: 10, sender: 'Ian', content: 'Can someone update me?', sentDate: new Date()},
     ]
 
-    async getAllMessages(): Promise<MessageEntity[]> 
+    async createMessage(data: CreateMessageDto): Promise<MessageEntity> 
     {
-        this.messageRepository.create(this.messages);
-        await this.messageRepository.save(this.messages);
-        return await this.messageRepository.find();
-    }
-
-    async createMessage(data: CreateMessageDto): Promise<MessageEntity> {
-        const message = this.messageRepository.create(data);
+        console.log("Data to be inserted:", data);
+        const message = await this.messageRepository.create(data);
         await this.messageRepository.save(message);
         return message;
+    }
+
+    async getAllMessages(): Promise<MessageEntity[]> 
+    {
+        //this.messageRepository.create(this.messages);
+        //await this.messageRepository.save(this.messages);
+        return await this.messageRepository.find();
     }
 }

@@ -90,15 +90,19 @@ export class ChatGateway
 
   @SubscribeMessage('newMessage')
   async handleNewMessage(@MessageBody() data: CreateMessageDto, @ConnectedSocket() client: Socket) {
+    console.log("data = ", data);
     const newMessage = await this.chatService.createMessage(data);
-    this.server.emit('message', newMessage);
+    
+    console.log("Message = ", newMessage);
+    this.server.emit('newMessage', newMessage);
     return { status: 'Message sent and saved' };
 }
 
   @SubscribeMessage('getAllMessages')
-  GetAllMessages() 
+  async GetAllMessages() 
   {
-    this.server.emit('getAllMessages', this.chatService.getAllMessages());
-    return this.chatService.getAllMessages();
+    const messages = await this.chatService.getAllMessages();
+    this.server.emit('getAllMessages', messages);
+    return await this.chatService.getAllMessages();
   }
 }
