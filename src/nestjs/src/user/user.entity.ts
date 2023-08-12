@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { 
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  ManyToMany,
+  } from 'typeorm';
+import { RoomEntity } from 'src/chat/entities/room.entity';
 
 @Entity()
 export class UserEntity 
@@ -58,6 +64,9 @@ export class UserEntity
 
   @Column({ default: false })
   public isTwoFactorAuthenticationEnabled: boolean;
+
+  @ManyToMany(() => RoomEntity, room => room.members)
+  rooms: RoomEntity[];
   /*==========================================================================*/
 
 }

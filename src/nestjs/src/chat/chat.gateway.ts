@@ -9,6 +9,7 @@ import * as colors from '../colors';
 import { ChatService } from './chat.service';
 import { ChatAuthService } from './chat-auth.service';
 import { CreateMessageDto } from './dto/message.dto';
+import { RoomService } from './room.service';
 
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
@@ -16,7 +17,8 @@ export class ChatGateway
 {
   constructor(private userService: UserService,
     private readonly chatService: ChatService,
-    private readonly chatAuthService: ChatAuthService
+    private readonly chatAuthService: ChatAuthService,
+    private readonly roomService: RoomService
     ) {}
 
   @WebSocketServer()

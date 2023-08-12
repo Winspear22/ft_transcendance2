@@ -12,7 +12,7 @@ export class ChatService {
         private messageRepository: Repository<MessageEntity>,
     ) {}
         /*TABLEAU DE TESTS*/
-    messages: MessageEntity[] = [
+    /*messages: MessageEntity[] = [
         {id: 1, sender: 'Adnen', content: 'Hello World', sentDate: new Date()},
         {id: 2, sender: 'Alice', content: 'Hi there!', sentDate: new Date()},
         {id: 3, sender: 'Bob', content: 'How are things?', sentDate: new Date()},
@@ -23,7 +23,7 @@ export class ChatService {
         {id: 8, sender: 'Grace', content: 'Hey everyone!', sentDate: new Date()},
         {id: 9, sender: 'Hannah', content: 'I missed the previous messages.', sentDate: new Date()},
         {id: 10, sender: 'Ian', content: 'Can someone update me?', sentDate: new Date()},
-    ]
+    ]*/
 
     async createMessage(data: CreateMessageDto): Promise<MessageEntity> 
     {
