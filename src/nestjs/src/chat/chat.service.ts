@@ -1,55 +1,40 @@
 import { Injectable } from '@nestjs/common';
-import { UserService } from 'src/user/user.service'; // Assurez-vous que le chemin d'accès est correct
-import { JwtService } from '@nestjs/jwt';
-import { JwtPayload } from 'src/auth/interface/jwtpayload.interface';
-import { decode, TokenExpiredError } from 'jsonwebtoken';  // Ne pas oublier d'importer les méthodes nécessaires
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { MessageEntity } from './entities/message.entity';
+import { CreateMessageDto } from './dto/message.dto';
 
 @Injectable()
 export class ChatService {
 
     constructor(
-        private readonly userService: UserService,
-        private readonly jwtService: JwtService
+        @InjectRepository(MessageEntity)
+        private messageRepository: Repository<MessageEntity>,
     ) {}
+        /*TABLEAU DE TESTS*/
+    messages: MessageEntity[] = [
+        {id: 1, sender: 'Adnen', content: 'Hello World', sentDate: new Date()},
+        {id: 2, sender: 'Alice', content: 'Hi there!', sentDate: new Date()},
+        {id: 3, sender: 'Bob', content: 'How are things?', sentDate: new Date()},
+        {id: 4, sender: 'Charlie', content: 'Good morning!', sentDate: new Date()},
+        {id: 5, sender: 'David', content: 'Happy to be here.', sentDate: new Date()},
+        {id: 6, sender: 'Eve', content: 'What a great day!', sentDate: new Date()},
+        {id: 7, sender: 'Frank', content: 'Let\'s chat!', sentDate: new Date()},
+        {id: 8, sender: 'Grace', content: 'Hey everyone!', sentDate: new Date()},
+        {id: 9, sender: 'Hannah', content: 'I missed the previous messages.', sentDate: new Date()},
+        {id: 10, sender: 'Ian', content: 'Can someone update me?', sentDate: new Date()},
+    ]
 
-    extractAccessTokenFromCookie(cookie: string): any {
-        try
-        {
-            const decodedCookie = decodeURIComponent(cookie); 
-            return JSON.parse(decodedCookie);
-        }
-        catch (error)
-        {
-            console.log("Error. Cookie could not be decoded.");
-            return (undefined);
-        }
-        //const decodedCookie = decodeURIComponent(cookie); 
+    async getAllMessages(): Promise<MessageEntity[]> 
+    {
+        this.messageRepository.create(this.messages);
+        await this.messageRepository.save(this.messages);
+        return await this.messageRepository.find();
     }
 
-    async isTokenBlacklisted(token: string): Promise<boolean> {
-        return await this.userService.isTokenBlacklisted(token);
-    }
-
-    decodeAccessToken(token: string): JwtPayload | null {
-        const decodedPayload = decode(token) as JwtPayload;
-        return decodedPayload || null;
-    }
-
-    hasTokenExpired(expiry: number): boolean {
-        const currentTime = Math.floor(Date.now() / 1000);
-        return expiry < currentTime;
-    }
-
-    async verifyToken(accessToken: string, secret: string): Promise<JwtPayload | null> {
-        try {
-            return await this.jwtService.verifyAsync(accessToken, { secret });
-        } catch (error) {
-            if (error instanceof TokenExpiredError) {
-                console.log('Token has expired.');
-            } else {
-                console.log('Token is invalid:', error.message);
-            }
-            return null;
-        }
+    async createMessage(data: CreateMessageDto): Promise<MessageEntity> {
+        const message = this.messageRepository.create(data);
+        await this.messageRepository.save(message);
+        return message;
     }
 }

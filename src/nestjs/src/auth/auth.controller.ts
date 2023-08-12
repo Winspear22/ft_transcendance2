@@ -195,7 +195,6 @@ export class AuthController {
   async authenticate(@Req() request, @Body() body, @Res({ passthrough: true }) res: Response) {
     let payload = null;
     this.authService.WriteCommandsNames("AUTHENTICATE");
-    //console.log('le body ', body)
     try
     {
       this.authService.WriteCommandsNames("1 STEP");

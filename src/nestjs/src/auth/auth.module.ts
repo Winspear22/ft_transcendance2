@@ -10,6 +10,10 @@ import { IntraStrategy } from './strategies/ft.strategy'
 import { ChatGateway } from '../chat/chat.gateway';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 import { ChatService } from 'src/chat/chat.service';
+import { MessageEntity } from 'src/chat/entities/message.entity';
+import { ChatAuthService } from 'src/chat/chat-auth.service';
+import { ChatModule } from 'src/chat/chat.module';
+
 @Module({
   imports: [
     TypeOrmModule.forRoot({
@@ -19,14 +23,15 @@ import { ChatService } from 'src/chat/chat.service';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [UserEntity, BlacklistedToken],  // Ajoutez BlacklistedTokenEntity ici
+      entities: [UserEntity, BlacklistedToken, MessageEntity],  // Ajoutez BlacklistedTokenEntity ici
       synchronize: true,
     }),
     UserModule,
     HttpModule,
+    ChatModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, EventGateway, IntraStrategy, ChatGateway, ChatService],
+  providers: [AuthService, EventGateway, IntraStrategy],
 })
 export class AuthModule {}
 
