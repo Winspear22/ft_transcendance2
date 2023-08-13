@@ -78,6 +78,7 @@ export class UserService {
 
   async isTwoFactorAuthenticationCodeValid(TfaCode: string, username: string) {
     try {
+
       const user = await this.findUserByUsername(username);
       const verif = authenticator.check(
         TfaCode,
@@ -85,6 +86,7 @@ export class UserService {
       );
       return verif;
     } catch (error) {
+      console.log(colors.BRIGHT + colors.RED + "La fontion authenticator a rate", + colors.RESET);
       console.error(error);
       return false;
     }

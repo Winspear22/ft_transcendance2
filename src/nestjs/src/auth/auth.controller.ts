@@ -173,13 +173,14 @@ export class AuthController {
   @Post('turn-on')
   async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
     this.authService.WriteCommandsNames("ACTIVATE 2FA");
+    console.log("BODY ==== ", body);
     const isCodeValid =
       await this.userService.isTwoFactorAuthenticationCodeValid(
         body.TfaCode,
         body.username,
       );
     console.log('TfaCode', body.TfaCode, 'username', body.username);
-    console.log("IS LOGGED VALID", isCodeValid);
+    console.log("Is the code entered valid ? = ", isCodeValid);
     if (isCodeValid) {
       console.log("user id : ", body.username);
       await this.userService.turnOnTwoFactorAuthentication(
