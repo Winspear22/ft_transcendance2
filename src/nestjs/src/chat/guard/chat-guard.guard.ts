@@ -51,7 +51,7 @@ export class ChatGuard implements CanActivate {
         /*JE TROUVE L'UTILISATEUR ASSOCIE AU TOKEN*/
         const user = await this.userService.findUserByUsername(username);
         if (user)
-            console.log("User connected : ", user.username);
+            console.log("User connected MIDDLEWARE CHATGUARD: ", user.username);
         else
         {
             console.log('User does not exist');

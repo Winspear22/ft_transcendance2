@@ -62,6 +62,13 @@ export class RoomService
         return await this.roomRepository.findOneBy({ id: roomId });
     }
 
+    async getRoomByName(roomName: string): Promise<RoomEntity | undefined> {
+        const room = await this.roomRepository.findOneBy({ name: roomName });
+        if (!room)
+            return undefined;
+        return await this.roomRepository.findOneBy({ name: roomName });
+    }
+
     /**
     * Cree une room et l'ajoute a la base de donnees.
     */

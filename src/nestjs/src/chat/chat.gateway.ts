@@ -118,12 +118,28 @@ export class ChatGateway
   @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
   async handleCreateRoom(@MessageBody() data: { name: string },
-  @ConnectedSocket() client: Socket): Promise<RoomEntity> 
+  @ConnectedSocket() client: Socket): Promise<RoomEntity | undefined> 
   {
-    const room = await this.roomService.createRoom(data.name, [client.data.user]);
-    if (room)
-      client.join(room.name);  // Le client rejoint la salle après sa création
-    return room;
+    const roomName = await this.roomService.getRoomByName(data.name);
+    console.log(roomName);
+    if (roomName == undefined)
+    {
+      const room = await this.roomService.createRoom(data.name, [client.data.user]);
+      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
+      client.join(room.name);
+      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
+      console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.name, colors.BLUE, " a ete creee avec succes." + colors.RESET);
+      const message = "La room ${room.name} a ete creee avec succes !";
+      this.server.emit("RoomCreationSuccess", message);
+      return room;
+    }
+    else
+    {
+      console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.name, colors.BLUE, " n'a pas pu etre creee car elle existe deja." + colors.RESET)
+      const message = "La room ${room.name} existe deja, par consequent elle n'a pas ete creee";
+      this.server.emit("RoomCreationError", message);
+      return roomName;
+    } 
   }
 
   /**
@@ -138,6 +154,7 @@ export class ChatGateway
     console.log("Dans le Room");
     if (room)
     {
+
       this.server.to(room.name).emit('roomDeleted', data.roomId); // Informer tous les membres de la salle
       await this.roomService.deleteRoom(data.roomId);
     }
