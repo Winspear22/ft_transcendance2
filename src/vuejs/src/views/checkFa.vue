@@ -21,13 +21,12 @@ export default {
     },
     data() {
         return {
-            showPopup: true,   // Affiche le popup dès le chargement du composant
-            TfaCode: ''        // Stocke le code saisi par l'utilisateur
+            showPopup: true,   
+            TfaCode: ''        
         };
     },
     methods: {
         async validateCode() {
-            // Envoyer une requête POST avec les données nécessaires au backend
             try {
                 const response = await axios.post('http://localhost:3000/auth/turn-on', {
                     username: this.userInfo.username,
@@ -36,12 +35,10 @@ export default {
                     withCredentials: true
                 });
 
-                // Traiter la réponse comme vous le souhaitez
                 if (response.data.success) {
                     this.$emit('codeValidated');
                     this.showPopup = false;
                 } else {
-                    // Gérer une éventuelle erreur renvoyée par le backend
                     alert('Erreur de validation du code');
                 }
             } catch (error) {
@@ -61,7 +58,6 @@ export default {
 
 
 <style scoped>
-/* Vous pouvez ajouter des styles pour la fenêtre popup ici */
 .popup-container {
     position: fixed;
     top: 0;
