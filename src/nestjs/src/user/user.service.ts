@@ -111,15 +111,15 @@ export class UserService {
   /*=====================================================================*/
 
   async findUserById(id: number): Promise<UserEntity> {
-    return this.usersRepository.findOneBy({ id });
+    return await this.usersRepository.findOneBy({ id });
   }
 
   async findUserByUsername(username: string): Promise<UserEntity> {
-    return this.usersRepository.findOneBy({ username });
+    return await this.usersRepository.findOneBy({ username });
   }
 
   async findUserByEmail(email: string): Promise<UserEntity> {
-    return this.usersRepository.findOneBy({ email });
+    return await this.usersRepository.findOneBy({ email });
   }
 
   /*=====================================================================*/

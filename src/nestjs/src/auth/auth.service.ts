@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { User42Dto } from '../user/user42.dto';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { authenticator } from 'otplib';
