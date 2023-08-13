@@ -3,7 +3,7 @@
         <displayPong></displayPong>
         <userInfo @userInfo="handleUserInfo"/>
         <userDisplay :infoUser="userData"/>
-        <displayQrcode v-if="userData" :userId="userData.id"/>
+        <displayQrcode v-if="userData" :userData="userData"/>
     </div>
 </template>
 

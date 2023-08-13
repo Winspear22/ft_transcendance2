@@ -14,36 +14,42 @@
         <!-- QR Code -->
         <div class="qr-container">
             <img v-if="checkDisplay && qrcodeData" :src="qrcodeData" alt="User's QR Code" />
+            <checkFa v-if="showCheckFa" :userInfo="userData" @codeValidated="onCodeValidated"/>
         </div>
     </div>
 </template>
 
 <script>
 import axios from 'axios';
+import checkFa from './checkFa'; 
 
 export default {
     props: {
-        userId: {
-            type: Number,
+        userData: {
+            type: Object,
             required: true
         }
     },
     data() {
         return {
             qrcodeData: null,
-            checkDisplay: false
+            checkDisplay: false,
+            showCheckFa: false
         };
+    },
+    components: {
+        checkFa
     },
 
     async created() {
         const storedState = localStorage.getItem('buttonState');
         if (storedState !== null) {
-            this.checkDisplay = storedState === 'true'; // Convertir la chaîne en booléen
+            this.checkDisplay = storedState === 'true';
         }
         
         if (this.checkDisplay && !this.qrcodeData) {
             try {
-                const response = await axios.post('http://localhost:3000/auth/generate', { userId: this.userId }, { withCredentials: true });
+                const response = await axios.post('http://localhost:3000/auth/generate', { userId: this.userData.id }, { withCredentials: true });
                 this.qrcodeData = response.data.qrCode;
             } catch (error) {
                 console.error("Erreur lors de la génération du QR code:", error);
@@ -54,14 +60,23 @@ export default {
     methods: {
         async toggleChange() {
             this.checkDisplay = !this.checkDisplay;
+            
+            // Si activé, afficher le composant de vérification du code
+            this.showCheckFa = this.checkDisplay;
+
             if (this.checkDisplay && !this.qrcodeData) {
                 try {
-                    const response = await axios.post('http://localhost:3000/auth/generate', { userId: this.userId }, { withCredentials: true });
+                    const response = await axios.post('http://localhost:3000/auth/generate', { userId: this.userData.id }, { withCredentials: true });
                     this.qrcodeData = response.data.qrCode;
                 } catch (error) {
                     console.error("Erreur lors de la génération du QR code:", error);
                 }
             }
+        },
+        
+        // Méthode appelée lorsque le code est validé
+        onCodeValidated() {
+            this.showCheckFa = false;
         }
     },
 
@@ -72,6 +87,7 @@ export default {
     }
 };
 </script>
+
 
 
 <style scoped>
