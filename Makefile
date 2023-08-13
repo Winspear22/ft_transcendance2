@@ -1,15 +1,15 @@
 all: up
 up:
-	docker-compose up --build
+	sudo docker-compose up --build
 
 down:
-	docker-compose down
+	sudo docker-compose down
 
 rm:
-	docker-compose rm
+	sudo docker-compose rm
 
 rmi:
-	docker-compose down --rmi all
+	sudo docker-compose down --rmi all
 
 fclean:
 	sudo docker-compose -f docker-compose.yml down \

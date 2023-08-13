@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import store from './store'; // Assurez-vous d'importer votre store ici
+import store from './store';
 import Home from './views/homePage.vue';
 import Login from './views/loginPage.vue';
 import Setting from './views/settingPage.vue';

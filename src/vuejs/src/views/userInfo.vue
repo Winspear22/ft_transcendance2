@@ -1,6 +1,5 @@
 <template>
     <div>
-      <!-- Ici, vous pouvez afficher les données de l'utilisateur comme vous le souhaitez. -->
     </div>
   </template>
   

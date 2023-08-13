@@ -10,7 +10,6 @@ export default createStore({
       state.token = token;
       state.userIsAuthenticated = !!token;  // Si un token est défini, l'utilisateur est considéré comme authentifié
     },
-    // Vous pouvez aussi ajouter une mutation spécifique pour gérer l'authentification si nécessaire
     SET_USER_AUTHENTICATION(state, isAuthenticated) {
       state.userIsAuthenticated = isAuthenticated;
     }

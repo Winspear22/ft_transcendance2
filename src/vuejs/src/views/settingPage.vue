@@ -10,8 +10,8 @@
 <script>
 import displayPong from './displayPong';
 import userInfo from './userInfo';
-import userDisplay from './userDisplay';  // Importez le composant UserDisplay
-import displayQrcode from './displayQrcode';  // Importez le composant UserDisplay
+import userDisplay from './userDisplay';
+import displayQrcode from './displayQrcode'; 
 
 export default {
     components: {
@@ -22,7 +22,7 @@ export default {
     },
     data() {
         return {
-            userData: null  // initialisation de userData à null
+            userData: null 
         };
     },
     methods: {
