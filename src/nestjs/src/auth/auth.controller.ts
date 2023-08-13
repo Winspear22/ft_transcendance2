@@ -159,11 +159,13 @@ export class AuthController {
   //@UseGuards(JwtAuthenticationGuard)
   async register(@Res() response: Response, @Req() request: ExpressRequest) {
     const userId = request.body.userId;
+    console.log("USERID ====", userId);
     const user = await this.userService.findUserById(userId);
     console.log('COUCOU JE SUIS DANS GENERATE');
     const result = await this.authService.generateTwoFactorAuthenticationSecret(
       user,
     );
+    console.log(result);
     return response.json(result);
   }
 
