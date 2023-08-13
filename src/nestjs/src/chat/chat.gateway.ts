@@ -11,6 +11,8 @@ import { ChatAuthService } from './chat-auth.service';
 import { CreateMessageDto } from './dto/message.dto';
 import { RoomService } from './room.service';
 import { RoomEntity } from './entities/room.entity';
+import { UseGuards } from '@nestjs/common';
+import { ChatGuard } from './guard/chat-guard.guard';
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
 export class ChatGateway 
@@ -34,7 +36,8 @@ export class ChatGateway
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
-     const accessTokenCookie = client.handshake.headers.cookie;
+
+    const accessTokenCookie = client.handshake.headers.cookie;
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
 
     if (!accessTokenCookie) 
@@ -42,42 +45,40 @@ export class ChatGateway
         console.log('Access Token Cookie is missing.');
         return this.handleDisconnect(client);
     }
-    /*J'EXTRAIS L'ACCESS TOKEN DU COOKIE*/
+   
     const userData = this.chatAuthService.extractAccessTokenFromCookie(accessTokenCookie);
     if (!userData)
       return this.handleDisconnect(client);
     const { username, refreshToken, accessToken } = userData;
-    /*JE VERIFIE SI LE TOKEN EST BLACKLISTE*/
+    
     if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
       console.log('Token is blacklisted.');
       return this.handleDisconnect(client);
     }
-    /*JE VERIFIE SI LE EST COMPLET*/
+   
     const decodedPayload = this.chatAuthService.decodeAccessToken(accessToken);
     if (!decodedPayload) {
       console.log('Token is invalid or malformed.');
       return this.handleDisconnect(client);
     }
-    /*JE VERIFIE SI LE TOKEN EST EXPIRE*/
+    
     if (this.chatAuthService.hasTokenExpired(decodedPayload.exp)) {
       console.log('Token has expired.');
       return this.handleDisconnect(client);
     }
-    /*JE VERIFIE SI LE TOKEN EST VALIDE AVEC VERIFYASYNC*/
+    
     const payload = await this.chatAuthService.verifyToken(accessToken, process.env.ACCESS_TOKEN);
     if (!payload) {
       return this.handleDisconnect(client);
     }
 
-    /*JE TROUVE L'UTILISATEUR ASSOCIE AU TOKEN*/
+   
     const user = await this.userService.findUserByUsername(username);
     client.data.user = user;
-    //if (this.server.sockets.)
-    //console.log(client.data.user);
-
+    
     if (user)
       console.log("User connected : ", user.username);
-      //return user;
+      
     else
     {
       console.log('User does not exist');
@@ -91,6 +92,7 @@ export class ChatGateway
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('newMessage')
   async handleNewMessage(@MessageBody() data: CreateMessageDto, @ConnectedSocket() client: Socket) {
     console.log("data = ", data);
@@ -101,6 +103,7 @@ export class ChatGateway
     return { status: 'Message sent and saved' };
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('getAllMessages')
   async GetAllMessages() 
   {
@@ -112,6 +115,7 @@ export class ChatGateway
   /**
   * Permet de creer une room
   */
+  @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
   async handleCreateRoom(@MessageBody() data: { name: string },
   @ConnectedSocket() client: Socket): Promise<RoomEntity> 
@@ -125,6 +129,7 @@ export class ChatGateway
   /**
   * Permet de supprimer une room
   */
+  @UseGuards(ChatGuard)
   @SubscribeMessage('deleteRoom')
   async handleDeleteRoom(@MessageBody() data: { roomId: number }, 
   @ConnectedSocket() client: Socket): Promise<void> 
@@ -139,7 +144,7 @@ export class ChatGateway
   }
 
   /* NE FONCTIONNE PAS DU TOUT */
-
+  @UseGuards(ChatGuard)
   @SubscribeMessage('joinRoom')
   async handleJoinRoom(@MessageBody() data: { roomId: number },
   @ConnectedSocket() client: Socket): Promise<void> 
@@ -157,6 +162,7 @@ export class ChatGateway
       }
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('newMessageInRoom')
   async handleNewMessageRoom(@MessageBody() data: CreateMessageDto, @ConnectedSocket() client: Socket): Promise<void> {
     const newMessage = await this.chatService.createMessage(data);
@@ -164,6 +170,7 @@ export class ChatGateway
     //this.server.to(data.room.name).emit('newMessageInRoom', newMessage); // Émet le message à une salle spécifique
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('leaveRoom')
   async handleLeaveRoom(@MessageBody() data: { roomId: number }, @ConnectedSocket() client: Socket): Promise<void> {
     const room = await this.roomService.getRoomById(data.roomId);
