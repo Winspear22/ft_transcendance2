@@ -145,6 +145,21 @@ export class ChatGateway
   /**
   * Permet de supprimer une room
   */
+  /*@UseGuards(ChatGuard)
+  @SubscribeMessage('deleteRoom')
+  async handleDeleteRoom(@MessageBody() data: { roomId: number }, 
+  @ConnectedSocket() client: Socket): Promise<void> 
+  {
+    const room = await this.roomService.getRoomById(data.roomId);
+    console.log("Dans le Room");
+    if (room)
+    {
+      client.leave(room.name);
+      this.server.to(room.name).emit('roomDeleted', data.roomId); // Informer tous les membres de la salle
+      await this.roomService.deleteRoom(data.roomId);
+    }
+  }*/
+
   @UseGuards(ChatGuard)
   @SubscribeMessage('deleteRoom')
   async handleDeleteRoom(@MessageBody() data: { roomId: number }, 
@@ -154,11 +169,28 @@ export class ChatGateway
     console.log("Dans le Room");
     if (room)
     {
+      console.log(client.id);
+    // Vérifiez s'il y a des clients dans cette salle
+      const toto = this.server.sockets.adapter;
+      console.log("Client number = ", toto);
+      /*const clientsInRoom = this.server.sockets.adapter.rooms.get(room.name);
+      console.log("Client number = ", clientsInRoom);
+      const numberOfClientsInRoom = clientsInRoom ? clientsInRoom.size : 0;
 
-      this.server.to(room.name).emit('roomDeleted', data.roomId); // Informer tous les membres de la salle
-      await this.roomService.deleteRoom(data.roomId);
+      if (numberOfClientsInRoom === 0) 
+      {
+        client.leave(room.name);
+        this.server.to(room.name).emit('roomDeleted', data.roomId); // Informer tous les membres de la salle
+        await this.roomService.deleteRoom(data.roomId);
+      }
+      else
+      {
+        console.log(`Il y a encore ${numberOfClientsInRoom} membres dans la salle ${room.name}.`);
+      // Vous pouvez également renvoyer un message au client pour l'informer que la salle ne peut pas être supprimée tant qu'il y a des membres à l'intérieur.
+      }*/
     }
-  }
+}
+
 
   /* NE FONCTIONNE PAS DU TOUT */
   @UseGuards(ChatGuard)

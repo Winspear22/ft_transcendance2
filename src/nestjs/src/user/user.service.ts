@@ -61,6 +61,42 @@ export class UserService {
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
     return newUser;
   }
+
+  async createUser2(userDet: any): Promise<UserEntity> {
+    const newUser = this.usersRepository.create({
+      username: userDet.login,
+      email: userDet.email,
+      profile_picture: userDet?.picture,
+      isTwoFactorAuthenticationEnabled: false,
+      user_status: 'Online',
+      //id42: userDet.providerId,
+      //provider: userDet.provider,
+    });
+    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------USER2 CREATED---------------", colors.RESET);
+    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
+    this.DisplayUserIdentity(newUser);
+    await this.usersRepository.save(newUser);
+    //On ecrit l'id apres le save car c'est la fonction save qui attribut l'id.
+    console.log(colors.GREEN + colors.BRIGHT, 'My User simple ID === ', colors.WHITE + colors.BRIGHT + newUser.id);
+    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
+    return newUser;
+  }
+
+  generateRandomPseudo(): string {
+    const prefixes = [
+        'Super', 'Mega', 'Ultra', 'Hyper', 'Alpha', 'Omega', 'Ninja', 'Pirate', 'Ghost', 'Laser'
+    ];
+
+    const suffixes = [
+        'Tiger', 'Phoenix', 'Dragon', 'Warrior', 'Knight', 'Shadow', 'Light', 'Hunter', 'Bear', 'Lion'
+    ];
+
+    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+
+    return `${randomPrefix}${randomSuffix}`;
+}
   /*=====================================================================*/
   /*-----------------------------2FA METHODES----------------------------*/
   /*=====================================================================*/

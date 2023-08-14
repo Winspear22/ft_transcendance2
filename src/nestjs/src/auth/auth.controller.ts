@@ -57,6 +57,37 @@ export class AuthController {
     const username = req.user['username'];
     await this.userService.CreateCookiesForNewUser(res, username);
   }
+
+  @Public()
+  @Get('login/guest')
+  //@UseGuards(FtOauthGuard)
+  async redirect2(@Res({ passthrough: true }) res: Response, @Req() req: ExpressRequest) 
+  {
+  
+    console.log("JE SUIS LA");
+    const c_user = { 
+      //provider: "42",
+      //providerId: '8542',
+      login: this.userService.generateRandomPseudo(),
+      email: "",
+      //picture: "lololo",
+      //login
+      //username: "toto",
+    }
+    const user = await this.userService.findUserByUsername(c_user['login']);
+    if (!user) {
+      const rand = Math.random().toString(16).substr(2, 5);
+
+      c_user['login'] = c_user['login'] + rand;
+    }
+    c_user['email'] = c_user['login'] + "@guest.com"
+    const username = await this.userService.createUser2(c_user);
+    this.authService.WriteCommandsNames("GUEST CALLBACK");
+    //const user = await this.userService.findUserByUsername(req.user['username']);
+    //this.userService.DisplayUserIdentity(user);
+    //const username = req.user['username'];
+    await this.userService.CreateCookiesForNewUser(res, username.username);
+  }
   /*==========================================================================*/
 
   /*==========================================================================*/
