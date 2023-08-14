@@ -4,7 +4,8 @@ import {
     Column,
     ManyToMany,
     JoinTable,
-    OneToMany
+    OneToMany,
+    ManyToOne
   } from 'typeorm';
 import { UserEntity } from '../../user/user.entity';
 import { MessageEntity } from './message.entity';
@@ -16,6 +17,12 @@ export class RoomEntity {
 
     @Column({ type: 'text', unique: true })
     name: string;
+
+    @ManyToOne(() => UserEntity)
+    roomCreator: UserEntity;
+
+    @ManyToOne(() => UserEntity)
+    roomCurrentAdmin: UserEntity;
 
     @ManyToMany(() => UserEntity, user => user.rooms)
     @JoinTable() // Ceci crée automatiquement une table de jointure

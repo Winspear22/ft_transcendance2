@@ -15,7 +15,6 @@ import { UseGuards } from '@nestjs/common';
 import { ChatGuard } from './guard/chat-guard.guard';
 
 
-
 @WebSocketGateway({cors: true, namespace: 'chats'})
 export class ChatGateway 
 {
@@ -39,59 +38,20 @@ export class ChatGateway
     this.server.emit('message', msg);
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
-
-    const accessTokenCookie = client.handshake.headers.cookie;
-    console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
-
-    if (!accessTokenCookie) 
+    const user = await this.chatService.getUserFromSocket(client);
+    if (user == undefined)
     {
-        console.log('Access Token Cookie is missing.');
-        return this.handleDisconnect(client);
-    }
-   
-    const userData = this.chatAuthService.extractAccessTokenFromCookie(accessTokenCookie);
-    if (!userData)
+      console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
       return this.handleDisconnect(client);
-    const { username, refreshToken, accessToken } = userData;
+    }
+    console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     
-    if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
-      console.log('Token is blacklisted.');
-      return this.handleDisconnect(client);
-    }
-   
-    const decodedPayload = this.chatAuthService.decodeAccessToken(accessToken);
-    if (!decodedPayload) {
-      console.log('Token is invalid or malformed.');
-      return this.handleDisconnect(client);
-    }
-    
-    if (this.chatAuthService.hasTokenExpired(decodedPayload.exp)) {
-      console.log('Token has expired.');
-      return this.handleDisconnect(client);
-    }
-    
-    const payload = await this.chatAuthService.verifyToken(accessToken, process.env.ACCESS_TOKEN);
-    if (!payload) {
-      return this.handleDisconnect(client);
-    }
-
-   
-    const user = await this.userService.findUserByUsername(username);
-    client.data.user = user;
-    
-    if (user)
-    {
-      this.ref_client.set(client.id, user.id);
-      console.log("User connected : ", user.username, this.ref_client);
-    } 
-    else
-    {
-      console.log('User does not exist');
-      return this.handleDisconnect(client);
-    }
+    this.ref_client.set(client.id, user.id);
+    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
   }
 
   handleDisconnect(client: Socket)
@@ -129,15 +89,15 @@ export class ChatGateway
   @ConnectedSocket() client: Socket): Promise<RoomEntity | undefined> 
   {
     const roomName = await this.roomService.getRoomByName(data.name);
-    console.log(roomName);
+    //console.log(roomName);
     if (roomName == undefined)
     {
       const room = await this.roomService.createRoom(data.name, [client.data.user]);
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
       client.join(room.name);
-      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
+      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN", colors.WHITE, client.rooms);
       console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.name, colors.BLUE, " a ete creee avec succes." + colors.RESET);
-      const message = "La room ${room.name} a ete creee avec succes !";
+      const message = "La room " + room.name + " a ete creee avec succes !";
       this.server.emit("RoomCreationSuccess", message);
       return room;
     }
@@ -174,7 +134,6 @@ export class ChatGateway
   @ConnectedSocket() client: Socket): Promise<void> 
   {
     const room = await this.roomService.getRoomById(data.roomId);
-    console.log("Dans le Room");
     if (room)
     {
       console.log(client.id);

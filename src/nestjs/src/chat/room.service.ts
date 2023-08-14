@@ -22,7 +22,7 @@ export class RoomService
         if (!room) {
             throw new Error('Room not found');
         }
-        console.log(colors.BRIGHT, colors.BLUE, "getAllMembersFromRoom : ", colors.WHITE, room, colors.RESET)
+        //console.log(colors.BRIGHT, colors.BLUE, "getAllMembersFromRoom : ", colors.WHITE, room, colors.RESET)
         return room.members;
     }
 
