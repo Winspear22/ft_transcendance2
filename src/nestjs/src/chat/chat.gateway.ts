@@ -14,6 +14,8 @@ import { RoomEntity } from './entities/room.entity';
 import { UseGuards } from '@nestjs/common';
 import { ChatGuard } from './guard/chat-guard.guard';
 
+
+
 @WebSocketGateway({cors: true, namespace: 'chats'})
 export class ChatGateway 
 {
@@ -22,6 +24,10 @@ export class ChatGateway
     private readonly chatAuthService: ChatAuthService,
     private readonly roomService: RoomService
     ) {}
+  
+  private ref_client = new Map<string, number>()
+
+
 
   @WebSocketServer()
   server: Server;
@@ -77,8 +83,10 @@ export class ChatGateway
     client.data.user = user;
     
     if (user)
-      console.log("User connected : ", user.username);
-      
+    {
+      this.ref_client.set(client.id, user.id);
+      console.log("User connected : ", user.username, this.ref_client);
+    } 
     else
     {
       console.log('User does not exist');
@@ -211,6 +219,10 @@ export class ChatGateway
       }
   }
 
+  
+
+
+
   @UseGuards(ChatGuard)
   @SubscribeMessage('newMessageInRoom')
   async handleNewMessageRoom(@MessageBody() data: CreateMessageDto, @ConnectedSocket() client: Socket): Promise<void> {
@@ -218,6 +230,14 @@ export class ChatGateway
     //console.log(data);
     //this.server.to(data.room.name).emit('newMessageInRoom', newMessage); // Émet le message à une salle spécifique
   }
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('who')
+  async whoisinroom(@MessageBody() data: { roomId: number }, @ConnectedSocket() client: Socket) 
+  {
+    const room = await this.roomService.getAllMembersFromRoom(data.roomId);
+    console.log(room);
+  }
+
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('leaveRoom')
