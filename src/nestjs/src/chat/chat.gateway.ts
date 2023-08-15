@@ -97,36 +97,23 @@ export class ChatGateway
       client.join(room.name);
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN", colors.WHITE, client.rooms);
       console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.name, colors.BLUE, " a ete creee avec succes." + colors.RESET);
+      room.roomCreator = client.data.user;
+      room.roomCurrentAdmin = client.data.user;
+      await this.roomService.addUserToRoom(room.id, client.data.user);
       const message = "La room " + room.name + " a ete creee avec succes !";
+      this.chatService.setUserAdminStatusON(client, room.id);
+      this.chatService.setUserCreatorStatusON(client, room.id);
       this.server.emit("RoomCreationSuccess", message);
       return room;
     }
     else
     {
       console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.name, colors.BLUE, " n'a pas pu etre creee car elle existe deja." + colors.RESET)
-      const message = "La room ${room.name} existe deja, par consequent elle n'a pas ete creee";
+      const message = "La room " + roomName.name + " existe deja, par consequent elle n'a pas ete creee";
       this.server.emit("RoomCreationError", message);
       return roomName;
     } 
   }
-
-  /**
-  * Permet de supprimer une room
-  */
-  /*@UseGuards(ChatGuard)
-  @SubscribeMessage('deleteRoom')
-  async handleDeleteRoom(@MessageBody() data: { roomId: number }, 
-  @ConnectedSocket() client: Socket): Promise<void> 
-  {
-    const room = await this.roomService.getRoomById(data.roomId);
-    console.log("Dans le Room");
-    if (room)
-    {
-      client.leave(room.name);
-      this.server.to(room.name).emit('roomDeleted', data.roomId); // Informer tous les membres de la salle
-      await this.roomService.deleteRoom(data.roomId);
-    }
-  }*/
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('deleteRoom')
@@ -136,25 +123,21 @@ export class ChatGateway
     const room = await this.roomService.getRoomById(data.roomId);
     if (room)
     {
-      console.log(client.id);
-    // Vérifiez s'il y a des clients dans cette salle
-      const toto = this.server.sockets.adapter;
-      console.log("Client number = ", toto);
-      /*const clientsInRoom = this.server.sockets.adapter.rooms.get(room.name);
-      console.log("Client number = ", clientsInRoom);
-      const numberOfClientsInRoom = clientsInRoom ? clientsInRoom.size : 0;
-
-      if (numberOfClientsInRoom === 0) 
-      {
-        client.leave(room.name);
-        this.server.to(room.name).emit('roomDeleted', data.roomId); // Informer tous les membres de la salle
-        await this.roomService.deleteRoom(data.roomId);
-      }
-      else
-      {
-        console.log(`Il y a encore ${numberOfClientsInRoom} membres dans la salle ${room.name}.`);
-      // Vous pouvez également renvoyer un message au client pour l'informer que la salle ne peut pas être supprimée tant qu'il y a des membres à l'intérieur.
-      }*/
+      /*NE PAS OUBLIER DE RAJOUTER LE IF Y'A QU'UN SEUL UTILISATEUR*/
+      client.leave(room.name);
+      await this.roomService.deleteUserFromRoom(data.roomId, client.data.user);
+      this.chatService.setUserAdminStatusOFF(client, room.id);
+      this.chatService.setUserCreatorStatusOFF(client, room.id);
+      await this.roomService.deleteRoom(data.roomId);
+      const message = "La room " + room.name + " a ete supprimee avec succes !";
+      console.log(message);
+      this.server.emit("RoomDeletionSuccess", message);
+    }
+    else
+    {
+      const message = "La room n'existe pas.";
+      console.log(message);
+      this.server.emit("RoomDeletionError", message);
     }
 }
 
@@ -171,7 +154,6 @@ export class ChatGateway
         console.log("J'AI TROUVE LA ROOM, il sagit de : ", room.id, room.name, room.members);
         console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
         client.join(room.name);
-
         await this.roomService.addUserToRoom(room.id, client.data.user);
         this.server.to(room.name).emit('userJoinedRoom', { roomId: data.roomId, username: client.data.user.username });
         console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN ", colors.WHITE, client.rooms);

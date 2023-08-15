@@ -11,7 +11,8 @@ import { UserEntity } from '../../user/user.entity';
 import { MessageEntity } from './message.entity';
 
 @Entity('room')
-export class RoomEntity {
+export class RoomEntity 
+{
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -24,7 +25,7 @@ export class RoomEntity {
     @ManyToOne(() => UserEntity)
     roomCurrentAdmin: UserEntity;
 
-    @ManyToMany(() => UserEntity, user => user.rooms)
+    @ManyToMany(() => UserEntity, user => user.MemberofRooms)
     @JoinTable() // Ceci crée automatiquement une table de jointure
     members: UserEntity[];
 

@@ -26,14 +26,6 @@ export class RoomService
         return room.members;
     }
 
-    /*async getASpecificDataFromUserInRoom(dataWanted: string, roomId: number)
-    {
-        const allClientsFromRoom = this.getAllMembersFromRoom(roomId); 
-        const info = (await allClientsFromRoom).forEach(user => {
-            console.log("JE SUIS LE USER === ", user.username);
-          });;
-    }*/
-
     /**
      * Récupère un membre spécifique d'une room spécifiée par son ID.
      */
@@ -96,17 +88,11 @@ export class RoomService
     }
 
     async deleteUserFromRoom(roomId: number, user: UserEntity): Promise<void> {
-        // Trouver la salle par son ID et obtenir ses membres
         const room = await this.roomRepository.findOne({ where: { id: roomId }, relations: ['members'] });
-        
         if (!room) {
             throw new Error('Room not found');
         }
-    
-        // Filtrer les membres pour exclure l'utilisateur spécifié
         room.members = room.members.filter(member => member.id !== user.id);
-    
-        // Sauvegarder la salle mise à jour
         await this.roomRepository.save(room);
     }
 

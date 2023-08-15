@@ -75,5 +75,5 @@ export class UserEntity
   administratedRooms: RoomEntity[];
 
   @ManyToMany(() => RoomEntity, room => room.members)
-  rooms: RoomEntity[];
+  MemberofRooms: RoomEntity[];
 }

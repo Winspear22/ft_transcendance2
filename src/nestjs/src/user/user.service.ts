@@ -254,11 +254,11 @@ export class UserService {
       //res.redirect(url);
     }
   }
-
+  /*Ne PAS OUBLIER DE REMETTRE A LA VALUE D'AVANT POUR L'ACCESS TOKEN : 60 * 15 * 20*/
   async CreateAndSignTokens(id: string, username: string) 
   {
     const [new_access_token, new_refresh_token] = await Promise.all([
-      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN, expiresIn: 60 * 15 * 20 }),
+      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN, expiresIn: '365d' }),
       this.jwtService.signAsync({ sub: id, username }, { secret: process.env.REFRESH_TOKEN, expiresIn: 60 * 60 * 24 * 7})]);
     return {access_token: new_access_token, refresh_token: new_refresh_token};
   }
