@@ -17,8 +17,8 @@ export class RoomService
     /**
      * Récupère tous les membres d'une room spécifiée par son ID.
      */
-    async getAllMembersFromRoom(roomId: number): Promise<UserEntity[]> {
-        const room = await this.roomRepository.findOne({ where: { id: roomId }, relations: ['members'] });
+    async getAllMembersFromRoom(roomName: string): Promise<UserEntity[]> {
+        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
         if (!room) {
             throw new Error('Room not found');
         }
@@ -29,8 +29,8 @@ export class RoomService
     /**
      * Récupère un membre spécifique d'une room spécifiée par son ID.
      */
-    async getSpecificMemberOfRoom(roomId: number, memberId: number): Promise<UserEntity | undefined> {
-        const room = await this.roomRepository.findOne({ where: { id: roomId }, relations: ['members'] });
+    async getSpecificMemberOfRoom(roomName: string, memberId: number): Promise<UserEntity | undefined> {
+        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
         if (!room) {
             throw new Error('Room not found');
         }
@@ -41,8 +41,8 @@ export class RoomService
     /**
      * Récupère tous les messages écrits dans une room spécifiée par son ID.
      */
-    async getMessagesOfRoom(roomId: number): Promise<MessageEntity[]> {
-        const room = await this.roomRepository.findOne({ where: { id: roomId }, relations: ['messages'] });
+    async getMessagesOfRoom(roomName: string): Promise<MessageEntity[]> {
+        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['messages'] });
         if (!room) {
             throw new Error('Room not found');
         }

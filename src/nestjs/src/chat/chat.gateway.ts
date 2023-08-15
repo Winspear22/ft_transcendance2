@@ -123,7 +123,7 @@ export class ChatGateway
     const room = await this.roomService.getRoomByName(data.roomName);
     if (room)
     {
-      /*NE PAS OUBLIER DE RAJOUTER LE IF Y'A QU'UN SEUL UTILISATEUR*/
+
       client.leave(room.name);
       await this.roomService.deleteUserFromRoom(data.roomName, client.data.user);
       await this.chatService.setUserAdminStatusOFF(client, room.id);
@@ -188,10 +188,20 @@ export class ChatGateway
       console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms AVANT leave ", colors.WHITE, client.rooms);
     if (room) {
         console.log("J'AI TROUVE LA ROOM, il sagit de : ", room.id, room.name, room.members);
-        client.leave(room.name);
-        await this.roomService.deleteUserFromRoom(room.name, client.data.user);
-        this.server.to(room.name).emit('userLeftRoom', { roomId: data.roomName, username: client.data.user.username });
-        console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms APRES leave ", colors.WHITE, client.rooms);
+        const membersFromRoom = this.roomService.getAllMembersFromRoom(room.name);
+        if ((await membersFromRoom).length === 1)
+        {
+          console.log(colors.BRIGHT + colors.RED + "J'ai lance handleDeleteRoom" + colors.RESET);
+          await this.handleDeleteRoom(data, client);
+
+        }
+        else
+        {
+          client.leave(room.name);
+          await this.roomService.deleteUserFromRoom(room.name, client.data.user);
+          this.server.to(room.name).emit('userLeftRoom', { roomId: data.roomName, username: client.data.user.username });
+          console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms APRES leave ", colors.WHITE, client.rooms);
+        }
     }
   }
 }
