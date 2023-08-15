@@ -89,7 +89,6 @@ export class ChatGateway
   @ConnectedSocket() client: Socket): Promise<RoomEntity | undefined> 
   {
     const roomName = await this.roomService.getRoomByName(data.roomName);
-    //console.log(roomName);
     if (roomName == undefined)
     {
       const room = await this.roomService.createRoom(data.roomName, [client.data.user]);
@@ -123,7 +122,6 @@ export class ChatGateway
     const room = await this.roomService.getRoomByName(data.roomName);
     if (room)
     {
-
       client.leave(room.name);
       await this.roomService.deleteUserFromRoom(data.roomName, client.data.user);
       await this.chatService.setUserAdminStatusOFF(client, room.id);
@@ -135,7 +133,7 @@ export class ChatGateway
     }
     else
     {
-      const message = "La room n'existe pas.";
+      const message = "La room " + data.roomName + " n'existe pas.";
       console.log(message);
       this.server.emit("RoomDeletionError", message);
     }
@@ -148,16 +146,22 @@ export class ChatGateway
   async handleJoinRoom(@MessageBody() data: { roomName: string },
   @ConnectedSocket() client: Socket): Promise<void> 
   {
-      console.log(colors.BRIGHT + colors.GREEN + "JE SUIS DANS JOIN ROOM" + colors.RESET);
     const room = await this.roomService.getRoomByName(data.roomName); // Supposant que vous avez une méthode getRoomById
-    if (room) {
-        console.log("J'AI TROUVE LA ROOM, il sagit de : ", room.id, room.name, room.members);
-        console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
-        client.join(room.name);
-        await this.roomService.addUserToRoom(room.name, client.data.user);
-        this.server.to(room.name).emit('userJoinedRoom', { roomId: data.roomName, username: client.data.user.username });
-        console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN ", colors.WHITE, client.rooms);
-      }
+    if (room) 
+    {
+      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
+      client.join(room.name);
+      await this.roomService.addUserToRoom(room.name, client.data.user);
+      const message = "User " + client.data.user.username + " joined room " + room.name + " successfully.";
+      this.server.emit("userJoinedRoomSuccess", message);
+      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN ", colors.WHITE, client.rooms);
+    }
+    else
+    {
+      const message = "User " + client.data.user.username + "did not join room " + data.roomName + " because it does not exist.";
+      this.server.emit("userJoinedRoomError", message);
+      console.log(message);
+    }
   }
 
   
@@ -182,26 +186,37 @@ export class ChatGateway
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(@MessageBody() data: { roomName: string }, @ConnectedSocket() client: Socket): Promise<void> {
+  async handleLeaveRoom(@MessageBody() data: { roomName: string }, @ConnectedSocket() client: Socket): Promise<void> 
+  {
     const room = await this.roomService.getRoomByName(data.roomName);
-      console.log(colors.BRIGHT + colors.GREEN + "JE SUIS DANS LEAVE ROOM" + colors.RESET);
-      console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms AVANT leave ", colors.WHITE, client.rooms);
-    if (room) {
+    console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms AVANT leave ", colors.WHITE, client.rooms);
+    /*CAS OU LA ROOM EXISTE*/
+    if (room) 
+    {
         console.log("J'AI TROUVE LA ROOM, il sagit de : ", room.id, room.name, room.members);
         const membersFromRoom = this.roomService.getAllMembersFromRoom(room.name);
+        /* CAS OU L'UTILISATEUR EST LE DERNIER DANS LA ROOM */
         if ((await membersFromRoom).length === 1)
         {
           console.log(colors.BRIGHT + colors.RED + "J'ai lance handleDeleteRoom" + colors.RESET);
           await this.handleDeleteRoom(data, client);
-
         }
+        /* CAS OU L'UTILISATEUR N'EST PAS LE DERNIER DANS LA ROOM */
         else
         {
           client.leave(room.name);
           await this.roomService.deleteUserFromRoom(room.name, client.data.user);
-          this.server.to(room.name).emit('userLeftRoom', { roomId: data.roomName, username: client.data.user.username });
+          const message = "User " + client.data.user.username + " left room " + room.name;
+          this.server.emit("userLeftRoomSuccess", message);
           console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms APRES leave ", colors.WHITE, client.rooms);
         }
+    }
+    /* CAS OU LA ROOM N'EXISTE PAS*/
+    else
+    {
+      const message = "User " + client.data.user.username + " could not leave " + data.roomName + " because it does not exist.";
+      this.server.emit("userLeftRoomError", message);
+      console.log(message);
     }
   }
 }
