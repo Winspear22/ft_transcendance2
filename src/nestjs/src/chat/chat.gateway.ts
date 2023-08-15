@@ -85,30 +85,30 @@ export class ChatGateway
   */
   @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
-  async handleCreateRoom(@MessageBody() data: { name: string },
+  async handleCreateRoom(@MessageBody() data: { roomName: string },
   @ConnectedSocket() client: Socket): Promise<RoomEntity | undefined> 
   {
-    const roomName = await this.roomService.getRoomByName(data.name);
+    const roomName = await this.roomService.getRoomByName(data.roomName);
     //console.log(roomName);
     if (roomName == undefined)
     {
-      const room = await this.roomService.createRoom(data.name, [client.data.user]);
+      const room = await this.roomService.createRoom(data.roomName, [client.data.user]);
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
       client.join(room.name);
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN", colors.WHITE, client.rooms);
-      console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.name, colors.BLUE, " a ete creee avec succes." + colors.RESET);
+      console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.roomName, colors.BLUE, " a ete creee avec succes." + colors.RESET);
       room.roomCreator = client.data.user;
       room.roomCurrentAdmin = client.data.user;
-      await this.roomService.addUserToRoom(room.id, client.data.user);
+      await this.roomService.addUserToRoom(room.name, client.data.user);
       const message = "La room " + room.name + " a ete creee avec succes !";
-      this.chatService.setUserAdminStatusON(client, room.id);
-      this.chatService.setUserCreatorStatusON(client, room.id);
+      await this.chatService.setUserAdminStatusON(client, room.id);
+      await this.chatService.setUserCreatorStatusON(client, room.id);
       this.server.emit("RoomCreationSuccess", message);
       return room;
     }
     else
     {
-      console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.name, colors.BLUE, " n'a pas pu etre creee car elle existe deja." + colors.RESET)
+      console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.roomName, colors.BLUE, " n'a pas pu etre creee car elle existe deja." + colors.RESET)
       const message = "La room " + roomName.name + " existe deja, par consequent elle n'a pas ete creee";
       this.server.emit("RoomCreationError", message);
       return roomName;
@@ -117,18 +117,18 @@ export class ChatGateway
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('deleteRoom')
-  async handleDeleteRoom(@MessageBody() data: { roomId: number }, 
+  async handleDeleteRoom(@MessageBody() data: { roomName: string }, 
   @ConnectedSocket() client: Socket): Promise<void> 
   {
-    const room = await this.roomService.getRoomById(data.roomId);
+    const room = await this.roomService.getRoomByName(data.roomName);
     if (room)
     {
       /*NE PAS OUBLIER DE RAJOUTER LE IF Y'A QU'UN SEUL UTILISATEUR*/
       client.leave(room.name);
-      await this.roomService.deleteUserFromRoom(data.roomId, client.data.user);
-      this.chatService.setUserAdminStatusOFF(client, room.id);
-      this.chatService.setUserCreatorStatusOFF(client, room.id);
-      await this.roomService.deleteRoom(data.roomId);
+      await this.roomService.deleteUserFromRoom(data.roomName, client.data.user);
+      await this.chatService.setUserAdminStatusOFF(client, room.id);
+      await this.chatService.setUserCreatorStatusOFF(client, room.id);
+      await this.roomService.deleteRoom(data.roomName);
       const message = "La room " + room.name + " a ete supprimee avec succes !";
       console.log(message);
       this.server.emit("RoomDeletionSuccess", message);
@@ -145,17 +145,17 @@ export class ChatGateway
   /* NE FONCTIONNE PAS DU TOUT */
   @UseGuards(ChatGuard)
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(@MessageBody() data: { roomId: number },
+  async handleJoinRoom(@MessageBody() data: { roomName: string },
   @ConnectedSocket() client: Socket): Promise<void> 
   {
       console.log(colors.BRIGHT + colors.GREEN + "JE SUIS DANS JOIN ROOM" + colors.RESET);
-    const room = await this.roomService.getRoomById(data.roomId); // Supposant que vous avez une méthode getRoomById
+    const room = await this.roomService.getRoomByName(data.roomName); // Supposant que vous avez une méthode getRoomById
     if (room) {
         console.log("J'AI TROUVE LA ROOM, il sagit de : ", room.id, room.name, room.members);
         console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
         client.join(room.name);
-        await this.roomService.addUserToRoom(room.id, client.data.user);
-        this.server.to(room.name).emit('userJoinedRoom', { roomId: data.roomId, username: client.data.user.username });
+        await this.roomService.addUserToRoom(room.name, client.data.user);
+        this.server.to(room.name).emit('userJoinedRoom', { roomId: data.roomName, username: client.data.user.username });
         console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN ", colors.WHITE, client.rooms);
       }
   }
@@ -164,7 +164,7 @@ export class ChatGateway
 
 
 
-  @UseGuards(ChatGuard)
+  /*@UseGuards(ChatGuard)
   @SubscribeMessage('newMessageInRoom')
   async handleNewMessageRoom(@MessageBody() data: CreateMessageDto, @ConnectedSocket() client: Socket): Promise<void> {
     const newMessage = await this.chatService.createMessage(data);
@@ -177,20 +177,20 @@ export class ChatGateway
   {
     const room = await this.roomService.getAllMembersFromRoom(data.roomId);
     console.log(room);
-  }
+  }*/
 
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(@MessageBody() data: { roomId: number }, @ConnectedSocket() client: Socket): Promise<void> {
-    const room = await this.roomService.getRoomById(data.roomId);
+  async handleLeaveRoom(@MessageBody() data: { roomName: string }, @ConnectedSocket() client: Socket): Promise<void> {
+    const room = await this.roomService.getRoomByName(data.roomName);
       console.log(colors.BRIGHT + colors.GREEN + "JE SUIS DANS LEAVE ROOM" + colors.RESET);
       console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms AVANT leave ", colors.WHITE, client.rooms);
     if (room) {
         console.log("J'AI TROUVE LA ROOM, il sagit de : ", room.id, room.name, room.members);
         client.leave(room.name);
-        await this.roomService.deleteUserFromRoom(room.id, client.data.user);
-        this.server.to(room.name).emit('userLeftRoom', { roomId: data.roomId, username: client.data.user.username });
+        await this.roomService.deleteUserFromRoom(room.name, client.data.user);
+        this.server.to(room.name).emit('userLeftRoom', { roomId: data.roomName, username: client.data.user.username });
         console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms APRES leave ", colors.WHITE, client.rooms);
     }
   }

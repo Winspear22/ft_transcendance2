@@ -79,16 +79,16 @@ export class RoomService
     * Ajoute les utilisateurs a la room et sauvegarde qui est present dans la room
     */
 
-    async addUserToRoom(roomId: number, user: UserEntity): Promise<void> {
-        const room = await this.roomRepository.findOne({ where: { id: roomId }, relations: ['members'] });
+    async addUserToRoom(roomName: string, user: UserEntity): Promise<void> {
+        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
         if(!room.members.includes(user)) {
             room.members.push(user);
         }
         await this.roomRepository.save(room);
     }
 
-    async deleteUserFromRoom(roomId: number, user: UserEntity): Promise<void> {
-        const room = await this.roomRepository.findOne({ where: { id: roomId }, relations: ['members'] });
+    async deleteUserFromRoom(roomName: string, user: UserEntity): Promise<void> {
+        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
         if (!room) {
             throw new Error('Room not found');
         }
@@ -100,7 +100,7 @@ export class RoomService
     * Supprime la room
     */
 
-    async deleteRoom(roomId: number): Promise<void> {
-        await this.roomRepository.delete(roomId);
+    async deleteRoom(roomName: string): Promise<void> {
+        await this.roomRepository.delete(roomName);
     }
 }

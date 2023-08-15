@@ -254,6 +254,33 @@ export class UserService {
       //res.redirect(url);
     }
   }
+
+
+  async CreateCookiesForNewGuest(res: Response, username: string)
+  {
+    const User = this.findUserByUsername(username);
+    if ((await User).isTwoFactorAuthenticationEnabled === false)
+    {
+      const idAsString: string = (await User).id.toString();
+      const tokens = await this.CreateAndSignTokens(idAsString, (await User).username);
+
+      const saltRounds = 12;
+      const salt = await bcrypt.genSalt(saltRounds);
+      const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
+      this.FindAndUpdateUser((await User).username, { MyHashedRefreshToken: hashedRefreshToken });
+      console.log(colors.GREEN + colors.BRIGHT + "User hashed refresh token : " + colors.FG_WHITE + hashedRefreshToken + colors.RESET);
+      this.CreateNewAccessCookie(
+        {
+          username: (await User).username,
+          accessToken: tokens.access_token,
+          refreshToken: hashedRefreshToken,//tokens.refresh_token,
+          avatar: (await User).profile_picture
+        },
+        res,
+      );
+    }
+  }
+
   /*Ne PAS OUBLIER DE REMETTRE A LA VALUE D'AVANT POUR L'ACCESS TOKEN : 60 * 15 * 20*/
   async CreateAndSignTokens(id: string, username: string) 
   {
