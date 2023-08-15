@@ -149,6 +149,14 @@ export class ChatGateway
     const room = await this.roomService.getRoomByName(data.roomName); // Supposant que vous avez une méthode getRoomById
     if (room) 
     {
+      const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
+      console.log(colors.BRIGHT + colors.MAGENTA + " UTILISATEUR TROUVE DANS JOIN === " + colors.WHITE, user, colors.RESET);
+      if (user != undefined)
+      {
+        var message2 = "User " + client.data.user.username + " is already part of the room " + room.name + ".";
+        this.server.emit("userJoinedRoomSuccess", message2);
+        return ;
+      }
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
       client.join(room.name);
       await this.roomService.addUserToRoom(room.name, client.data.user);
@@ -193,8 +201,15 @@ export class ChatGateway
     /*CAS OU LA ROOM EXISTE*/
     if (room) 
     {
-        console.log("J'AI TROUVE LA ROOM, il sagit de : ", room.id, room.name, room.members);
-        const membersFromRoom = this.roomService.getAllMembersFromRoom(room.name);
+      const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
+      console.log(colors.BRIGHT + colors.YELLOW + " UTILISATEUR TROUVE DANS LEAVE === " + colors.WHITE, user, colors.RESET);
+      if (user == undefined)
+      {
+        var message2 = "User " + client.data.user.username + " is not part of the room " + room.name + ". He therefore cannot leave it.";
+        this.server.emit("userLeftRoomSuccess", message2);
+        return ;
+      }
+        const membersFromRoom = await this.roomService.getAllMembersFromRoom(room.name);
         /* CAS OU L'UTILISATEUR EST LE DERNIER DANS LA ROOM */
         if ((await membersFromRoom).length === 1)
         {

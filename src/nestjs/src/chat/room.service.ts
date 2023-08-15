@@ -34,7 +34,9 @@ export class RoomService
         if (!room) {
             throw new Error('Room not found');
         }
-        console.log(colors.BRIGHT, colors.BLUE, "getSpecificMemberOfRoom : ", colors.WHITE, room, colors.RESET)
+        const user = room.members.find(member => member.id === memberId);
+        console.log("J'ai trouve cet utilisateur === ", user);
+        //console.log(colors.BRIGHT, colors.BLUE, "getSpecificMemberOfRoom : ", colors.WHITE, room, colors.RESET)
         return room.members.find(member => member.id === memberId);
     }
 
