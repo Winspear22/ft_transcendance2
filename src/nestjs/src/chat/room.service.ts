@@ -101,6 +101,7 @@ export class RoomService
     */
 
     async deleteRoom(roomName: string): Promise<void> {
-        await this.roomRepository.delete(roomName);
+        const room = this.getRoomByName(roomName);
+        await this.roomRepository.delete((await room).id);
     }
 }
