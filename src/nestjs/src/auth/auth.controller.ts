@@ -146,8 +146,8 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @Post('refresh')
   @UseGuards(JwtAuthGuard)
+  @Post('refresh')
   async CreateNewRefreshToken(@Req() req: ExpressRequest)
   {
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
@@ -176,9 +176,8 @@ export class AuthController {
 
 
   @Public()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Post('generate')
-  //@UseGuards(JwtAuthGuard)
   async register(@Res() response: Response, @Req() request: ExpressRequest) {
     const userId = request.body.id;
     console.log("USERID ====", userId);
@@ -187,14 +186,13 @@ export class AuthController {
     const result = await this.authService.generateTwoFactorAuthenticationSecret(
       user,
     );
-    console.log(result);
+    //console.log(result);
     return response.json(result);
   }
 
   @Public()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Post('turn-on')
-  //@UseGuards(JwtAuthGuard)
   async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
     this.authService.WriteCommandsNames("ACTIVATE 2FA");
     console.log("BODY ==== ", body);
@@ -219,10 +217,9 @@ export class AuthController {
   }
 
   @Public()
-  @Post('authenticate')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('jwt'))
-  //@UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
+  @Post('authenticate')
   async authenticate(@Req() request, @Body() body, @Res({ passthrough: true }) res: Response) {
     let payload = null;
     this.authService.WriteCommandsNames("AUTHENTICATE");
@@ -251,16 +248,16 @@ export class AuthController {
   }
 
   @Public()
-  @Post('deactivate')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
+  @Post('deactivate')
   async Deactivate2FA(@Body() body, @Res() res: Response ) 
   {
     this.authService.WriteCommandsNames("DEACTIVATE 2FA");
     const response = await this.userService.Deactivate2FA(body.username);
     res.status(200).json(response);
   }
-
+  /* A SUPPRIMER AVANT LE PUSH FINAL*/
   @Delete('deleteallusers')
   @UseGuards(JwtAuthGuard)
   async deleteAllUsers(@Res() res: Response) {

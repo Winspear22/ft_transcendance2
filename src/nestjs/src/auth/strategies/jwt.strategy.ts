@@ -16,12 +16,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt')
             secretOrKey: process.env.ACCESS_TOKEN,
             jwtFromRequest: ExtractJwt.fromExtractors([
               (request: Request) => {
-                  console.log("JE SUIS ICI");
-                  const cookie = request.cookies['PongAccessAndRefreshCookie'];
-                  console.log("cookie ==== ", cookie);
                   const cookieData = JSON.parse(request?.cookies["PongAccessAndRefreshCookie"] || '{}');
-                  console.log("cookieDATA == ", cookieData);
-                  console.log("ACCESS TOKEN == ", cookieData.accessToken);
                   return cookieData.accessToken;
               }
           ]),
@@ -30,7 +25,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt')
 
     async validate(payload: JwtPayload): Promise<UserEntity> 
     {
-        console.log("JE SUIS DANS LE GUARD");
         const user = await this.userService.findUserByUsername(payload.username);
         if (!user) {
             throw new UnauthorizedException();
