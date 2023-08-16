@@ -17,11 +17,9 @@ import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 import { FtOauthGuard } from './guard/ft-oauth.guard';
 import * as colors from '../colors';
-import { decode } from 'jsonwebtoken';
-import { JwtPayload } from './interface/jwtpayload.interface';
 import { JwtAuthGuard } from './guard/jwt-guard.guard';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { AuthGuard } from '@nestjs/passport';
+import { UserEntity } from 'src/user/user.entity';
 
 export class TwoFactorAuthenticationCodeDto {
   @IsString()
@@ -89,39 +87,32 @@ export class AuthController {
   async logout(@Req() req: ExpressRequest, @Res() res: Response) 
   { 
     this.authService.WriteCommandsNames("REQUEST LOGOUT");
-    const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
-    if (accessTokenCookie) 
+    const user = req.user as UserEntity;
+    try 
     {
-      try 
-      {
-        const userData = JSON.parse(accessTokenCookie);
-        const { username } = userData;
-        const user = await this.userService.findUserByUsername(username);
-        await this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
-        await this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
-        await this.userService.DisplayUserIdentity(user);
-        console.log("Je suis ICI");
-        const partialUser = await this.userService.returnPartialUserInfo(username);
-        return res.status(HttpStatus.OK).json({ partialUser });
-      } 
-      catch (error) 
-      {
-        console.error(error);
-      }
+      await this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
+      await this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
+      await this.userService.DisplayUserIdentity(user);
+      const partialUser = await this.userService.returnPartialUserInfo(user.username);
+      //res.clearCookie('jwt');
+      return res.status(HttpStatus.OK).json({ partialUser });
+    } 
+    catch (error) 
+    {
+      console.error(error);
     }
   }
 
   @Public()
   @Get('check-auth')
   @UseGuards(JwtAuthGuard)
-  async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) {
+  async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) 
+  {
+    const user = req.user as UserEntity;
     const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
     if (accessTokenCookie) {
       try 
       {
-        const userData = JSON.parse(accessTokenCookie);
-        const { username } = userData;
-        const user = await this.userService.findUserByUsername(username);
         if (user)
           return res.json({ success: true, infoUser: user, cookie: accessTokenCookie});
       }

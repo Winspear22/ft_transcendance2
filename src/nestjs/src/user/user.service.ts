@@ -1,7 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException, HttpException, HttpStatus
+  NotFoundException, HttpException, HttpStatus, Res
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './user.entity';
@@ -14,6 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
+
 export class AuthDto {
   @IsString()
   @IsNotEmpty()
@@ -358,7 +359,6 @@ export class UserService {
         throw new HttpException('No user found', HttpStatus.FORBIDDEN);
       }
       if (user.profile_picture !== dto.avatar && dto.avatar !== '') {
-        //await this.userRepository.save(user);
         await this.usersRepository.save(user);
       }
 
@@ -413,7 +413,7 @@ export class UserService {
     const found = await this.blacklistedTokenRepository.findOneBy({ token });
     return !!found;
   }*/
-  
+
   async returnPartialUserInfo(username: string): Promise<Partial<UserEntity>>
   {
     const user = await this.findUserByUsername(username);
@@ -424,4 +424,10 @@ export class UserService {
     return (partialUser);
 
   }
+
+  async UpdateUser(user: UserEntity,
+    @Res({passthrough: true}) res: Response): Promise<void>
+    {
+      
+    }
 }
