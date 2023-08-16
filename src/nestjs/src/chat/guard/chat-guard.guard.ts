@@ -28,10 +28,10 @@ export class ChatGuard implements CanActivate {
             return false;
         const { username, refreshToken, accessToken } = userData;
         /*JE VERIFIE SI LE TOKEN EST BLACKLISTE*/
-        if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
+        /*if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
             console.log('Token is blacklisted.');
             return false;
-        }
+        }*/
         /*JE VERIFIE SI LE EST COMPLET*/
         const decodedPayload = this.chatAuthService.decodeAccessToken(accessToken);
         if (!decodedPayload) {

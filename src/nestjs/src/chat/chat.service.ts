@@ -56,10 +56,10 @@ export class ChatService {
             return undefined;
         const { username, refreshToken, accessToken } = userData;
     
-        if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
+        /*if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
             console.log('Token is blacklisted.');
             return undefined;
-        }
+        }*/
    
         const decodedPayload = this.chatAuthService.decodeAccessToken(accessToken);
         if (!decodedPayload) {

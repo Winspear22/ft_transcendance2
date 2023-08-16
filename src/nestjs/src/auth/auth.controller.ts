@@ -86,7 +86,7 @@ export class AuthController {
   @Public()
   @Post('Logout')
   @UseGuards(JwtAuthGuard)
-  async logout(@Req() req: ExpressRequest) 
+  async logout(@Req() req: ExpressRequest, @Res() res: Response) 
   { 
     this.authService.WriteCommandsNames("REQUEST LOGOUT");
     const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
@@ -96,18 +96,13 @@ export class AuthController {
       {
         const userData = JSON.parse(accessTokenCookie);
         const { username } = userData;
-        let user = await this.userService.findUserByUsername(username);
-        this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
-        this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
-        let user2 = await this.userService.findUserByUsername(username);
-        await this.userService.DisplayUserIdentity(user2);
-        const { accessToken } = userData;
-        console.log(colors.BLUE + "token dans LOGOUT ==== ", colors.WHITE, accessToken, colors.RESET );
-
-        const decodedToken: any = decode(accessToken) as JwtPayload;
-        console.log(accessToken);
-        const expiryDate = new Date(decodedToken.exp * 1000);
-        await this.userService.blacklistToken(accessToken, expiryDate);
+        const user = await this.userService.findUserByUsername(username);
+        await this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
+        await this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
+        await this.userService.DisplayUserIdentity(user);
+        console.log("Je suis ICI");
+        const partialUser = await this.userService.returnPartialUserInfo(username);
+        return res.status(HttpStatus.OK).json({ partialUser });
       } 
       catch (error) 
       {
@@ -146,8 +141,8 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @Post('refresh')
+  @UseGuards(JwtAuthGuard)
   async CreateNewRefreshToken(@Req() req: ExpressRequest)
   {
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
@@ -176,8 +171,8 @@ export class AuthController {
 
 
   @Public()
-  @UseGuards(JwtAuthGuard)
   @Post('generate')
+  @UseGuards(JwtAuthGuard)
   async register(@Res() response: Response, @Req() request: ExpressRequest) {
     const userId = request.body.id;
     console.log("USERID ====", userId);
@@ -191,8 +186,8 @@ export class AuthController {
   }
 
   @Public()
-  @UseGuards(JwtAuthGuard)
   @Post('turn-on')
+  @UseGuards(JwtAuthGuard)
   async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
     this.authService.WriteCommandsNames("ACTIVATE 2FA");
     console.log("BODY ==== ", body);
@@ -218,8 +213,8 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @Post('authenticate')
+  @UseGuards(JwtAuthGuard)
   async authenticate(@Req() request, @Body() body, @Res({ passthrough: true }) res: Response) {
     let payload = null;
     this.authService.WriteCommandsNames("AUTHENTICATE");
@@ -249,8 +244,8 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
   @Post('deactivate')
+  @UseGuards(JwtAuthGuard)
   async Deactivate2FA(@Body() body, @Res() res: Response ) 
   {
     this.authService.WriteCommandsNames("DEACTIVATE 2FA");
@@ -258,6 +253,7 @@ export class AuthController {
     res.status(200).json(response);
   }
   /* A SUPPRIMER AVANT LE PUSH FINAL*/
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('deleteallusers')
   @UseGuards(JwtAuthGuard)
   async deleteAllUsers(@Res() res: Response) {

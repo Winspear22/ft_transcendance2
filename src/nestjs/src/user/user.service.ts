@@ -400,17 +400,28 @@ export class UserService {
   }
 
 
-  async blacklistToken(token: string, expiryDate: Date): Promise<void> {
+  /*async blacklistToken(token: string, expiryDate: Date): Promise<void> {
     const blacklistedToken = new BlacklistedToken();
     blacklistedToken.token = token;
     blacklistedToken.expiryDate = expiryDate;
     await this.blacklistedTokenRepository.save(blacklistedToken);
-  }
+  }*/
 
-  async isTokenBlacklisted(token: string): Promise<boolean> 
+  /*async isTokenBlacklisted(token: string): Promise<boolean> 
   {
     console.log("token dans isblacklisted ==== ",  token);
     const found = await this.blacklistedTokenRepository.findOneBy({ token });
     return !!found;
+  }*/
+  
+  async returnPartialUserInfo(username: string): Promise<Partial<UserEntity>>
+  {
+    const user = await this.findUserByUsername(username);
+    if (!user)
+      throw new NotFoundException('No user found');
+    const { id42, provider, email, profile_picture, MyHashedRefreshToken, twoFactorAuthenticationSecret, isTwoFactorAuthenticationEnabled, ...partialUser } = user;
+
+    return (partialUser);
+
   }
 }
