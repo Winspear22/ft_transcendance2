@@ -19,8 +19,9 @@ import { FtOauthGuard } from './guard/ft-oauth.guard';
 import * as colors from '../colors';
 import { decode } from 'jsonwebtoken';
 import { JwtPayload } from './interface/jwtpayload.interface';
-
+import { JwtAuthGuard } from './guard/jwt-guard.guard';
 import { IsNotEmpty, IsString } from 'class-validator';
+import { AuthGuard } from '@nestjs/passport';
 
 export class TwoFactorAuthenticationCodeDto {
   @IsString()
@@ -84,6 +85,7 @@ export class AuthController {
   /*==========================================================================*/
   @Public()
   @Post('Logout')
+  @UseGuards(JwtAuthGuard)
   async logout(@Req() req: ExpressRequest) 
   { 
     this.authService.WriteCommandsNames("REQUEST LOGOUT");
@@ -106,17 +108,17 @@ export class AuthController {
         console.log(accessToken);
         const expiryDate = new Date(decodedToken.exp * 1000);
         await this.userService.blacklistToken(accessToken, expiryDate);
-
       } 
       catch (error) 
       {
         console.error(error);
       }
     }
-
   }
+
   @Public()
   @Get('check-auth')
+  @UseGuards(JwtAuthGuard)
   async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) {
     const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
     if (accessTokenCookie) {
@@ -144,8 +146,8 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  //@UseGuards(RtGuard) //A quoi sert le Guard
   @Post('refresh')
+  @UseGuards(JwtAuthGuard)
   async CreateNewRefreshToken(@Req() req: ExpressRequest)
   {
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
@@ -173,12 +175,12 @@ export class AuthController {
   /*==========================================================================*/
 
 
-
   @Public()
+  @UseGuards(AuthGuard('jwt'))
   @Post('generate')
-  //@UseGuards(JwtAuthenticationGuard)
+  //@UseGuards(JwtAuthGuard)
   async register(@Res() response: Response, @Req() request: ExpressRequest) {
-    const userId = request.body.userId;
+    const userId = request.body.id;
     console.log("USERID ====", userId);
     const user = await this.userService.findUserById(userId);
     console.log('COUCOU JE SUIS DANS GENERATE');
@@ -190,7 +192,9 @@ export class AuthController {
   }
 
   @Public()
+  @UseGuards(AuthGuard('jwt'))
   @Post('turn-on')
+  //@UseGuards(JwtAuthGuard)
   async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
     this.authService.WriteCommandsNames("ACTIVATE 2FA");
     console.log("BODY ==== ", body);
@@ -206,8 +210,10 @@ export class AuthController {
       await this.userService.turnOnTwoFactorAuthentication(
         body.username,
       );
+      /* RENVOYER LES DATAS DE L'UTILISATEUR*/
       res.status(200).json({ message: '2FA enabled' });
     } else {
+      /* RENVOYER LES DATAS DE L'UTILISATEUR*/
       res.status(401).json({ message: 'Invalid 2FA code' });
     }
   }
@@ -215,6 +221,8 @@ export class AuthController {
   @Public()
   @Post('authenticate')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('jwt'))
+  //@UseGuards(JwtAuthGuard)
   async authenticate(@Req() request, @Body() body, @Res({ passthrough: true }) res: Response) {
     let payload = null;
     this.authService.WriteCommandsNames("AUTHENTICATE");
@@ -245,6 +253,7 @@ export class AuthController {
   @Public()
   @Post('deactivate')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   async Deactivate2FA(@Body() body, @Res() res: Response ) 
   {
     this.authService.WriteCommandsNames("DEACTIVATE 2FA");
@@ -253,6 +262,7 @@ export class AuthController {
   }
 
   @Delete('deleteallusers')
+  @UseGuards(JwtAuthGuard)
   async deleteAllUsers(@Res() res: Response) {
     await this.userService.deleteAllUsers();
     res.status(200).json({ message: 'All the Users in the database were deleted.' });

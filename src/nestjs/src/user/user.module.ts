@@ -6,7 +6,7 @@ import { UserService } from './user.service';
 import { UsersRepository } from './user.repository';
 import { PassportModule, PassportStrategy } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtTwoFactorStrategy } from 'src/auth/strategies/jwt.strategy';
+import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 
 @Module({
@@ -21,9 +21,8 @@ import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtTwoFactorStrategy],
-  //exports: [JwtTwoFactorStrategy, PassportModule, UserService, JwtModule],
-  exports: [UserService, JwtTwoFactorStrategy, PassportModule, JwtModule, TypeOrmModule.forFeature([UserEntity, UsersRepository])],
+  providers: [UserService, JwtStrategy],
+  exports: [UserService, JwtStrategy, PassportModule, JwtModule, TypeOrmModule.forFeature([UserEntity, UsersRepository])],
 
 })
 export class UserModule {}
