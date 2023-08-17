@@ -14,6 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
+import { UpdateUserDto } from './dto/updateuser.dto';
 
 export class AuthDto {
   @IsString()
@@ -421,15 +422,63 @@ export class UserService {
     const user = await this.findUserByUsername(username);
     if (!user)
       throw new NotFoundException('No user found');
-    const { id42, provider, email, profile_picture, MyHashedRefreshToken, twoFactorAuthenticationSecret, ...partialUser } = user;
+    const { id42, provider, profile_picture, MyHashedRefreshToken, twoFactorAuthenticationSecret, ...partialUser } = user;
 
     return (partialUser);
 
   }
 
-  async UpdateUser(user: UserEntity,
-    @Res({passthrough: true}) res: Response): Promise<void>
+  async UpdateUserUsernameSettings(user: UserEntity,
+  @Res({passthrough: true}) res: Response,
+  newData: UpdateUserDto): Promise<void>
+  {
+    try
     {
-      
+      const { username } = newData;
+      if (username)
+      {
+        await this.FindAndUpdateUser((await user).username, { username: username });
+        user.username = username;
+      }
+      var userId = user.id.toString();
+      const tokens = await this.CreateAndSignTokens(userId, (await user).username);
+      const saltRounds = 12;
+      const salt = await bcrypt.genSalt(saltRounds);
+      const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
+      this.FindAndUpdateUser((await user).username, { MyHashedRefreshToken: hashedRefreshToken });
+      this.CreateNewAccessCookie(
+      {
+        username: (await user).username,
+        accessToken: tokens.access_token,
+        refreshToken: hashedRefreshToken,//tokens.refresh_token,
+        avatar: (await user).profile_picture
+      },
+      res,
+      );
     }
+    catch (error)
+    {
+      res.json({message: "Error. Could not change user data"})
+    }
+  }
+
+  async UpdateUserEmailSettings(user: UserEntity,
+  @Res({passthrough: true}) res: Response,
+  newData: UpdateUserDto): Promise<void>
+  {
+    try
+    {
+      const { email } = newData;
+      console.log(email);
+      if (email)
+      {
+        await this.FindAndUpdateUser((await user).username, { email: email });
+        user.email = email;
+      }
+    }
+    catch (error)
+    {
+      res.json({message: "Error. Could not change user data"})
+    }
+  }
 }

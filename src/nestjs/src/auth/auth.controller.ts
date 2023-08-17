@@ -148,7 +148,7 @@ export class AuthController {
     }
     catch (error) 
     {
-        console.error(error);
+      console.error(error);
     }
   }
   /*==========================================================================*/
