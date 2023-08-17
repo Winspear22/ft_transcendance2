@@ -1,7 +1,7 @@
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException, HttpException, HttpStatus, Res
+  NotFoundException, HttpException, HttpStatus, Res, UploadedFile
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './user.entity';
@@ -481,4 +481,33 @@ export class UserService {
       res.json({message: "Error. Could not change user data"})
     }
   }
+
+  deleteOldImage(image: string) {
+		let fs = require('fs');
+		let filePath = "../upload/image/" + image;
+		fs.stat(filePath, function (err, stats) {
+		console.log(stats);
+			if (err) {
+				return console.error(err);
+			}
+			fs.unlinkSync(filePath);
+		})
+	}
+
+  async saveImage(@UploadedFile() file, user: UserEntity): Promise<string> {
+		if (!file?.filename)
+			throw new ForbiddenException('Only image files are allowed !');
+
+		this.deleteOldImage(user.profile_picture);
+		user.profile_picture = file.filename;
+		try {
+			await this.FindAndUpdateUser(user.username, {profile_picture: user.profile_picture});
+		} catch (e) 
+    {
+			console.log(e);
+			throw e;
+		}
+		return file.filename;
+	}
+
 }

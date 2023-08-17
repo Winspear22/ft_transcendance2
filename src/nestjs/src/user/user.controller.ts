@@ -6,6 +6,7 @@ import { Controller, Req,
 	Body,
 	HttpStatus,
 	HttpCode,
+	UploadedFile
 	 } from "@nestjs/common"
 import { UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
@@ -56,4 +57,14 @@ export class UserController {
 			return ;
 		}
 	}
+
+	@Post('change/pp')
+	@UseGuards(JwtAuthGuard)
+	@HttpCode(HttpStatus.CREATED)
+	async ChangeProfilePicture(@UploadedFile() file,
+	user: UserEntity): Promise<string> 
+	{
+		return this.userService.saveImage(file, user);
+	}
+
 }
