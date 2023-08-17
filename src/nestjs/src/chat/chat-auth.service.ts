@@ -27,10 +27,10 @@ export class ChatAuthService {
         //const decodedCookie = decodeURIComponent(cookie); 
     }
 
-    async isTokenBlacklisted(token: string): Promise<boolean> 
+    /*async isTokenBlacklisted(token: string): Promise<boolean> 
     {
         return await this.userService.isTokenBlacklisted(token);
-    }
+    }*/
 
     decodeAccessToken(token: string): JwtPayload | null 
     {
