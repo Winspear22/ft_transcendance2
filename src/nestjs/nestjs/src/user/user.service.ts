@@ -503,9 +503,9 @@ export class UserService {
 			throw new ForbiddenException('Only image files are allowed !');
     const imagePath = `./uploads/` + file?.filename;
     console.log("imagePath = " + imagePath);
-    //console.log("imagePath via variable = " +  file?.filePath);
-		//this.deleteOldImage(user.profile_picture);
-		//user.profile_picture = imagePath;
+    console.log("imagePath via variable = " +  file?.filePath);
+		this.deleteOldImage(user.profile_picture);
+		user.profile_picture = imagePath;
 		try {
 			await this.FindAndUpdateUser(user.username, {profile_picture: imagePath});
 		} catch (e) 
