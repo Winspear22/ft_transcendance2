@@ -28,17 +28,7 @@ export default {
 </script>
 
 <style scoped>
-div {
-  /* ajouté pour centrer le contenu */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh; /* pour occuper toute la hauteur de la fenêtre de visualisation */
-}
-
 .login-btn {
-  padding: 0;
   border: none;
   cursor: pointer;
   font-size: 16px;

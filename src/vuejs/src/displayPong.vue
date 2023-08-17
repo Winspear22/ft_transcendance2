@@ -13,11 +13,7 @@
     margin-bottom: 0px;
   }
 
-  .PO {
-    color: #2fe8ee;
-  }
+  .PO { color: #2fe8ee; }
 
-  .NG {
-    color: #2459d5;
-  }
+  .NG { color: #2459d5; }
   </style>

@@ -104,16 +104,17 @@ export class AuthController {
     }
   }
 
+
   @Public()
   @Get('check-auth')
-  @UseGuards(JwtAuthGuard)
-  async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) 
-  {
-    const user = req.user as UserEntity;
+  async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) {
     const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
     if (accessTokenCookie) {
       try 
       {
+        const userData = JSON.parse(accessTokenCookie);
+        const { username } = userData;
+        const user = await this.userService.findUserByUsername(username);
         if (user)
           return res.json({ success: true, infoUser: user, cookie: accessTokenCookie});
       }
@@ -124,6 +125,21 @@ export class AuthController {
     }
     return res.json({ success: false });
   }
+
+  @Public() 
+  @Get('getUserInfo')
+  @UseGuards(JwtAuthGuard)
+  async getUserInfo(@Req() req: ExpressRequest, @Res() res: Response) {
+      try {
+          const user = req.user as UserEntity;
+          
+          return res.status(HttpStatus.OK).json({ success: true, user });
+      } catch (error) {
+          console.error(error);
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Error retrieving user info' });
+      }
+  }
+
 
   /*==========================================================================*/
   
