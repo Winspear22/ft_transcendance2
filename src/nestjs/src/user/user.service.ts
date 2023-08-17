@@ -132,14 +132,16 @@ export class UserService {
   async Deactivate2FA(username: string) {
     const user = await this.usersRepository.findOneBy({ username });
   
-    if (user && user.isTwoFactorAuthenticationEnabled) {
+    if (user && user.isTwoFactorAuthenticationEnabled) 
+    {
       await this.usersRepository.update(user.id, {
         isTwoFactorAuthenticationEnabled: false,
         twoFactorAuthenticationSecret: null,
       });
-      return { message: '2FA disabled' };
+      var partialUser = await this.returnPartialUserInfo(user.username);
+      return { message: '2FA disabled', partialUser };
     } else {
-      return { message: '2FA not disabled' };
+      return { message: '2FA not disabled', partialUser };
     }
   }
 
@@ -419,7 +421,7 @@ export class UserService {
     const user = await this.findUserByUsername(username);
     if (!user)
       throw new NotFoundException('No user found');
-    const { id42, provider, email, profile_picture, MyHashedRefreshToken, twoFactorAuthenticationSecret, isTwoFactorAuthenticationEnabled, ...partialUser } = user;
+    const { id42, provider, email, profile_picture, MyHashedRefreshToken, twoFactorAuthenticationSecret, ...partialUser } = user;
 
     return (partialUser);
 

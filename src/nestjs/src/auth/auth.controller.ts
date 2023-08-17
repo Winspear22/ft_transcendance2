@@ -94,7 +94,8 @@ export class AuthController {
       await this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
       await this.userService.DisplayUserIdentity(user);
       const partialUser = await this.userService.returnPartialUserInfo(user.username);
-      //res.clearCookie('jwt');
+      /* VERIFIER S'IL FAUT SUPPRIMER LE COOKIE OU NON*/
+      //res.clearCookie('PongAccessAndRefreshCookie');
       return res.status(HttpStatus.OK).json({ partialUser });
     } 
     catch (error) 
@@ -140,22 +141,14 @@ export class AuthController {
     console.log(colors.GREEN + colors.BRIGHT, "------------------REFRESH ROUTE--------------", colors.RESET);
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
-    const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
-    if (accessTokenCookie) 
+    const user = req.user as UserEntity;
+    try 
     {
-      try 
-      {
-        const userData = JSON.parse(accessTokenCookie);
-        const { username } = userData;
-        const user = await this.userService.findUserByUsername(username);
-        if (user)
-          req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pou
-        return this.userService.CreateNewRefreshTokens(user.username, user.MyHashedRefreshToken);
-      }
-      catch (error) 
-      {
-          console.error(error);
-      }
+      return this.userService.CreateNewRefreshTokens(user.username, user.MyHashedRefreshToken);
+    }
+    catch (error) 
+    {
+        console.error(error);
     }
   }
   /*==========================================================================*/
@@ -164,24 +157,26 @@ export class AuthController {
   @Public()
   @Post('generate')
   @UseGuards(JwtAuthGuard)
-  async register(@Res() response: Response, @Req() request: ExpressRequest) {
-    const userId = request.body.id;
+  async register(@Res() response: Response, @Req() req: ExpressRequest) 
+  {
+    const userId = req.body.id;
     console.log("USERID ====", userId);
     const user = await this.userService.findUserById(userId);
     console.log('COUCOU JE SUIS DANS GENERATE');
     const result = await this.authService.generateTwoFactorAuthenticationSecret(
       user,
     );
-    //console.log(result);
+    console.log(result);
     return response.json(result);
   }
 
   @Public()
   @Post('turn-on')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
+  async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) 
+  {
     this.authService.WriteCommandsNames("ACTIVATE 2FA");
-    console.log("BODY ==== ", body);
     const isCodeValid =
       await this.userService.isTwoFactorAuthenticationCodeValid(
         body.TfaCode,
@@ -189,22 +184,26 @@ export class AuthController {
       );
     console.log('TfaCode', body.TfaCode, 'username', body.username);
     console.log("Is the code entered valid ? = ", isCodeValid);
-    if (isCodeValid) {
-      console.log("user id : ", body.username);
-      await this.userService.turnOnTwoFactorAuthentication(
-        body.username,
-      );
+    if (isCodeValid) 
+    {
+      await this.userService.turnOnTwoFactorAuthentication(body.username,);
       /* RENVOYER LES DATAS DE L'UTILISATEUR*/
-      res.status(200).json({ message: '2FA enabled' });
-    } else {
+      var partialUser = await this.userService.returnPartialUserInfo(body.username);
+      console.log(partialUser);
+      res.status(200).json({ message: '2FA enabled', partialUser });
+    } 
+    else 
+    {
       /* RENVOYER LES DATAS DE L'UTILISATEUR*/
-      res.status(401).json({ message: 'Invalid 2FA code' });
+      var partialUser = await this.userService.returnPartialUserInfo(body.username);
+      console.log(partialUser);
+      res.status(401).json({ message: 'Invalid 2FA code', partialUser });
     }
   }
 
   @Public()
-  @HttpCode(HttpStatus.OK)
   @Post('authenticate')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   async authenticate(@Req() request, @Body() body, @Res({ passthrough: true }) res: Response) {
     let payload = null;
@@ -224,7 +223,6 @@ export class AuthController {
         console.log("validation OK", validation)
         payload = await	this.userService.loginWith2fa(body.username, res);
         console.log("Payload", payload)
-
         return payload;
       }
     }
@@ -234,19 +232,20 @@ export class AuthController {
   }
 
   @Public()
-  @HttpCode(HttpStatus.OK)
   @Post('deactivate')
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   async Deactivate2FA(@Body() body, @Res() res: Response ) 
   {
     this.authService.WriteCommandsNames("DEACTIVATE 2FA");
     const response = await this.userService.Deactivate2FA(body.username);
+    console.log(response);
     res.status(200).json(response);
   }
   /* A SUPPRIMER AVANT LE PUSH FINAL*/
-  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete('deleteallusers')
   @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAllUsers(@Res() res: Response) {
     await this.userService.deleteAllUsers();
     res.status(200).json({ message: 'All the Users in the database were deleted.' });
