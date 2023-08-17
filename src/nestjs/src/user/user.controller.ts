@@ -6,12 +6,15 @@ import { Controller, Req,
 	Body,
 	HttpStatus,
 	HttpCode,
-	UploadedFile
+	UploadedFile,
+	UseInterceptors
 	 } from "@nestjs/common"
 import { UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
 import { JwtAuthGuard } from "src/auth/guard/jwt-guard.guard";
 import { UpdateEmailDto, UpdateUserDto } from "./dto/updateuser.dto";
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ImageDto } from './dto/profile_picture.dto';
 
 @Controller('user')
 export class UserController {
@@ -60,11 +63,14 @@ export class UserController {
 
 	@Post('change/pp')
 	@UseGuards(JwtAuthGuard)
+	@UseInterceptors(FileInterceptor('file'))
 	@HttpCode(HttpStatus.CREATED)
 	async ChangeProfilePicture(@UploadedFile() file,
-	user: UserEntity): Promise<string> 
+	@Req() req: Request): Promise<ImageDto> 
 	{
-		return this.userService.saveImage(file, user);
+		console.log(file);
+		const user = req.user as UserEntity;
+		return this.userService.UploadAndSaveImage(file, user);
 	}
 
 }

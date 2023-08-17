@@ -9,7 +9,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 
-@Module({
+/*@Module({
   imports: [
     TypeOrmModule.forFeature([UserEntity, UsersRepository, BlacklistedToken]),  // Ajoutez BlacklistedTokenEntity ici
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -24,5 +24,28 @@ import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
   providers: [UserService, JwtStrategy],
   exports: [UserService, JwtStrategy, PassportModule, JwtModule, TypeOrmModule.forFeature([UserEntity, UsersRepository])],
 
+})
+export class UserModule {}*/
+
+import { MulterModule } from '@nestjs/platform-express';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([UserEntity, UsersRepository, BlacklistedToken]),  // Ajoutez BlacklistedTokenEntity ici
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.register({
+      secret: 'superSecret2021',
+      signOptions: {
+        expiresIn: 86400,
+      },
+    }),
+    // Configurez MulterModule pour définir le répertoire de destination des fichiers uploadés
+    MulterModule.register({
+      dest: './uploads',
+    }),
+  ],
+  controllers: [UserController],
+  providers: [UserService, JwtStrategy],
+  exports: [UserService, JwtStrategy, PassportModule, JwtModule, TypeOrmModule.forFeature([UserEntity, UsersRepository])],
 })
 export class UserModule {}

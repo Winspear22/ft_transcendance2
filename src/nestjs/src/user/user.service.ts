@@ -15,6 +15,7 @@ import * as bcrypt from 'bcryptjs';
 import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 import { UpdateEmailDto, UpdateUserDto } from './dto/updateuser.dto';
+import { ImageDto } from './dto/profile_picture.dto';
 
 export class AuthDto {
   @IsString()
@@ -482,32 +483,43 @@ export class UserService {
     }
   }
 
-  deleteOldImage(image: string) {
-		let fs = require('fs');
-		let filePath = "../upload/image/" + image;
-		fs.stat(filePath, function (err, stats) {
-		console.log(stats);
+  deleteOldImage(path: string) 
+  {
+		var fs = require('fs');
+  
+		fs.stat(path, function (err, stats) 
+    {
+		  console.log(stats);
 			if (err) {
 				return console.error(err);
 			}
-			fs.unlinkSync(filePath);
+			fs.unlinkSync(path);
 		})
 	}
 
-  async saveImage(@UploadedFile() file, user: UserEntity): Promise<string> {
-		if (!file?.filename)
-			throw new ForbiddenException('Only image files are allowed !');
-
+  async UploadAndSaveImage(@UploadedFile() file,
+    user: UserEntity): Promise<ImageDto> 
+  {	
+    console.log(file?.filename);
+    if (!file?.filename)
+			throw new ForbiddenException('Error. Only image files are allowed !');
+    if (user.profile_picture)
 		this.deleteOldImage(user.profile_picture);
-		user.profile_picture = file.filename;
-		try {
+		user.profile_picture = file.path;
+		try 
+    {
 			await this.FindAndUpdateUser(user.username, {profile_picture: user.profile_picture});
-		} catch (e) 
+		} 
+    catch (e) 
     {
 			console.log(e);
 			throw e;
 		}
-		return file.filename;
+    const image = {
+      filename: file.filename,
+      path: file.path
+    };		
+    return image;
 	}
 
 }
