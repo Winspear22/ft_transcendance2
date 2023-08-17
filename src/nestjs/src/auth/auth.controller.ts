@@ -68,6 +68,7 @@ export class AuthController {
   { 
     this.authService.WriteCommandsNames("REQUEST LOGOUT");
     const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
+    console.log(req.cookies);
     if (accessTokenCookie) 
     {
       try 
