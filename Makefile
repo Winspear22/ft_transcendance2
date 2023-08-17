@@ -1,20 +1,20 @@
 all: up
 up:
-	sudo docker-compose up --build
+	docker-compose up --build
 
 down:
-	sudo docker-compose down
+	docker-compose down
 
 rm:
-	sudo docker-compose rm
+	docker-compose rm
 
 rmi:
-	sudo docker-compose down --rmi all
+	docker-compose down --rmi all
 
 fclean:
 	sudo docker-compose -f docker-compose.yml down \
 	&& sudo docker system prune -a --force \
-	&& sudo rm -Rf /Users/administrateur/42/data/*
+	&& sudo rm -Rf /home/adnen/Bureau/volume_adaloui/*
 
 show:
 	sudo docker container ps -a
@@ -42,7 +42,7 @@ vuejs:
 retry:
 	make down
 	make volume_delete
-	sudo find /Users/administrateur/42/data -mindepth 1 -delete
+	sudo find /home/adnen/Bureau/volume_adaloui -mindepth 1 -delete
 	make fclean
 	make up
 inspect:
