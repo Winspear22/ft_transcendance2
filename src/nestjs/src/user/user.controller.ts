@@ -10,7 +10,7 @@ import { Controller, Req,
 import { UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
 import { JwtAuthGuard } from "src/auth/guard/jwt-guard.guard";
-import { UpdateUserDto } from "./dto/updateuser.dto";
+import { UpdateEmailDto, UpdateUserDto } from "./dto/updateuser.dto";
 
 @Controller('user')
 export class UserController {
@@ -41,13 +41,12 @@ export class UserController {
 	@Post('change/email')
 	@UseGuards(JwtAuthGuard)
 	@HttpCode(HttpStatus.CREATED)
-	async ChangeEmail(@Body() data: UpdateUserDto,
+	async ChangeEmail(@Body() data: UpdateEmailDto,
 	@Req() req: Request, @Res({passthrough: true}) res: Response)
 	{
 		try
 		{
 			const user = req.user as UserEntity;
-			console.log(user);
 			await this.userService.UpdateUserEmailSettings(user, res, data);
 			const partialUser = await this.userService.returnPartialUserInfo(user.username);
 			res.status(201).json({ message: 'Email successfully modified.', partialUser });

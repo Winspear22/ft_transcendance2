@@ -14,7 +14,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
-import { UpdateUserDto } from './dto/updateuser.dto';
+import { UpdateEmailDto, UpdateUserDto } from './dto/updateuser.dto';
 
 export class AuthDto {
   @IsString()
@@ -464,7 +464,7 @@ export class UserService {
 
   async UpdateUserEmailSettings(user: UserEntity,
   @Res({passthrough: true}) res: Response,
-  newData: UpdateUserDto): Promise<void>
+  newData: UpdateEmailDto): Promise<void>
   {
     try
     {
