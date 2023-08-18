@@ -503,8 +503,8 @@ export class UserService {
     console.log(file?.filename);
     if (!file?.filename)
 			throw new ForbiddenException('Error. Only image files are allowed !');
-    if (user.profile_picture)
-		this.deleteOldImage(user.profile_picture);
+    if (user.profile_picture.startsWith('uploads/'))
+        this.deleteOldImage(user.profile_picture);
 		user.profile_picture = file.path;
 		try 
     {

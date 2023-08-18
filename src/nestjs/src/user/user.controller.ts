@@ -15,6 +15,39 @@ import { JwtAuthGuard } from "src/auth/guard/jwt-guard.guard";
 import { UpdateEmailDto, UpdateUserDto } from "./dto/updateuser.dto";
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ImageDto } from './dto/profile_picture.dto';
+import path = require("path")
+import { diskStorage } from "multer";
+import { v4 as uuidv4 } from "uuid";
+
+type validMimeType =  'image/png' | 'image/jpg' | 'image/jpeg' | 'image/gif'
+
+const validMimeTypes: validMimeType [] = [
+	'image/png',
+	'image/jpg',
+	'image/jpeg',
+	'image/gif'
+]
+
+export const storage = {
+	storage: diskStorage({
+		destination: '/upload/image',
+		filename: (req, file, cb) => {
+			const filename: string = path.parse(file.originalname).name.replace(/\s/g, '') + uuidv4();
+			const extension: string = path.parse(file.originalname).ext;
+			cb(null, `${filename}${extension}`)
+		}
+	}),
+	fileFilter: (req, file, cb) => {
+		const allowedMimeTypes: validMimeType[] =  validMimeTypes;
+		allowedMimeTypes.includes(file.mimetype) ? cb(null, true) : cb(null, false);
+	},
+	limits: {
+		fileSize: 1000000
+    }
+}
+
+
+
 
 @Controller('user')
 export class UserController {
@@ -62,9 +95,10 @@ export class UserController {
 	}
 
 	@Post('change/pp')
-	@UseGuards(JwtAuthGuard)
-	@UseInterceptors(FileInterceptor('file'))
+	@UseInterceptors(FileInterceptor('file', storage))
+	//@UseInterceptors(FileInterceptor('file'))
 	@HttpCode(HttpStatus.CREATED)
+	@UseGuards(JwtAuthGuard)	
 	async ChangeProfilePicture(@UploadedFile() file,
 	@Req() req: Request): Promise<ImageDto> 
 	{

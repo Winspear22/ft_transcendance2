@@ -26,6 +26,7 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
     profile: Profile, // Profile is an object with all the user informations
     cb: VerifyCallback, // a callback function where we will pass the user object and use it later to register it in the database and sign the JWT
   ): Promise<any> {
+
     const userDet = {
       provider: profile.provider,
       providerId: profile.id,
@@ -34,9 +35,8 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
       picture: profile._json.image.link,
       login: profile._json.login,
     };
-    // console.log("je rentre ici 5,5 ??")
     let user = await this.userService.findUserByUsername(userDet.login);
-   if (user) 
+    if (user) 
     {
       user = await this.userService.FindAndUpdateUser(user.username, { user_status: 'Online' });
       return cb(null, user);
