@@ -35,7 +35,7 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
       picture: profile._json.image.link,
       login: profile._json.login,
     };
-    let user = await this.userService.findUserByUsername(userDet.login);
+    let user = await this.userService.findUserBy42Id(userDet.providerId);
     if (user) 
     {
       user = await this.userService.FindAndUpdateUser(user.username, { user_status: 'Online' });

@@ -165,6 +165,11 @@ export class UserService {
     return await this.usersRepository.findOneBy({ email });
   }
 
+  async findUserBy42Id(id42: number): Promise<UserEntity> {
+    return await this.usersRepository.findOneBy({ id42 });
+  }
+
+
   /*=====================================================================*/
   /*-----------------------------USER GETTERS----------------------------*/
   /*=====================================================================*/
