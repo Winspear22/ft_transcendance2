@@ -30,7 +30,7 @@ const validMimeTypes: validMimeType [] = [
 
 export const storage = {
 	storage: diskStorage({
-		destination: '/upload/image',
+		destination: './uploads/',
 		filename: (req, file, cb) => {
 			const filename: string = path.parse(file.originalname).name.replace(/\s/g, '') + uuidv4();
 			const extension: string = path.parse(file.originalname).ext;

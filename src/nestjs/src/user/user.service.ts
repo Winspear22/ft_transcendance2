@@ -464,7 +464,7 @@ export class UserService {
     }
     catch (error)
     {
-      res.json({message: "Error. Could not change user data"})
+      res.json({message: "Error. Could not change user username"})
     }
   }
 
@@ -484,7 +484,7 @@ export class UserService {
     }
     catch (error)
     {
-      res.json({message: "Error. Could not change user data"})
+      res.json({message: "Error. Could not change user email"})
     }
   }
 
