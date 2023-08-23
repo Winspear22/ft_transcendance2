@@ -106,5 +106,4 @@ export class UserController {
 		const user = req.user as UserEntity;
 		return this.userService.UploadAndSaveImage(file, user);
 	}
-
 }

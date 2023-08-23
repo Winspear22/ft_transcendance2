@@ -67,13 +67,14 @@ export class RoomService
     * Cree une room et l'ajoute a la base de donnees.
     */
 
-    async createRoom(name: string, members?: UserEntity[]): Promise<RoomEntity> {
+    async createRoom(name: string, creator: UserEntity, members?: UserEntity[]): Promise<RoomEntity> {
         const room = new RoomEntity();
         room.name = name;
+        room.roomCreator = creator;
+        room.roomCurrentAdmin = creator;
         if (members) {
             room.members = members;
         }
-        console.log(room);
         return await this.roomRepository.save(room);
     }
 
@@ -105,5 +106,18 @@ export class RoomService
     async deleteRoom(roomName: string): Promise<void> {
         const room = this.getRoomByName(roomName);
         await this.roomRepository.delete((await room).id);
+    }
+
+    async setNewAdminForRoom(roomName: string, newAdmin: UserEntity): Promise<RoomEntity> 
+    {
+        const room = await this.roomRepository.findOne({ where: { name: roomName } });
+    
+        if (!room) {
+            throw new Error('Room not found');
+        }
+    
+        room.roomCurrentAdmin = newAdmin;
+    
+        return await this.roomRepository.save(room);
     }
 }

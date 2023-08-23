@@ -52,6 +52,8 @@ export class ChatGateway
     
     this.ref_client.set(client.id, user.id);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
+    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
+
   }
 
   handleDisconnect(client: Socket)
@@ -91,7 +93,16 @@ export class ChatGateway
     const roomName = await this.roomService.getRoomByName(data.roomName);
     if (roomName == undefined)
     {
-      const room = await this.roomService.createRoom(data.roomName, [client.data.user]);
+      const roomNamePattern = /^[a-zA-Z0-9]{2,12}$/;
+      if (!roomNamePattern.test(data.roomName)) 
+      {
+        console.log(colors.BRIGHT + colors.RED + "Erreur: Le nom de la room n'est pas valide. Il doit être alphanumérique et avoir entre 2 et 12 caractères." + colors.RESET);
+        const errorMessage = "Le nom de la room n'est pas valide. Il doit être alphanumérique et avoir entre 2 et 12 caractères.";
+        this.server.emit("RoomCreationError", errorMessage);
+        return roomName;
+      }
+      //const room = await this.roomService.createRoom(data.roomName, [client.data.user]);
+      const room = await this.roomService.createRoom(data.roomName, client.data.user, [client.data.user]);
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
       client.join(room.name);
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN", colors.WHITE, client.rooms);
@@ -99,17 +110,17 @@ export class ChatGateway
       room.roomCreator = client.data.user;
       room.roomCurrentAdmin = client.data.user;
       await this.roomService.addUserToRoom(room.name, client.data.user);
-      const message = "La room " + room.name + " a ete creee avec succes !";
+      const errorMessage = "La room " + room.name + " a ete creee avec succes !";
       await this.chatService.setUserAdminStatusON(client, room.id);
       await this.chatService.setUserCreatorStatusON(client, room.id);
-      this.server.emit("RoomCreationSuccess", message);
+      this.server.emit("RoomCreationSuccess", errorMessage);
       return room;
     }
     else
     {
       console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.roomName, colors.BLUE, " n'a pas pu etre creee car elle existe deja." + colors.RESET)
-      const message = "La room " + roomName.name + " existe deja, par consequent elle n'a pas ete creee";
-      this.server.emit("RoomCreationError", message);
+      const errorMessage = "La room " + roomName.name + " existe deja, par consequent elle n'a pas ete creee";
+      this.server.emit("RoomCreationError", errorMessage);
       return roomName;
     } 
   }
