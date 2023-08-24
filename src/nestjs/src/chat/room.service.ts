@@ -29,6 +29,8 @@ export class RoomService
 
     async setPassword(password: string): Promise<string>
     {
+        if (password == null)
+            return (null);
         if (typeof password !== "string") 
         {
             console.log("Invalid password:", password);
@@ -75,8 +77,9 @@ export class RoomService
     */
 
     async createRoom(data: { roomName: string, 
-        password: string, publicRoom: boolean }, creator: UserEntity, 
-        members?: UserEntity[]): Promise<RoomEntity> {
+    password: string, publicRoom: boolean },
+    creator: UserEntity): Promise<RoomEntity> 
+    {
         const room = new RoomEntity();
         try
         {
@@ -91,8 +94,6 @@ export class RoomService
             room.publicRoom = data.publicRoom;
             room.roomCreator = creator;
             room.roomCurrentAdmin = creator;
-            //if (members)
-            //    room.members = members;
         }
         catch (error) 
         {
@@ -107,7 +108,7 @@ export class RoomService
     * Ajoute les utilisateurs a la room et sauvegarde qui est present dans la room
     */
 
-    async addUserToRoom(roomName: string, user: UserEntity): Promise<void> {
+    async addUserToRoominDb(roomName: string, user: UserEntity): Promise<void> {
         const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
         if(!room.members.includes(user)) {
             room.members.push(user);
@@ -115,7 +116,7 @@ export class RoomService
         await this.roomRepository.save(room);
     }
 
-    async deleteUserFromRoom(roomName: string, user: UserEntity): Promise<void> {
+    async deleteUserFromRoominDb(roomName: string, user: UserEntity): Promise<void> {
         const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
         if (!room) {
             throw new Error('Room not found');
