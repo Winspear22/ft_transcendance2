@@ -153,14 +153,17 @@ export class ChatGateway
     });
     if (room) 
     {
-      console.log(room);
+      console.log("Roome creator userneme === " + colors.FG_GREEN + room.roomCreator.username+ colors.RESET);
       if (room.roomCreator.id == client.data.user.id)
       {
-        room.password = await this.roomService.setPassword(data.password);
-        //await this.roomRepository.update(room.name, { password: room.password }); // Modification ici
-        await this.roomRepository.update(room.id, { password: room.password });
-        this.server.emit("changePasswordSuccess", "Password for room " + data.roomName + " changed.");
-
+        if (await this.roomService.verifyPassword(data.password, room.password) === true)
+          this.server.emit("changePasswordError", "Error, this is the same password.");
+        else
+        {
+          room.password = await this.roomService.setPassword(data.password);
+          await this.roomRepository.update(room.id, { password: room.password });
+          this.server.emit("changePasswordSuccess", "Password for room " + data.roomName + " changed.");  
+        }
       }
       else
         this.server.emit("changePasswordError", "Error, you are not the room owner.");
