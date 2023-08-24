@@ -5,6 +5,7 @@ import { RoomEntity } from './entities/room.entity';
 import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors';
 import * as bcrypt from 'bcryptjs';
+import { UserService } from 'src/user/user.service';
 
 
 @Injectable()
@@ -13,6 +14,10 @@ export class RoomService
     constructor(
         @InjectRepository(RoomEntity)
         private roomRepository: Repository<RoomEntity>,
+        @InjectRepository(UserEntity)
+        private usersRepository: Repository<UserEntity>,
+        private userService: UserService
+        
     ) {}
 
     /**
@@ -44,6 +49,21 @@ export class RoomService
 
     async verifyPassword(realPassword: string, hashedPassword: string): Promise<boolean> {
         return bcrypt.compare(realPassword, hashedPassword);
+    }
+
+    async setRoomCreator(name: string, id: number): Promise<UserEntity> {
+        const room = await this.getRoomByName(name);
+        if (!room) {
+            throw new Error(`Room with ID ${name} not found.`);
+        }
+    
+        const user = await this.userService.findUserById(id); // Supposant que vous avez un userRepository pour les utilisateurs
+        if (!user) {
+            throw new Error(`User with ID ${id} not found.`);
+        }
+        room.roomCreator = user;
+        await this.roomRepository.save(room);
+        return user;
     }
 
     /**
@@ -92,7 +112,7 @@ export class RoomService
                 room.password = null;
             room.name = data.roomName;
             room.publicRoom = data.publicRoom;
-            room.roomCreator = creator;
+            //room.roomCreator = await this.setRoomCreator(room.name, creator.id);
             room.roomCurrentAdmin = creator;
         }
         catch (error) 
@@ -100,7 +120,7 @@ export class RoomService
           console.error(error);
           return (null);
         }
-
+        console.log(room);
         return await this.roomRepository.save(room);
     }
 

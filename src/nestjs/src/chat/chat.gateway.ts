@@ -97,6 +97,7 @@ export class ChatGateway
     {
       const room = await this.roomService.createRoom(data, client.data.user);
       client.join(room.name);
+      room.roomCreator = await this.roomService.setRoomCreator(room.name, client.data.user.id);
       await this.roomService.addUserToRoominDb(room.name, client.data.user);
       this.server.emit("RoomCreationSuccess", "la room " + room.name + " a ete creee avec success !");
       return room;
@@ -145,14 +146,19 @@ export class ChatGateway
   async handleChangePassword(@MessageBody() data: { roomName: string, password: string },
   @ConnectedSocket() client: Socket): Promise<void> 
   {
-    const room = await this.roomService.getRoomByName(data.roomName); // Supposant que vous avez une méthode getRoomById
+    //const room = await this.roomService.getRoomByName(data.roomName);
+    const room = await this.roomRepository.findOne({
+      where: { name: data.roomName },
+      relations: ['roomCreator']
+    });
     if (room) 
     {
       console.log(room);
-      if (room.roomCreator == client.data.user)
+      if (room.roomCreator.id == client.data.user.id)
       {
         room.password = await this.roomService.setPassword(data.password);
-        await this.roomRepository.update(room.name, { password: room.password }); // Modification ici
+        //await this.roomRepository.update(room.name, { password: room.password }); // Modification ici
+        await this.roomRepository.update(room.id, { password: room.password });
         this.server.emit("changePasswordSuccess", "Password for room " + data.roomName + " changed.");
 
       }
