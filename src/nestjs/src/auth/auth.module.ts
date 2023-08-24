@@ -11,6 +11,7 @@ import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 import { MessageEntity } from 'src/chat/entities/message.entity';
 import { ChatModule } from 'src/chat/chat.module';
 import { RoomEntity } from 'src/chat/entities/room.entity';
+import { RoomEntity2 } from 'src/chat/entities/room2.entity';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { RoomEntity } from 'src/chat/entities/room.entity';
       username: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
-      entities: [UserEntity, BlacklistedToken, MessageEntity, RoomEntity],  // Ajoutez BlacklistedTokenEntity ici
+      entities: [UserEntity, BlacklistedToken, MessageEntity, RoomEntity, RoomEntity2],  // Ajoutez BlacklistedTokenEntity ici
       synchronize: true,
     }),
     UserModule,

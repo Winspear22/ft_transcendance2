@@ -11,6 +11,7 @@ import { ChatAuthService } from './chat-auth.service';
 import { UserService } from 'src/user/user.service';
 import { RoomService } from './room.service';
 import { RoomEntity } from './entities/room.entity';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class ChatService {
@@ -144,4 +145,14 @@ export class ChatService {
         console.log(colors.CYAN, "CreatedRooms size === ", user.createdRooms.length);
         console.log("Room created : ", + colors.MAGENTA, user.createdRooms);
     }
+
+    /*===============================ROOM DATA===============================*/
+    async setPassword(password: string): Promise<string>
+    {
+        const saltRounds = 12;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const hashedPaasword = await bcrypt.hash(password, salt);
+        return (hashedPaasword);
+    }
+    /*=======================================================================*/
 }
