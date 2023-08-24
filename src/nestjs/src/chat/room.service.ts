@@ -3,8 +3,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RoomEntity } from './entities/room.entity';
 import { UserEntity } from 'src/user/user.entity';
-import { MessageEntity } from './entities/message.entity';
 import * as colors from '../colors';
+import * as bcrypt from 'bcryptjs';
+
 
 @Injectable()
 export class RoomService 
@@ -26,6 +27,23 @@ export class RoomService
         return room.members;
     }
 
+    async setPassword(password: string): Promise<string>
+    {
+        if (typeof password !== "string") 
+        {
+            console.log("Invalid password:", password);
+            throw new Error("Password must be a string");
+        }
+        const saltRounds = 12;
+        const salt = await bcrypt.genSalt(saltRounds);
+        const hashedPaasword = await bcrypt.hash(password, salt);
+        return (hashedPaasword);
+    }
+
+    async verifyPassword(realPassword: string, hashedPassword: string): Promise<boolean> {
+        return bcrypt.compare(realPassword, hashedPassword);
+    }
+
     /**
      * Récupère un membre spécifique d'une room spécifiée par son ID.
      */
@@ -40,17 +58,6 @@ export class RoomService
         return room.members.find(member => member.id === memberId);
     }
 
-    /**
-     * Récupère tous les messages écrits dans une room spécifiée par son ID.
-     */
-    async getMessagesOfRoom(roomName: string): Promise<MessageEntity[]> {
-        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['messages'] });
-        if (!room) {
-            throw new Error('Room not found');
-        }
-        console.log(colors.BRIGHT, colors.BLUE, "getMessagesOfRoom : ", colors.WHITE, room, colors.RESET)
-        return room.messages;
-    }
 
     async getRoomById(roomId: number): Promise<RoomEntity> {
         return await this.roomRepository.findOneBy({ id: roomId });
@@ -67,14 +74,32 @@ export class RoomService
     * Cree une room et l'ajoute a la base de donnees.
     */
 
-    async createRoom(name: string, creator: UserEntity, members?: UserEntity[]): Promise<RoomEntity> {
+    async createRoom(data: { roomName: string, 
+        password: string, publicRoom: boolean }, creator: UserEntity, 
+        members?: UserEntity[]): Promise<RoomEntity> {
         const room = new RoomEntity();
-        room.name = name;
-        room.roomCreator = creator;
-        room.roomCurrentAdmin = creator;
-        if (members) {
-            room.members = members;
+        try
+        {
+            const roomNamePattern = /^[a-zA-Z0-9]{2,12}$/;
+            if (!roomNamePattern.test(data.roomName))
+                throw new Error('Error. Wrong room name. Use only alphanumeric characters with a length of 2-12 characters.');
+            if (data.password)
+                room.password = await this.setPassword(data.password);
+            else
+                room.password = null;
+            room.name = data.roomName;
+            room.publicRoom = data.publicRoom;
+            room.roomCreator = creator;
+            room.roomCurrentAdmin = creator;
+            //if (members)
+            //    room.members = members;
         }
+        catch (error) 
+        {
+          console.error(error);
+          return (null);
+        }
+
         return await this.roomRepository.save(room);
     }
 

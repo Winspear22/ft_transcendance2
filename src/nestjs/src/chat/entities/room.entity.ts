@@ -19,6 +19,12 @@ export class RoomEntity
     @Column({ type: 'text', unique: true })
     name: string;
 
+    @Column('boolean', {default: false})
+    publicRoom: boolean;
+  
+    @Column("text", {default: "", nullable: true})
+    password: string;
+
     @ManyToOne(() => UserEntity)
     roomCreator: UserEntity;
 

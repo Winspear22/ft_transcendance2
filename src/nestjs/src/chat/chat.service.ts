@@ -25,7 +25,7 @@ export class ChatService {
         @InjectRepository(RoomEntity)
         private roomRepository: Repository<RoomEntity>,
         @InjectRepository(UserEntity)
-        private usersRepository: Repository<UserEntity>
+        private usersRepository: Repository<UserEntity>,
     ) {}
 
     async createMessage(data: CreateMessageDto): Promise<MessageEntity> 
@@ -147,12 +147,6 @@ export class ChatService {
     }
 
     /*===============================ROOM DATA===============================*/
-    async setPassword(password: string): Promise<string>
-    {
-        const saltRounds = 12;
-        const salt = await bcrypt.genSalt(saltRounds);
-        const hashedPaasword = await bcrypt.hash(password, salt);
-        return (hashedPaasword);
-    }
+
     /*=======================================================================*/
 }

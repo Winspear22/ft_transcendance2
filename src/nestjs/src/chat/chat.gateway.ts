@@ -87,32 +87,21 @@ export class ChatGateway
   */
   @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
-  async handleCreateRoom(@MessageBody() data: { roomName: string },
+  async handleCreateRoom(@MessageBody() data: { roomName: string, 
+  password: string, publicRoom: boolean },
   @ConnectedSocket() client: Socket): Promise<RoomEntity | undefined> 
   {
     const roomName = await this.roomService.getRoomByName(data.roomName);
     if (roomName == undefined)
     {
-      const roomNamePattern = /^[a-zA-Z0-9]{2,12}$/;
-      if (!roomNamePattern.test(data.roomName)) 
-      {
-        console.log(colors.BRIGHT + colors.RED + "Erreur: Le nom de la room n'est pas valide. Il doit être alphanumérique et avoir entre 2 et 12 caractères." + colors.RESET);
-        const errorMessage = "Le nom de la room n'est pas valide. Il doit être alphanumérique et avoir entre 2 et 12 caractères.";
-        this.server.emit("RoomCreationError", errorMessage);
-        return roomName;
-      }
-      //const room = await this.roomService.createRoom(data.roomName, [client.data.user]);
-      const room = await this.roomService.createRoom(data.roomName, client.data.user, [client.data.user]);
-      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
+      const room = await this.roomService.createRoom(data, client.data.user, [client.data.user]);
       client.join(room.name);
       console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN", colors.WHITE, client.rooms);
       console.log(colors.BRIGHT + colors.BLUE + "La room : ", colors.WHITE, data.roomName, colors.BLUE, " a ete creee avec succes." + colors.RESET);
-      room.roomCreator = client.data.user;
-      room.roomCurrentAdmin = client.data.user;
       await this.roomService.addUserToRoom(room.name, client.data.user);
       const errorMessage = "La room " + room.name + " a ete creee avec succes !";
-      await this.chatService.setUserAdminStatusON(client, room.id);
-      await this.chatService.setUserCreatorStatusON(client, room.id);
+      //await this.chatService.setUserAdminStatusON(client, room.id);
+      //await this.chatService.setUserCreatorStatusON(client, room.id);
       this.server.emit("RoomCreationSuccess", errorMessage);
       return room;
     }
@@ -154,26 +143,51 @@ export class ChatGateway
   /* NE FONCTIONNE PAS DU TOUT */
   @UseGuards(ChatGuard)
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(@MessageBody() data: { roomName: string },
+  async handleJoinRoom(@MessageBody() data: { roomName: string, password: string },
   @ConnectedSocket() client: Socket): Promise<void> 
   {
     const room = await this.roomService.getRoomByName(data.roomName); // Supposant que vous avez une méthode getRoomById
     if (room) 
     {
-      const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
-      console.log(colors.BRIGHT + colors.MAGENTA + " UTILISATEUR TROUVE DANS JOIN === " + colors.WHITE, user, colors.RESET);
-      if (user != undefined)
+      if (room.password != null && await this.roomService.verifyPassword(data.password, room.password) === true)
       {
-        var message2 = "User " + client.data.user.username + " is already part of the room " + room.name + ".";
-        this.server.emit("userJoinedRoomSuccess", message2);
-        return ;
+        const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
+        console.log(colors.BRIGHT + colors.MAGENTA + " UTILISATEUR TROUVE DANS JOIN === " + colors.WHITE, user, colors.RESET);
+        if (user != undefined)
+        {
+          var message2 = "User " + client.data.user.username + " is already part of the room " + room.name + ".";
+          this.server.emit("userJoinedRoomSuccess", message2);
+          return ;
+        }
+        console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
+        client.join(room.name);
+        await this.roomService.addUserToRoom(room.name, client.data.user);
+        const message = "User " + client.data.user.username + " joined room " + room.name + " successfully.";
+        this.server.emit("userJoinedRoomSuccess", message);
+        console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN ", colors.WHITE, client.rooms);
       }
-      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
-      client.join(room.name);
-      await this.roomService.addUserToRoom(room.name, client.data.user);
-      const message = "User " + client.data.user.username + " joined room " + room.name + " successfully.";
-      this.server.emit("userJoinedRoomSuccess", message);
-      console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN ", colors.WHITE, client.rooms);
+      else if (room.password == null)
+      {
+        const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
+        console.log(colors.BRIGHT + colors.MAGENTA + " UTILISATEUR TROUVE DANS JOIN === " + colors.WHITE, user, colors.RESET);
+        if (user != undefined)
+        {
+          var message2 = "User " + client.data.user.username + " is already part of the room " + room.name + ".";
+          this.server.emit("userJoinedRoomSuccess", message2);
+          return ;
+        }
+        console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms AVANT JOIN", colors.WHITE, client.rooms);
+        client.join(room.name);
+        await this.roomService.addUserToRoom(room.name, client.data.user);
+        const message = "User " + client.data.user.username + " joined room " + room.name + " successfully.";
+        this.server.emit("userJoinedRoomSuccess", message);
+        console.log(colors.BRIGHT + colors.BLUE + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.BLUE, " fait parti des rooms APRES JOIN ", colors.WHITE, client.rooms);
+
+      }
+      else
+      {
+        this.server.emit("userJoinedWrongPassword", "Error, wrong password.");
+      }
     }
     else
     {

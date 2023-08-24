@@ -8,13 +8,10 @@ import { UserService } from 'src/user/user.service';
 import * as colors from '../colors';
 import { ChatService } from './chat.service';
 import { ChatAuthService } from './chat-auth.service';
-import { CreateMessageDto } from './dto/message.dto';
-import { RoomService } from './room.service';
-import { RoomEntity } from './entities/room.entity';
 import { UseGuards } from '@nestjs/common';
 import { ChatGuard } from './guard/chat-guard.guard';
 import { RoomEntity2 } from './entities/room2.entity';
-import { RoomDto } from './dto/room2.dto';
+import { RoomDto, RoomFromFrontDto } from './dto/room2.dto';
 import { RoomService2 } from './room2.service';
   
   
@@ -24,7 +21,7 @@ import { RoomService2 } from './room2.service';
     constructor(private userService: UserService,
       private readonly chatService: ChatService,
       private readonly chatAuthService: ChatAuthService,
-      private readonly roomService: RoomService2
+      private readonly room2Service: RoomService2
       ) {}
     
     private ref_client = new Map<string, number>()
@@ -44,7 +41,7 @@ import { RoomService2 } from './room2.service';
         return this.handleDisconnect(client);
       }
       console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
-      
+      client.data.user = user;
       this.ref_client.set(client.id, user.id);
       console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
       console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
@@ -70,21 +67,30 @@ import { RoomService2 } from './room2.service';
     }*/
 
     @UseGuards(ChatGuard)
-    @SubscribeMessage('createChannel')
-    async handleCreateRoom(client: Socket, room: RoomDto)
+    @SubscribeMessage('createRoom')
+    async handleCreateRoom(@ConnectedSocket() client: Socket, @MessageBody() data: RoomFromFrontDto)
     {
-      const roomName = await this.roomService.getRoomByName(room.name);
-      if (roomName == undefined)
+      const room = await this.room2Service.getRoomByName(data.roomName);
+      console.log("Je suis ici");
+      if (room == undefined)
       {
-        this.server.emit("RoomCreationError", "La room " + roomName.name + " existe deja, par consequent elle n'a pas ete creee");
-        return null;
+        //console.log(data.roomName);
+        //console.log(data.password);
+        //console.log(data.publicRoom);
+        const roomCreated = await this.room2Service.createRoom(client.data.user, data);
+        if (!roomCreated)
+        {
+          this.server.emit("RoomCreationError", "La room " + data.roomName + " n'a pas ete creee");
+          return false;
+        }
+        //await this.room2Service.getRoomByName(roomCreated.name);
+        this.server.emit("RoomCreationSuccess", "La room " + roomCreated.name + " a ete creee.");
+        return roomCreated;
       }
       else
       {
-        const roomCreated = await this.roomService.createRoom(client.data.user, room);
-        return roomCreated
-
-
+        this.server.emit("RoomCreationError", "La room " + data.roomName + " existe deja, par consequent elle n'a pas ete creee");
+        return null;
       }
     }
 }
