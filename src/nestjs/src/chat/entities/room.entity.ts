@@ -28,8 +28,11 @@ export class RoomEntity
     @ManyToOne(() => UserEntity)
     roomCreator: UserEntity;
 
-    @ManyToOne(() => UserEntity)
-    roomCurrentAdmin: UserEntity;
+    //@ManyToMany(() => UserEntity)
+    //roomCurrentAdmins: UserEntity[];
+    @ManyToMany(() => UserEntity)
+    @JoinTable()
+    roomCurrentAdmins: UserEntity[];
 
     @ManyToMany(() => UserEntity, user => user.MemberofRooms)
     @JoinTable() // Ceci crée automatiquement une table de jointure

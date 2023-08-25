@@ -142,38 +142,6 @@ export class ChatGateway
   }
 
   @UseGuards(ChatGuard)
-  @SubscribeMessage('changePassword')
-  async handleChangePassword(@MessageBody() data: { roomName: string, password: string },
-  @ConnectedSocket() client: Socket): Promise<void> 
-  {
-    //const room = await this.roomService.getRoomByName(data.roomName);
-    const room = await this.roomRepository.findOne({
-      where: { name: data.roomName },
-      relations: ['roomCreator']
-    });
-    if (room) 
-    {
-      console.log("Roome creator userneme === " + colors.FG_GREEN + room.roomCreator.username+ colors.RESET);
-      if (room.roomCreator.id == client.data.user.id)
-      {
-        if (await this.roomService.verifyPassword(data.password, room.password) === true)
-          this.server.emit("changePasswordError", "Error, this is the same password.");
-        else
-        {
-          room.password = await this.roomService.setPassword(data.password);
-          await this.roomRepository.update(room.id, { password: room.password });
-          this.server.emit("changePasswordSuccess", "Password for room " + data.roomName + " changed.");  
-        }
-      }
-      else
-        this.server.emit("changePasswordError", "Error, you are not the room owner.");
-    }
-    else
-      this.server.emit("changePasswordError", "Password for room " + data.roomName + " could not be changed, because the room does not exist.");
-  }
-
-
-  @UseGuards(ChatGuard)
   @SubscribeMessage('deleteRoom')
   async handleDeleteRoom(@MessageBody() data: { roomName: string }, 
   @ConnectedSocket() client: Socket): Promise<void> 
@@ -241,4 +209,65 @@ export class ChatGateway
       console.log(message);
     }
   }
+
+  /*=========================================================================================*/
+  /*----------------------------------POUVOIRS DE L'OWNER------------------------------------*/
+  /*=========================================================================================*/
+
+  /*---------------------------------CHANGER LE MOT DE PASSE---------------------------------*/
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('changePassword')
+  async handleChangePassword(@MessageBody() data: { roomName: string, password: string },
+  @ConnectedSocket() client: Socket): Promise<void> 
+  {
+    const room = await this.roomService.getRoomByName(data.roomName);
+    const roomCreator = await this.roomService.getRoomCreator(data.roomName);
+    if (room && roomCreator) 
+    {
+      console.log("Roome creator userneme === " + colors.FG_GREEN + roomCreator.username + colors.RESET);
+      if (roomCreator.id == client.data.user.id)
+      {
+        if (await this.roomService.verifyPassword(data.password, room.password) === true)
+          this.server.emit("changePasswordError", "Error, this is the same password.");
+        else
+        {
+          room.password = await this.roomService.setPassword(data.password);
+          await this.roomRepository.update(room.id, { password: room.password });
+          this.server.emit("changePasswordSuccess", "Password for room " + data.roomName + " changed.");  
+        }
+      }
+      else
+        this.server.emit("changePasswordError", "Error, you are not the room owner.");
+    }
+    else
+      this.server.emit("changePasswordError", "Password for room " + data.roomName + " could not be changed, because the room does not exist.");
+  }
+
+  /*-----------------------------------DESIGNER DES ADMINS-----------------------------------*/
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('changePassword')
+  async handlesetAdmin(@MessageBody() data: { roomName: string, adminName: string },
+  @ConnectedSocket() client: Socket): Promise<void> 
+  {
+    const room = await this.roomService.getRoomByName(data.roomName);
+    const roomCreator = await this.roomService.getRoomCreator(data.roomName);
+    const newAdmin = await this.roomService.getSpecificMemberOfRoomByUsername(data.roomName, data.adminName);
+
+    if (room && roomCreator && newAdmin) 
+    {
+      console.log("Roome creator userneme === " + colors.FG_GREEN + roomCreator.username + colors.RESET);
+      if (roomCreator.id == client.data.user.id)
+      {
+          await this.roomService.setRoomAdministrator(room.name, newAdmin.id);
+          this.server.emit("setAdminSuccess", newAdmin.username + "is a new admin in " + room.name);
+      }
+      else
+        this.server.emit("setAdminError", "Error, you are not the room owner.");
+
+    }
+    else
+      this.server.emit("setAdminError", "Error with set new administrator.");
+  }
+  /*=========================================================================================*/
+
 }
