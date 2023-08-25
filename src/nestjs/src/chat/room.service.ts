@@ -206,6 +206,33 @@ export class RoomService
         await this.roomRepository.save(room);
     }
 
+    async unsetRoomAdministrator(roomName: string, userId: number): Promise<void> {
+        const room = await this.roomRepository.findOne({
+            where: { name: roomName },
+            relations: ["roomCurrentAdmins"] // Assurez-vous de charger les administrateurs actuels de la salle.
+        });
+    
+        if (!room) {
+            throw new Error(`Room with name ${roomName} not found.`);
+        }
+    
+        const user = await this.userService.findUserById(userId); // Utilisez la fonction pour obtenir un utilisateur unique.
+    
+        if (!user) {
+            throw new Error(`User with ID ${userId} not found.`);
+        }
+    
+        // Vérifiez si l'utilisateur est effectivement un administrateur.
+        const adminIndex = room.roomCurrentAdmins.findIndex(admin => admin.id === userId);
+        if (adminIndex === -1) {
+            throw new Error(`User with ID ${userId} is not an administrator for the room ${roomName}.`);
+        }
+    
+        room.roomCurrentAdmins.splice(adminIndex, 1); // Supprimez l'utilisateur de la liste des administrateurs.
+        await this.roomRepository.save(room);
+    }
+    
+
     async getRoomAdministrators(name: string): Promise<UserEntity[]> {
         const room = await this.roomRepository.findOne({
             where: { name: name },

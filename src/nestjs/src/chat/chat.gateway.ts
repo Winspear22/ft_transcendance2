@@ -123,6 +123,7 @@ export class ChatGateway
         const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
         if (user != undefined)
         {
+          client.join(room.name);
           this.server.emit("userJoinedRoomSuccess", "User " + client.data.user.username + " is already part of the room " + room.name + ".");
           return ;
         }
@@ -131,11 +132,11 @@ export class ChatGateway
         this.server.emit("userJoinedRoomSuccess", "User " + client.data.user.username + " joined room " + room.name + " successfully.");
       }
       else
-        this.server.emit("userJoinedWrongPassword", "Error, wrong password.");
+        this.server.emit("userJoinedRoomError", "Error, wrong password.");
     }
     else
     {
-      const message = "User " + client.data.user.username + "did not join room " + data.roomName + " because it does not exist.";
+      const message = "User " + client.data.user.username + " did not join room " + data.roomName + " because it does not exist.";
       this.server.emit("userJoinedRoomError", message);
       console.log(message);
     }
@@ -245,8 +246,8 @@ export class ChatGateway
 
   /*-----------------------------------DESIGNER DES ADMINS-----------------------------------*/
   @UseGuards(ChatGuard)
-  @SubscribeMessage('changePassword')
-  async handlesetAdmin(@MessageBody() data: { roomName: string, adminName: string },
+  @SubscribeMessage('setNewAdmin')
+  async handleSetAdmin(@MessageBody() data: { roomName: string, adminName: string },
   @ConnectedSocket() client: Socket): Promise<void> 
   {
     const room = await this.roomService.getRoomByName(data.roomName);
@@ -267,6 +268,30 @@ export class ChatGateway
     }
     else
       this.server.emit("setAdminError", "Error with set new administrator.");
+  }
+
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('unsetNewAdmin')
+  async handlesUnsetAdmin(@MessageBody() data: { roomName: string, adminName: string },
+  @ConnectedSocket() client: Socket): Promise<void> 
+  {
+    const room = await this.roomService.getRoomByName(data.roomName);
+    const roomCreator = await this.roomService.getRoomCreator(data.roomName);
+    const adminToUnset = await this.roomService.getSpecificMemberOfRoomByUsername(data.roomName, data.adminName);
+
+    if (room && roomCreator && adminToUnset) 
+    {
+        if (roomCreator.id === client.data.user.id) 
+        {
+            await this.roomService.unsetRoomAdministrator(room.name, adminToUnset.id);
+            this.server.emit("unsetAdminSuccess", `${adminToUnset.username} is no longer an admin in ${room.name}`);
+        }
+        else
+            this.server.emit("unsetAdminError", "Error: you are not authorized to remove administrators.");
+    }
+    else
+        this.server.emit("unsetAdminError", "Error with unset administrator.");
   }
   /*=========================================================================================*/
 
