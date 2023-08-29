@@ -27,7 +27,7 @@ services:
     env_file: .env
     networks:
       - dataflow_network
-
+      
   nestjs:
     container_name: nestjs
     build:
@@ -41,9 +41,10 @@ services:
       - postgresql
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
-    volumes:
+    volumes:  # Indentation corrigée ici
       - ./src/nestjs:/app
-    networks:
+      - images:/app/vuejs/uploads
+    networks:  # Indentation corrigée ici
       - dataflow_network
 
   vuejs:
@@ -53,6 +54,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src/vuejs:/app
+      - images:/app/uploads
     ports:
       #- "4200:4200"
       - "8080:8080"
@@ -71,3 +73,5 @@ volumes:
       type: none
       o: bind
       device: /home/adnen/Desktop/VolumeTranscendance2
+  images:
+    driver: local

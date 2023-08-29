@@ -12,6 +12,8 @@ import { MessageEntity } from 'src/chat/entities/message.entity';
 import { ChatModule } from 'src/chat/chat.module';
 import { RoomEntity } from 'src/chat/entities/room.entity';
 import { RoomEntity2 } from 'src/chat/entities/room2.entity';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [
@@ -24,6 +26,10 @@ import { RoomEntity2 } from 'src/chat/entities/room2.entity';
       database: process.env.POSTGRES_DB,
       entities: [UserEntity, BlacklistedToken, MessageEntity, RoomEntity, RoomEntity2],  // Ajoutez BlacklistedTokenEntity ici
       synchronize: true,
+    }), // Verifier à quoi sert ce module.
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'vuejs', 'uploads'), // remontez deux dossiers en arrière
+      serveRoot: '/public/',  // le préfixe pour accéder aux fichiers
     }),
     UserModule,
     HttpModule,
