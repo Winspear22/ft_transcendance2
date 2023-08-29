@@ -16,6 +16,8 @@ import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 import { UpdateEmailDto, UpdateUserDto } from './dto/updateuser.dto';
 import { ImageDto } from './dto/profile_picture.dto';
+import { Observable, of } from 'rxjs';
+import { join } from 'path';
 
 export class AuthDto {
   @IsString()
@@ -525,6 +527,15 @@ export class UserService {
       path: file.path
     };		
     return image;
+	}
+
+  async getImage(@Res() res, profilePicture: string): Promise<Observable<object>> {
+		let fs = require('fs');
+		let files = fs.readdirSync('./uploads/');
+		if (Object.values(files).indexOf(profilePicture) === -1) {
+			return of(res.sendFile(join(process.cwd(), process.env.DEFAULT_PROFILE_PICTURE)));
+		}
+		return of(res.sendFile(join(process.cwd(), './uploads/' + profilePicture)));
 	}
 
 }

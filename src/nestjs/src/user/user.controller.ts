@@ -7,7 +7,9 @@ import { Controller, Req,
 	HttpStatus,
 	HttpCode,
 	UploadedFile,
-	UseInterceptors
+	UseInterceptors,
+	Get,
+	Param
 	 } from "@nestjs/common"
 import { UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
@@ -18,6 +20,7 @@ import { ImageDto } from './dto/profile_picture.dto';
 import path = require("path")
 import { diskStorage } from "multer";
 import { v4 as uuidv4 } from "uuid";
+import { Observable, of } from "rxjs";
 
 type validMimeType =  'image/png' | 'image/jpg' | 'image/jpeg' | 'image/gif'
 
@@ -96,7 +99,6 @@ export class UserController {
 
 	@Post('change/pp')
 	@UseInterceptors(FileInterceptor('file', storage))
-	//@UseInterceptors(FileInterceptor('file'))
 	@HttpCode(HttpStatus.CREATED)
 	@UseGuards(JwtAuthGuard)	
 	async ChangeProfilePicture(@UploadedFile() file,
@@ -105,5 +107,12 @@ export class UserController {
 		console.log(file);
 		const user = req.user as UserEntity;
 		return this.userService.UploadAndSaveImage(file, user);
+	}
+
+	@UseGuards(JwtAuthGuard)	
+	@Get('change/getpp/:profilePicture')
+	getProfilePicture(@Res() res,
+	@Param('profilePicture') profilePicture: string): Promise<Observable<object>> {
+		return this.userService.getImage(res, profilePicture);
 	}
 }
