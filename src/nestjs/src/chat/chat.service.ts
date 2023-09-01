@@ -11,6 +11,7 @@ import { ChatAuthService } from './chat-auth.service';
 import { UserService } from 'src/user/user.service';
 import { RoomService } from './room.service';
 import { RoomEntity } from './entities/room.entity';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class ChatService {
@@ -24,7 +25,7 @@ export class ChatService {
         @InjectRepository(RoomEntity)
         private roomRepository: Repository<RoomEntity>,
         @InjectRepository(UserEntity)
-        private usersRepository: Repository<UserEntity>
+        private usersRepository: Repository<UserEntity>,
     ) {}
 
     async createMessage(data: CreateMessageDto): Promise<MessageEntity> 
@@ -144,4 +145,8 @@ export class ChatService {
         console.log(colors.CYAN, "CreatedRooms size === ", user.createdRooms.length);
         console.log("Room created : ", + colors.MAGENTA, user.createdRooms);
     }
+
+    /*===============================ROOM DATA===============================*/
+
+    /*=======================================================================*/
 }

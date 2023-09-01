@@ -16,6 +16,10 @@ import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 import { UpdateEmailDto, UpdateUserDto } from './dto/updateuser.dto';
 import { ImageDto } from './dto/profile_picture.dto';
+import { Observable, of } from 'rxjs';
+import { join } from 'path';
+//import path = require("path")
+import * as path from 'path'; // Assurez-vous que le module 'path' est importé
 
 export class AuthDto {
   @IsString()
@@ -33,6 +37,9 @@ export class AuthDto {
   @IsOptional()
   type: string
 }
+
+const UPLOADS_PATH = path.resolve(__dirname, '../../vuejs/uploads');
+
 
 @Injectable()
 export class UserService {
@@ -487,11 +494,13 @@ export class UserService {
       res.json({message: "Error. Could not change user email"})
     }
   }
+  /* MANIERE POUR FAIRE AVEC LE DOSSIER UPLOADS*/
 
-  deleteOldImage(path: string) 
+  /*deleteOldImage(path: string) 
   {
 		var fs = require('fs');
-  
+    console.log(colors.RED + "Je suis ici." + colors.RESET);
+
 		fs.stat(path, function (err, stats) 
     {
 		  console.log(stats);
@@ -500,17 +509,18 @@ export class UserService {
 			}
 			fs.unlinkSync(path);
 		})
-	}
+	}*/
 
-  async UploadAndSaveImage(@UploadedFile() file,
+  /*async UploadAndSaveImage(@UploadedFile() file,
     user: UserEntity): Promise<ImageDto> 
   {	
+    console.log(colors.RED + "Je suis ici." + colors.RESET);
     console.log(file?.filename);
     if (!file?.filename)
 			throw new ForbiddenException('Error. Only image files are allowed !');
-    if (user.profile_picture.startsWith('uploads/'))
+    //if (user.profile_picture.startsWith('uploads/'))
         this.deleteOldImage(user.profile_picture);
-		user.profile_picture = file.path;
+		user.profile_picture = file.filename;
 		try 
     {
 			await this.FindAndUpdateUser(user.username, {profile_picture: user.profile_picture});
@@ -526,5 +536,58 @@ export class UserService {
     };		
     return image;
 	}
+
+  async getImage(@Res() res, profilePicture: string): Promise<Observable<object>> {
+		let fs = require('fs');
+		let files = fs.readdirSync('./uploads/');
+		if (Object.values(files).indexOf(profilePicture) === -1) {
+			return of(res.sendFile(join(process.cwd(), process.env.DEFAULT_PROFILE_PICTURE)));
+		}
+		return of(res.sendFile(join(process.cwd(), './uploads/' + profilePicture)));
+	}*/
+
+  /*MANIERE POUR FAIRE AVEC LE CONTENEUR*/
+
+  async UploadAndSaveImage(@UploadedFile() file, user: UserEntity): Promise<ImageDto> {
+    console.log(file?.filename);
+    if (!file?.filename) {
+        throw new ForbiddenException('Error. Only image files are allowed !');
+    }
+    
+    if (user.profile_picture) {
+        this.deleteOldImage(user.profile_picture);
+    }
+
+    user.profile_picture = file.filename;
+
+    try {
+        await this.FindAndUpdateUser(user.username, { profile_picture: user.profile_picture });
+    } catch (e) {
+        console.log(e);
+        throw e;
+    }
+    
+    const image = {
+        filename: file.filename,
+        path: file.path
+    };
+    return image;
+}
+
+
+deleteOldImage(imagePath: string) 
+{
+  var fs = require('fs');
+
+  const fullPath = path.resolve(UPLOADS_PATH, imagePath);
+
+  fs.stat(fullPath, function (err, stats) {
+      if (err) {
+          return console.error(err);
+      }
+      fs.unlinkSync(fullPath);
+  });
+}
+
 
 }

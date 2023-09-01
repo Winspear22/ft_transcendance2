@@ -7,7 +7,9 @@ import { Controller, Req,
 	HttpStatus,
 	HttpCode,
 	UploadedFile,
-	UseInterceptors
+	UseInterceptors,
+	Get,
+	Param
 	 } from "@nestjs/common"
 import { UseGuards } from "@nestjs/common";
 import { Request, Response } from "express";
@@ -18,8 +20,10 @@ import { ImageDto } from './dto/profile_picture.dto';
 import path = require("path")
 import { diskStorage } from "multer";
 import { v4 as uuidv4 } from "uuid";
+import { Observable, of } from "rxjs";
+/* MANIERE POUR FAIRE AVEC LE DOSSIER UPLOADS*/
 
-type validMimeType =  'image/png' | 'image/jpg' | 'image/jpeg' | 'image/gif'
+/*type validMimeType =  'image/png' | 'image/jpg' | 'image/jpeg' | 'image/gif'
 
 const validMimeTypes: validMimeType [] = [
 	'image/png',
@@ -31,6 +35,35 @@ const validMimeTypes: validMimeType [] = [
 export const storage = {
 	storage: diskStorage({
 		destination: './uploads/',
+		filename: (req, file, cb) => {
+			const filename: string = path.parse(file.originalname).name.replace(/\s/g, '') + uuidv4();
+			const extension: string = path.parse(file.originalname).ext;
+			cb(null, `${filename}${extension}`)
+		}
+	}),
+	fileFilter: (req, file, cb) => {
+		const allowedMimeTypes: validMimeType[] =  validMimeTypes;
+		allowedMimeTypes.includes(file.mimetype) ? cb(null, true) : cb(null, false);
+	},
+	limits: {
+		fileSize: 1000000
+    }
+}*/
+/* MANIERE POUR FAIRE AVEC LES CONTENEURS*/
+type validMimeType =  'image/png' | 'image/jpg' | 'image/jpeg' | 'image/gif'
+
+const validMimeTypes: validMimeType [] = [
+	'image/png',
+	'image/jpg',
+	'image/jpeg',
+	'image/gif'
+]
+
+const UPLOADS_PATH = path.resolve(__dirname, '../../vuejs/uploads');
+
+export const storage = {
+	storage: diskStorage({
+        destination: UPLOADS_PATH,
 		filename: (req, file, cb) => {
 			const filename: string = path.parse(file.originalname).name.replace(/\s/g, '') + uuidv4();
 			const extension: string = path.parse(file.originalname).ext;
@@ -96,7 +129,6 @@ export class UserController {
 
 	@Post('change/pp')
 	@UseInterceptors(FileInterceptor('file', storage))
-	//@UseInterceptors(FileInterceptor('file'))
 	@HttpCode(HttpStatus.CREATED)
 	@UseGuards(JwtAuthGuard)	
 	async ChangeProfilePicture(@UploadedFile() file,
@@ -106,5 +138,12 @@ export class UserController {
 		const user = req.user as UserEntity;
 		return this.userService.UploadAndSaveImage(file, user);
 	}
+	/*MANIERE POUR FAIRE AVEC LE DOSSIER UPLOADS*/
 
+	/*@UseGuards(JwtAuthGuard)	
+	@Get('change/getpp/:profilePicture')
+	getProfilePicture(@Res() res,
+	@Param('profilePicture') profilePicture: string): Promise<Observable<object>> {
+		return this.userService.getImage(res, profilePicture);
+	}*/
 }

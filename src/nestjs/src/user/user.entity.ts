@@ -71,7 +71,7 @@ export class UserEntity
   @OneToMany(() => RoomEntity, room => room.roomCreator)
   createdRooms: RoomEntity[];
 
-  @OneToMany(() => RoomEntity, room => room.roomCurrentAdmin)
+  @ManyToMany(() => RoomEntity, room => room.roomCurrentAdmins)
   administratedRooms: RoomEntity[];
 
   @ManyToMany(() => RoomEntity, room => room.members)
