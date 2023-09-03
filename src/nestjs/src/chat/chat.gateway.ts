@@ -79,7 +79,7 @@ export class ChatGateway
     return result;
   }
 
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('quitRoom')
   async quitRoom(@MessageBody() data: { 
   channelName: string }, @ConnectedSocket() client: Socket) {
@@ -104,11 +104,16 @@ export class ChatGateway
   {
     const result = await this.roomService.joinChannel(data, client);
     if (result.success)
+    {
       this.server.emit('channeljoined', client.data.user.username, "Channel joined : ", { channelName: data.channelName });
-    else
-    this.server.emit('channeljoined', "Error, there was a pb in joining the channel");
-
+      client.join(data.channelName);
       return (result);
+    }
+    else
+    {
+      this.server.emit('channeljoined', "Error, there was a pb in joining the channel");
+      return (result);
+    }
   }
 
 }

@@ -8,6 +8,7 @@ import * as bcrypt from 'bcryptjs';
 import { UserService } from 'src/user/user.service';
 import { ConnectedSocket } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
+import { MessageEntity } from './entities/message.entity';
 
 
 @Injectable()
@@ -18,6 +19,8 @@ export class RoomService
         private roomRepository: Repository<RoomEntity>,
         @InjectRepository(UserEntity)
         private usersRepository: Repository<UserEntity>,
+        @InjectRepository(MessageEntity)
+        private messagesRepository: Repository<MessageEntity>,
         private userService: UserService
         
     ) {}
@@ -53,38 +56,14 @@ export class RoomService
             owner: userId,
             roomMode: isPrivate ? 'private' : 'public',
             users: [userId], // initialiser avec l'ID de l'utilisateur propriétaire
-            admins: [], // initialiser avec l'ID de l'utilisateur propriétaire
+            admins: [userId], // initialiser avec l'ID de l'utilisateur propriétaire
             bannedIds: [],
             mutedIds: [],
             pendingIds: []
           };
         await this.roomRepository.save(newRoom);
         return { success: true };
-    }
-
-    async addUserToRoom(userId: number, channelName: string): Promise<any> {
-        // Trouver la room par son nom
-        const room = await this.getRoomByName(channelName);
-    
-        // Vérifier si la room et l'utilisateur existent
-        if (!room) {
-            return { success: false, error: 'Room not found' };
-        }
-    
-        // Vérifier si l'utilisateur est déjà dans la room
-        if (room.users.includes(userId)) {
-            return { success: true, message: 'User already in the room' };
-        }
-    
-        // Ajouter l'utilisateur à la room
-        room.users.push(userId);
-    
-        // Sauvegarder les changements
-        await this.roomRepository.save(room);
-    
-        return { success: true, message: 'User added to the room' };
-    }
-    
+    }    
 
     async joinChannel(body: { 
     channelName: string, 
@@ -103,10 +82,6 @@ export class RoomService
           return { success: false, error: 'You are banned from this channel' };
         }
     
-        const userInRoom = room.users.find(id => id === user.id);
-        if (userInRoom) {
-          return { success: true };
-        }
         console.log("l'utilisateur n'etait pas dans la room");
         console.log("passwords : ", password, " room password : ", room.password);
         /*if (room.password && room.password !== '') {
@@ -121,13 +96,38 @@ export class RoomService
                 return { success: false, error: 'Invalid password' };
         }
         console.log("password passe");
-
+        const userInRoom = room.users.find(id => id === user.id);
+        if (userInRoom) {
+          return { success: true };
+        }
     
-        /*room.users.push(user.id);
-        await this.roomRepository.save(room);*/
-        await this.addUserToRoom(user.id, room.roomName);
+        room.users.push(user.id);
+        await this.roomRepository.save(room);
         return { success: true };
     }
+
+    async quitChannel(body: { 
+        channelName: string; }, @ConnectedSocket() client: Socket) {
+        const { channelName } = body;
+        
+        const user = client.data.user;
+        const room = await this.getRoomByName(channelName);
+        if (!room) {
+            return { success: false, error: 'Channel not found' };
+        }
+    
+        if (user.id === room.owner) {
+            // Supprimez tous les messages du canal et ensuite le canal lui-même
+            await this.messagesRepository.delete({ id: room.id });
+            await this.roomRepository.delete({ id: room.id });
+            return { success: true };
+        } else {
+            room.users = room.users.filter(id => id !== user.id);
+            await this.roomRepository.save(room);
+            return { success: true };
+        }
+    }
+    
 
     async banUserChannel(body: {
     channelName: string;

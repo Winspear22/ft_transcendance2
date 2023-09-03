@@ -5,10 +5,11 @@ import {
   UpdateDateColumn,
   Column,
   ManyToOne,
+  JoinColumn
 } from 'typeorm';
-import { RoomEntity } from './room.entity';
+import { RoomEntity } from './room.entity';  // assurez-vous que l'import est correct
 
-@Entity('room_messages')
+@Entity('channel_messages')
 export class MessageEntity {
   @PrimaryGeneratedColumn()
   id: number;
@@ -25,9 +26,10 @@ export class MessageEntity {
   @Column('text')
   text: string;
 
-  @ManyToOne(() => RoomEntity, (room) => room.messages)
-  room: RoomEntity;
-
   @Column()
-  roomId: number;
+  channelId: number;
+
+  @ManyToOne(() => RoomEntity, room => room.messages)  // la relation inverse
+  @JoinColumn({ name: 'channelId' })  // Cette ligne est optionnelle si vous suivez la convention de nommage par défaut
+  room: RoomEntity;  // la propriété qui représente la relation
 }
