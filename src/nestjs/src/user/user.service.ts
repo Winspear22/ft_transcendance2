@@ -60,6 +60,9 @@ export class UserService {
       user_status: 'Online',
       id42: userDet.providerId,
       provider: userDet.provider,
+      blockedIds: [],
+      friends: [],
+      friendRequests: []
     });
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
     console.log(colors.GREEN + colors.BRIGHT, "------------------USER CREATED---------------", colors.RESET);

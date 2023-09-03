@@ -16,6 +16,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RoomBanGuard } from './guard/chat-guard.guard';
 import { UserEntity } from 'src/user/user.entity';
 import { MessageEntity } from './entities/message.entity';
+import { FriendMessage } from 'src/user/entities/friendmessage.entity';
+import { Friend } from 'src/user/entities/friend.entity';
+import { FriendChat } from 'src/user/entities/friendchat.entity';
 
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
@@ -29,7 +32,13 @@ export class ChatGateway
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
     @InjectRepository(MessageEntity)
-    private messagesRepository: Repository<MessageEntity>
+    private messagesRepository: Repository<MessageEntity>,
+    @InjectRepository(Friend)
+    private friendsRepository: Repository<Friend>,
+    @InjectRepository(FriendChat)
+    private friendChatsRepository: Repository<FriendChat>,
+    @InjectRepository(FriendMessage)
+    private friendMessageRepository: Repository<FriendMessage>,
     ) {}
   
   private ref_client = new Map<number, string>()
@@ -161,7 +170,7 @@ export class ChatGateway
     return channelMessages;
   }
 
-  @UseGuards(ChatGuard)
+  /*@UseGuards(ChatGuard)
   @SubscribeMessage('sendDM')
   async handleDMs(@MessageBody() body: { room: string,
   senderUsername: string,
@@ -198,6 +207,67 @@ export class ChatGateway
       // Gérez le cas où l'ID de l'utilisateur n'existe pas dans la Map
     //}
     //this.server.emit('sendDM', { senderId: sender.id, text: body.message, time: savedMessage.createdAt, username: sender.username });
-  }
+  }*/
 
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('sendDM')
+  async handleMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { room: string, senderUsername: string, message: string, receiverUsername: string }
+  ): Promise<void> 
+  {
+
+    let chat = await this.friendChatsRepository.findOne({
+      where: { room: body.room }
+    });
+  
+    // Si le chat n'existe pas, on le crée
+    if (!chat) {
+      chat = new FriendChat();
+      chat.room = body.room;
+      chat = await this.friendChatsRepository.save(chat);
+    }
+    console.log("ICI");
+;
+
+    const sender = await this.chatService.getUserFromSocket(client);
+    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    //console.log(chat);
+    console.log(sender);
+    console.log(receiver)
+    if (!sender || !receiver) {
+      return;
+    }
+    console.log("ICI 2");
+
+    if (receiver.blockedIds && receiver.blockedIds.includes(sender.id)) {
+      return;
+    }
+    
+    if (sender.blockedIds && sender.blockedIds.includes(receiver.id)) {
+      return;
+    }
+    console.log("ICI 3");
+
+    if (body.message.length === 0) {
+      return;
+    }
+    console.log("ICI 4");
+
+    const newMessage = new FriendMessage();
+    newMessage.chat = chat;
+    newMessage.senderId = sender.id;
+    newMessage.text = body.message;
+
+    const savedMessage = await this.friendMessageRepository.save(newMessage);
+
+    // Émission du message à travers le websocket
+    const receiverSocketId = this.ref_client.get(receiver.id);
+    console.log(receiverSocketId);
+    console.log(this.ref_client);
+
+    if (receiverSocketId !== undefined) {
+      this.server.to(receiverSocketId).emit("sendDM", savedMessage);
+  }
+}
 }

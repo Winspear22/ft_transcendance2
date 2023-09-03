@@ -2,10 +2,9 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  ManyToMany,
   OneToMany
   } from 'typeorm';
-import { RoomEntity } from 'src/chat/entities/room.entity';
+import { Friend } from './entities/friend.entity';
 
 @Entity()
 export class UserEntity 
@@ -65,4 +64,13 @@ export class UserEntity
 
   @Column({ default: false })
   public isTwoFactorAuthenticationEnabled: boolean;
+
+  @Column('int', { array: true, nullable: true })
+  blockedIds: number[];
+
+  @OneToMany(() => Friend, (friend) => friend.user)
+  friends: Friend[];
+
+  @Column('int', { array: true, nullable: true })
+  friendRequests: number[];
 }
