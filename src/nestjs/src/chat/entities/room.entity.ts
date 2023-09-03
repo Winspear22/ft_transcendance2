@@ -1,43 +1,54 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    ManyToMany,
-    JoinTable,
-    OneToMany,
-    ManyToOne
-  } from 'typeorm';
-import { UserEntity } from '../../user/user.entity';
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Column,
+  OneToMany,
+} from 'typeorm';
 import { MessageEntity } from './message.entity';
 
-@Entity('room')
-export class RoomEntity 
-{
-    @PrimaryGeneratedColumn()
-    id: number;
+@Entity('rooms')
+export class RoomEntity {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-    @Column({ type: 'text', unique: true })
-    name: string;
+  @CreateDateColumn()
+  createdAt: Date;
 
-    @Column('boolean', {default: false})
-    publicRoom: boolean;
-  
-    @Column("text", {default: "", nullable: true})
-    password: string;
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-    @ManyToOne(() => UserEntity)
-    roomCreator: UserEntity;
+  @Column('int', { array: true })
+  users: number[];
 
-    //@ManyToMany(() => UserEntity)
-    //roomCurrentAdmins: UserEntity[];
-    @ManyToMany(() => UserEntity)
-    @JoinTable()
-    roomCurrentAdmins: UserEntity[];
+  @Column('int', { array: true })
+  admins: number[];
 
-    @ManyToMany(() => UserEntity, user => user.MemberofRooms)
-    @JoinTable() // Ceci crée automatiquement une table de jointure
-    members: UserEntity[];
+  @Column('int')
+  owner: number;
 
-    @OneToMany(() => MessageEntity, message => message.room, { cascade: true })
-    messages: MessageEntity[];
+  @Column('int', { array: true })
+  bannedIds: number[];
+
+  @Column('int', { array: true })
+  mutedIds: number[];
+
+  @Column('int', { array: true })
+  pendingIds: number[];
+
+  @Column({ unique: true })
+  roomName: string;
+
+  @Column()
+  roomMode: string;
+
+  @Column({ nullable: true })
+  password?: string;
+
+  @Column()
+  isPrivate: boolean;
+
+  @OneToMany(() => MessageEntity, (message) => message.room)
+  messages: MessageEntity[];
 }

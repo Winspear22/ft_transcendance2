@@ -1,28 +1,33 @@
 import {
-    Entity,
-    PrimaryGeneratedColumn,
-    Column,
-    CreateDateColumn,
-    ManyToOne
-  } from 'typeorm';
+  Entity,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Column,
+  ManyToOne,
+} from 'typeorm';
 import { RoomEntity } from './room.entity';
-  
-@Entity('message')
-export class MessageEntity 
-{
+
+@Entity('room_messages')
+export class MessageEntity {
   @PrimaryGeneratedColumn()
   id: number;
-  
-  @Column({ type: 'text', comment: 'Sender of the message.' })
-  sender: string;
 
-  @Column({ type: 'text', comment: 'Content of the message.' })
-  content: string;
+  @CreateDateColumn()
+  createdAt: Date;
 
-  @CreateDateColumn({ type: 'timestamp', comment: 'Date when the message was sent.' })
-  sentDate: Date;
+  @UpdateDateColumn()
+  updatedAt: Date;
 
-  @ManyToOne(() => RoomEntity, room => room.messages)
+  @Column()
+  senderId: number;
+
+  @Column('text')
+  text: string;
+
+  @ManyToOne(() => RoomEntity, (room) => room.messages)
   room: RoomEntity;
+
+  @Column()
+  roomId: number;
 }
-  

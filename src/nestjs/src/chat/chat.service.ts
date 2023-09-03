@@ -88,7 +88,7 @@ export class ChatService {
             return undefined;
     }
 
-    async setUserAdminStatusON(@ConnectedSocket() client: Socket,
+    /*async setUserAdminStatusON(@ConnectedSocket() client: Socket,
     roomId: number): Promise<void>
     {
         const user = await this.usersRepository.findOne({ where: { id: client.data.user.id }, relations: ['administratedRooms'] })
@@ -144,7 +144,7 @@ export class ChatService {
         }
         console.log(colors.CYAN, "CreatedRooms size === ", user.createdRooms.length);
         console.log("Room created : ", + colors.MAGENTA, user.createdRooms);
-    }
+    }*/
 
     /*===============================ROOM DATA===============================*/
 

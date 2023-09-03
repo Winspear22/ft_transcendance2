@@ -68,12 +68,12 @@ export class UserEntity
 
   /*==========================================================================*/
 
-  @OneToMany(() => RoomEntity, room => room.roomCreator)
+  /*@OneToMany(() => RoomEntity, room => room.roomCreator)
   createdRooms: RoomEntity[];
 
   @ManyToMany(() => RoomEntity, room => room.roomCurrentAdmins)
   administratedRooms: RoomEntity[];
 
   @ManyToMany(() => RoomEntity, room => room.members)
-  MemberofRooms: RoomEntity[];
+  MemberofRooms: RoomEntity[];*/
 }

@@ -6,6 +6,8 @@ import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from 'src/user/user.service';
+import { ConnectedSocket } from '@nestjs/websockets';
+import { Socket, Server } from 'socket.io';
 
 
 @Injectable()
@@ -20,244 +22,205 @@ export class RoomService
         
     ) {}
 
-    async getAllMembersFromRoom(roomName: string): Promise<UserEntity[]> {
-        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
-        if (!room) {
-            throw new Error('Room not found');
-        }
-        //console.log(colors.BRIGHT, colors.BLUE, "getAllMembersFromRoom : ", colors.WHITE, room, colors.RESET)
-        return room.members;
-    }
-
-
-    /**
-     * Récupère un membre spécifique d'une room spécifiée par son ID.
-     */
-    async getSpecificMemberOfRoom(roomName: string, memberId: number): Promise<UserEntity | undefined> {
-        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
-        if (!room) {
-            throw new Error('Room not found');
-        }
-        const user = room.members.find(member => member.id === memberId);
-        console.log("J'ai trouve cet utilisateur === ", user);
-        //console.log(colors.BRIGHT, colors.BLUE, "getSpecificMemberOfRoom : ", colors.WHITE, room, colors.RESET)
-        return room.members.find(member => member.id === memberId);
-    }
-
-    async getSpecificMemberOfRoomByUsername(roomName: string, memberUsername: string): Promise<UserEntity | undefined> {
-        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
-        
-        if (!room) {
-            throw new Error('Room not found');
-        }
-        
-        const user = room.members.find(member => member.username === memberUsername);
-        console.log("J'ai trouvé cet utilisateur === ", user);
-        
-        return user;
-    }
-
-
     async getRoomById(roomId: number): Promise<RoomEntity> {
         return await this.roomRepository.findOneBy({ id: roomId });
     }
 
     async getRoomByName(roomName: string): Promise<RoomEntity | undefined> {
-        const room = await this.roomRepository.findOneBy({ name: roomName });
+        const room = await this.roomRepository.findOneBy({ roomName: roomName });
         if (!room)
             return undefined;
-        return await this.roomRepository.findOneBy({ name: roomName });
+        return await this.roomRepository.findOneBy({ roomName: roomName });
     }
 
-    /**
-    * Cree une room et l'ajoute a la base de donnees.
-    */
-
-    async createRoom(data: { roomName: string, 
-    password: string, publicRoom: boolean },
-    creator: UserEntity): Promise<RoomEntity> 
+    async createRoom(body: { 
+    channelName: string,
+    hasPassword: boolean, 
+    password?: string,
+    isPrivate: boolean }, @ConnectedSocket() client: Socket) 
     {
-        const room = new RoomEntity();
-        try
-        {
-            const roomNamePattern = /^[a-zA-Z0-9]{2,12}$/;
-            if (!roomNamePattern.test(data.roomName))
-                throw new Error('Error. Wrong room name. Use only alphanumeric characters with a length of 2-12 characters.');
-            if (data.password)
-                room.password = await this.setPassword(data.password);
-            else
-                room.password = null;
-            room.name = data.roomName;
-            room.publicRoom = data.publicRoom;
-            //room.roomCurrentAdmin = creator;
+        const { channelName, hasPassword, password, isPrivate } = body;
+        let room = await this.getRoomByName(channelName);
+        if (room) {
+            return { success: false, error: 'Channel already exists' };
         }
-        catch (error) 
-        {
-          console.error(error);
-          return (null);
-        }
-        console.log(room);
-        return await this.roomRepository.save(room);
+        const user = client.data.user;
+        const userId = user.id;
+        const newRoom: Partial<RoomEntity> = {
+            roomName: channelName,
+            password: hasPassword ? password : null,
+            isPrivate,
+            owner: userId,
+            roomMode: isPrivate ? 'private' : 'public',
+            users: [userId], // initialiser avec l'ID de l'utilisateur propriétaire
+            admins: [], // initialiser avec l'ID de l'utilisateur propriétaire
+            bannedIds: [],
+            mutedIds: [],
+            pendingIds: []
+          };
+        await this.roomRepository.save(newRoom);
+        return { success: true };
     }
 
-    /**
-    * Ajoute les utilisateurs a la room et sauvegarde qui est present dans la room
-    */
-
-    async addUserToRoominDb(roomName: string, user: UserEntity): Promise<void> {
-        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
-        if(!room.members.includes(user)) {
-            room.members.push(user);
-        }
-        await this.roomRepository.save(room);
-    }
-
-    async deleteUserFromRoominDb(roomName: string, user: UserEntity): Promise<void> {
-        const room = await this.roomRepository.findOne({ where: { name: roomName }, relations: ['members'] });
+    async addUserToRoom(userId: number, channelName: string): Promise<any> {
+        // Trouver la room par son nom
+        const room = await this.getRoomByName(channelName);
+    
+        // Vérifier si la room et l'utilisateur existent
         if (!room) {
-            throw new Error('Room not found');
+            return { success: false, error: 'Room not found' };
         }
-        room.members = room.members.filter(member => member.id !== user.id);
+    
+        // Vérifier si l'utilisateur est déjà dans la room
+        if (room.users.includes(userId)) {
+            return { success: true, message: 'User already in the room' };
+        }
+    
+        // Ajouter l'utilisateur à la room
+        room.users.push(userId);
+    
+        // Sauvegarder les changements
         await this.roomRepository.save(room);
+    
+        return { success: true, message: 'User added to the room' };
     }
+    
 
-    /**
-    * Supprime la room
-    */
-
-    async deleteRoom(roomName: string): Promise<void> {
-        const room = this.getRoomByName(roomName);
-        await this.roomRepository.delete((await room).id);
-    }
-
-    /*=====================SETTERS=====================*/
-    /*--------------------PASSWORD---------------------*/
-    async setPassword(password: string): Promise<string>
+    async joinChannel(body: { 
+    channelName: string, 
+    password?: string; }, 
+    @ConnectedSocket() client: Socket) 
     {
-        if (password == null)
-            return (null);
-        if (typeof password !== "string") 
+        const { password } = body;
+        
+        const user = client.data.user;
+        const room = await this.getRoomByName(body.channelName);
+        if (!room) {
+            return { success: false, error: 'Channel not found' };
+        }
+    
+        if (room.bannedIds.includes(user.id)) {
+          return { success: false, error: 'You are banned from this channel' };
+        }
+    
+        const userInRoom = room.users.find(id => id === user.id);
+        if (userInRoom) {
+          return { success: true };
+        }
+        console.log("l'utilisateur n'etait pas dans la room");
+        console.log("passwords : ", password, " room password : ", room.password);
+        /*if (room.password && room.password !== '') {
+          if (!bcrypt.compareSync(password, room.password)) {
+            console.log("je suis ici");
+            return { success: false, error: 'Invalid password' };
+          }
+        }*/
+        if (room.password && room.password !== '')
         {
-            console.log("Invalid password:", password);
-            throw new Error("Password must be a string");
+            if (room.password != password)
+                return { success: false, error: 'Invalid password' };
         }
-        const saltRounds = 12;
-        const salt = await bcrypt.genSalt(saltRounds);
-        const hashedPaasword = await bcrypt.hash(password, salt);
-        return (hashedPaasword);
+        console.log("password passe");
+
+    
+        /*room.users.push(user.id);
+        await this.roomRepository.save(room);*/
+        await this.addUserToRoom(user.id, room.roomName);
+        return { success: true };
     }
 
-    async verifyPassword(realPassword: string, hashedPassword: string): Promise<boolean> {
-        return bcrypt.compare(realPassword, hashedPassword);
-    }
-    
-    /*------------------ROOM-CREATOR-------------------*/
-    async setRoomCreator(name: string, id: number): Promise<UserEntity> {
-        const room = await this.getRoomByName(name);
+    async banUserChannel(body: {
+    channelName: string;
+    targetUsername: string; }, @ConnectedSocket() client: Socket)
+    {
+        const user = client.data.user;
+        const room = await this.getRoomByName(body.channelName);
         if (!room) {
-            throw new Error(`Room with ID ${name} not found.`);
+            return { success: false, error: 'Channel not found' };
         }
     
-        const user = await this.userService.findUserById(id); // Supposant que vous avez un userRepository pour les utilisateurs
-        if (!user) {
-            throw new Error(`User with ID ${id} not found.`);
+        if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
+            return { success: false, error: 'You are not admin' };
         }
-        room.roomCreator = user;
+    
+        const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
+        if (!targetUser) {
+            return { success: false, error: 'Target user not found' };
+        }
+    
+        if (targetUser.id === (await room).owner) {
+            return { success: false, error: 'Cannot ban owner' };
+        }
+    
+        if (!(await room).users.includes(targetUser.id)) {
+            return { success: false, error: 'Target user is not in this channel' };
+        }
+    
+        if ((await room).admins.includes(targetUser.id)) {
+            if ((await room).owner === user.id) {
+                (await room).users = (await room).users.filter(id => id !== targetUser.id);
+                (await room).bannedIds.push(targetUser.id);
+                await this.roomRepository.save(room);
+                return { success: true };
+            } else {
+                return { success: false, error: 'Cannot ban another admin' };
+            }
+        }
+
+        (await room).users = (await room).users.filter(id => id !== targetUser.id);
+        (await room).bannedIds.push(targetUser.id);
         await this.roomRepository.save(room);
-        return user;
+    
+        return { success: true };
     }
 
-    async getRoomCreator(name: string): Promise<UserEntity | null> {
-        const room = await this.roomRepository.findOne({
-            where: { name: name },
-            relations: ["roomCreator"]
-        });
-    
+    async kickUserChannel(body: { 
+    channelName: string; 
+    targetUsername: string; }, @ConnectedSocket() client: Socket)
+    {
+
+        const user = client.data.user;
+        const room = await this.getRoomByName(body.channelName); // Supposons que cette fonction fait un appel à votre propre base de données
+        
         if (!room) {
-            return undefined;
-            //throw new Error(`Room with name ${name} not found. toto`);
+            return { success: false, error: 'Channel not found' };
         }
-    
-        return room.roomCreator;
-    }
-    /*------------------ROOM-ADMINS-------------------*/
-    async setRoomAdministrator(roomName: string, userId: number): Promise<void> {
-        const room = await this.roomRepository.findOne({
-            where: { name: roomName },
-            relations: ["roomCurrentAdmins"] // Assurez-vous de charger les administrateurs actuels de la salle.
-        });
-    
-        if (!room) {
-            throw new Error(`Room with name ${roomName} not found.`);
+        
+        if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
+            return { success: false, error: 'You are not admin' };
         }
-    
-        const user = await this.userService.findUserById(userId); // Utilisez la fonction pour obtenir un utilisateur unique.
-    
-        if (!user) {
-            throw new Error(`User with ID ${userId} not found.`);
+
+        const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
+        if (!targetUser) {
+            return { success: false, error: 'Target user not found' };
         }
-    
-        // Vérifiez si l'utilisateur est déjà administrateur pour éviter les doublons.
-        if (room.roomCurrentAdmins.some(admin => admin.id === userId)) {
-            throw new Error(`User with ID ${userId} is already an administrator for the room ${roomName}.`);
+
+        if (targetUser.id === (await room).owner) {
+            return { success: false, error: 'Cannot kick owner' };
         }
-    
-        room.roomCurrentAdmins.push(user);
+
+        if (!(await room).users.includes(targetUser.id)) {
+            return { success: false, error: 'Target user is not in this channel' };
+        }
+
+        if ((await room).admins.includes(targetUser.id)) {
+            if ((await room).admins.includes(user.id)) {
+                return { success: false, error: 'Cannot kick another admin' };
+            } 
+            else if ((await room).owner === user.id) {
+                (await room).users = (await room).users.filter(id => id !== targetUser.id);
+                await this.roomRepository.save(room);
+                return { success: true };
+            }
+            else {
+                return { success: false, error: 'You are not admin' };
+            }
+        }
+
+        (await room).users = (await room).users.filter(id => id !== targetUser.id);
         await this.roomRepository.save(room);
-    }
 
-    async unsetRoomAdministrator(roomName: string, userId: number): Promise<void> {
-        const room = await this.roomRepository.findOne({
-            where: { name: roomName },
-            relations: ["roomCurrentAdmins"] // Assurez-vous de charger les administrateurs actuels de la salle.
-        });
-    
-        if (!room) {
-            throw new Error(`Room with name ${roomName} not found.`);
-        }
-    
-        const user = await this.userService.findUserById(userId); // Utilisez la fonction pour obtenir un utilisateur unique.
-    
-        if (!user) {
-            throw new Error(`User with ID ${userId} not found.`);
-        }
-    
-        // Vérifiez si l'utilisateur est effectivement un administrateur.
-        const adminIndex = room.roomCurrentAdmins.findIndex(admin => admin.id === userId);
-        if (adminIndex === -1) {
-            throw new Error(`User with ID ${userId} is not an administrator for the room ${roomName}.`);
-        }
-    
-        room.roomCurrentAdmins.splice(adminIndex, 1); // Supprimez l'utilisateur de la liste des administrateurs.
-        await this.roomRepository.save(room);
-    }
-    
-
-    async getRoomAdministrators(name: string): Promise<UserEntity[]> {
-        const room = await this.roomRepository.findOne({
-            where: { name: name },
-            relations: ["roomCurrentAdmins"]
-        });
-    
-        if (!room) {
-            throw new Error(`Room with name ${name} not found.`);
-        }
-    
-        return room.roomCurrentAdmins;
-    }
-
-    async isUserAdminOfRoom(roomName: string, username: string): Promise<boolean> {
-        const room = await this.roomRepository.findOne({
-            where: { name: roomName },
-            relations: ["roomCurrentAdmins"]
-        });
-    
-        if (!room) {
-            throw new Error(`Room with name ${roomName} not found.`);
-        }
-    
-        const isAdmin = room.roomCurrentAdmins.some(admin => admin.username === username);
-        return isAdmin;
+        return { success: true };
     }
 
 }
