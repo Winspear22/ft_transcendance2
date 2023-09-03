@@ -6,7 +6,7 @@ import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from 'src/user/user.service';
-import { ConnectedSocket } from '@nestjs/websockets';
+import { ConnectedSocket, WebSocketServer } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
 import { MessageEntity } from './entities/message.entity';
 
@@ -107,7 +107,8 @@ export class RoomService
     }
 
     async quitChannel(body: { 
-        channelName: string; }, @ConnectedSocket() client: Socket) {
+        channelName: string; }, 
+        @ConnectedSocket() client: Socket) {
         const { channelName } = body;
         
         const user = client.data.user;
@@ -223,4 +224,71 @@ export class RoomService
         return { success: true };
     }
 
+    //--------------------------------------------------------------------------------------//
+    //-------------------------------------ROOM GETTERS-------------------------------------//
+    //--------------------------------------------------------------------------------------//
+    async getYourRooms(@ConnectedSocket() client: Socket) {
+    
+        const user = client.data.user;
+        
+        // Trouver tous les channels où l'utilisateur est présent
+        const channels = await this.roomRepository.find({
+          where: {
+            users: user.id,
+          }
+        });
+    
+        const channelNames = channels.map(channel => ({ channelName: channel.roomName }));
+        return { success: true, yourChannels: channelNames };
+      }
+    
+      async getRooms(@ConnectedSocket() client: Socket) {
+        
+        const user = client.data.user;    
+        const channels = await this.roomRepository.find({
+          where: {
+            isPrivate: false,
+          }
+        });
+    
+        const retChannels = channels.map(channel => ({
+          channelName: channel.roomName,
+          users: channel.users.length,
+          owner: channel.owner,
+          hasPassword: !!channel.password,
+        }));
+    
+        return { success: true, channels: retChannels };
+      }
+    
+      async getRoomMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
+        const { roomName } = body;
+    
+        const user = client.data.user;        
+        // Votre logique d'authentification avec des jetons ici...
+    
+        const room = await this.roomRepository.findOne({
+          where: { roomName },
+          relations: ['messages']
+        });
+    
+        if (!room) {
+          return { success: false, error: 'Room not found' };
+        }
+
+        const retMessages = await Promise.all(room.messages.map(async (message) => {
+        const sender = await this.usersRepository.findOne({ where: { id: message.senderId } });
+        return {
+            senderId: message.senderId,
+            text: message.text,
+            time: message.createdAt,
+            username: sender.username,
+            avatar: sender.profile_picture,
+          };
+        }));
+    
+        return { success: true, chat: { room: roomName, messages: retMessages } };
+      }
+    
+    //--------------------------------------------------------------------------------------//
 }

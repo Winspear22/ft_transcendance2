@@ -83,15 +83,11 @@ export class ChatGateway
   @SubscribeMessage('quitRoom')
   async quitRoom(@MessageBody() data: { 
   channelName: string }, @ConnectedSocket() client: Socket) {
-    // Vérifier le nom du canal, l'accès utilisateur, etc. si nécessaire
-    // Vous pouvez utiliser le même ChatGuard ou un autre guard pour faire ces vérifications
-    
-    const result = true;//await this.roomService.quitRoom(data, client);
-    
-    //if (result.success) {
-      // Envoyer un message à tous les utilisateurs du canal pour les informer que l'utilisateur a quitté la salle
-    //  this.server.to(data.channelName).emit('userLeft', { username: client.data.user.username, channelName: data.channelName });
-   // }
+    const result = await this.roomService.quitChannel(data, client);
+    if (result.success) {
+      client.leave(data.channelName);
+      this.server.to(data.channelName).emit('userLeft', { username: client.data.user.username, channelName: data.channelName });
+    }
 
     return result;
   }
@@ -107,6 +103,9 @@ export class ChatGateway
     {
       this.server.emit('channeljoined', client.data.user.username, "Channel joined : ", { channelName: data.channelName });
       client.join(data.channelName);
+      client.on('disconnect', () => {
+        client.leave(data.channelName);
+      });
       return (result);
     }
     else
@@ -114,6 +113,29 @@ export class ChatGateway
       this.server.emit('channeljoined', "Error, there was a pb in joining the channel");
       return (result);
     }
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('getRooms')
+  async getChannels(@ConnectedSocket() client: Socket) {
+    const channels = await this.roomService.getRooms(client);
+    return channels;
+  }
+
+  // Ajout de la méthode getYourChannels
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('getYourRooms')
+  async getYourChannels(@ConnectedSocket() client: Socket) {
+    const yourChannels = await this.roomService.getYourRooms(client);
+    return yourChannels;
+  }
+
+  // Ajout de la méthode getChannelMessages
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('getRoomMessages')
+  async getChannelMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
+    const channelMessages = await this.roomService.getRoomMessages(body, client);
+    return channelMessages;
   }
 
 }
