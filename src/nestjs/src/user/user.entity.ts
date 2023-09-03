@@ -65,15 +65,4 @@ export class UserEntity
 
   @Column({ default: false })
   public isTwoFactorAuthenticationEnabled: boolean;
-
-  /*==========================================================================*/
-
-  /*@OneToMany(() => RoomEntity, room => room.roomCreator)
-  createdRooms: RoomEntity[];
-
-  @ManyToMany(() => RoomEntity, room => room.roomCurrentAdmins)
-  administratedRooms: RoomEntity[];
-
-  @ManyToMany(() => RoomEntity, room => room.members)
-  MemberofRooms: RoomEntity[];*/
 }

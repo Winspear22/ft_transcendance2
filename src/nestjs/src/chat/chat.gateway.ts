@@ -14,6 +14,8 @@ import { ChatGuard } from './guard/chat-guard.guard';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RoomBanGuard } from './guard/chat-guard.guard';
+import { UserEntity } from 'src/user/user.entity';
+import { MessageEntity } from './entities/message.entity';
 
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
@@ -24,9 +26,13 @@ export class ChatGateway
     private readonly roomService: RoomService,
     @InjectRepository(RoomEntity)
     private roomRepository: Repository<RoomEntity>,
+    @InjectRepository(UserEntity)
+    private usersRepository: Repository<UserEntity>,
+    @InjectRepository(MessageEntity)
+    private messagesRepository: Repository<MessageEntity>
     ) {}
   
-  private ref_client = new Map<string, number>()
+  private ref_client = new Map<number, string>()
 
 
 
@@ -44,9 +50,10 @@ export class ChatGateway
       console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
       return this.handleDisconnect(client);
     }
+    this.emitChannels(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     
-    this.ref_client.set(client.id, user.id);
+    this.ref_client.set(user.id, client.id);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
 
@@ -152,6 +159,45 @@ export class ChatGateway
   async getChannelMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
     const channelMessages = await this.roomService.getRoomMessages(body, client);
     return channelMessages;
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('sendDM')
+  async handleDMs(@MessageBody() body: { room: string,
+  senderUsername: string,
+  message: string,
+  receiverUsername: string }, @ConnectedSocket() client: Socket): Promise<void> {
+    const sender = await this.chatService.getUserFromSocket(client);//await this.usersRepository.findOne({ where: { username: body.senderUsername } });
+    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    console.log("Is this.server instance of Server?", this.server instanceof require("socket.io").Server);
+    console.log("Is this.server.sockets instance of Namespace?", this.server.sockets instanceof require("socket.io").Namespace);
+    
+    if (!sender || !receiver) {
+      return;
+    }
+
+    if (body.message.length === 0) {
+      return;
+    }
+    const roomId = await this.roomService.getRoomByName(body.room);
+    const newMessage = this.messagesRepository.create({
+      senderId: sender.id,
+      text: body.message,
+      channelId: roomId.id
+    });
+    const savedMessage = await this.messagesRepository.save(newMessage);
+    const receiverSocketId = this.ref_client.get(receiver.id);
+    console.log(receiverSocketId);
+    console.log(this.ref_client);
+
+    if (receiverSocketId !== undefined) {
+      // Utilisez l'ID de la socket pour envoyer un message ou pour d'autres opérations
+      // Par exemple, avec Socket.io, vous pouvez faire quelque chose comme ceci :
+      this.server.to(receiverSocketId).emit("sendDM", newMessage.text);
+    } //else {
+      // Gérez le cas où l'ID de l'utilisateur n'existe pas dans la Map
+    //}
+    //this.server.emit('sendDM', { senderId: sender.id, text: body.message, time: savedMessage.createdAt, username: sender.username });
   }
 
 }
