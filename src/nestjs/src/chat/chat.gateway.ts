@@ -119,8 +119,24 @@ export class ChatGateway
   @SubscribeMessage('getRooms')
   async getChannels(@ConnectedSocket() client: Socket) {
     const channels = await this.roomService.getRooms(client);
+    //await this.server.to(client.id).emit('channel', channels);
     return channels;
   }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitRooms')
+  async emitChannels(@ConnectedSocket() client: Socket) {
+    const channels = await this.roomService.getRooms(client);
+    return await this.server.to(client.id).emit('emitRooms', channels); // Pas sur, il faut que ca puisse envoyer a tout le monde.
+  }
+
+      /*async emitChannelForConnectedUsers() {
+        const connections: ConnectedUserI[] = await this.connectedUserService.findAll();
+        for (const connection of connections) {
+            const channels: ChannelI[] = await this.channelService.getChannelsForUser(connection.user.userId);
+            await this.server.to(connection.socketId).emit('channel', channels);
+        }
+    }*/
 
   // Ajout de la méthode getYourChannels
   @UseGuards(ChatGuard)

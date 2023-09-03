@@ -52,7 +52,7 @@ export class RoomService
         const newRoom: Partial<RoomEntity> = {
             roomName: channelName,
             password: hasPassword ? password : null,
-            isPrivate,
+            isPrivate: isPrivate,
             owner: userId,
             roomMode: isPrivate ? 'private' : 'public',
             users: [userId], // initialiser avec l'ID de l'utilisateur propriétaire
