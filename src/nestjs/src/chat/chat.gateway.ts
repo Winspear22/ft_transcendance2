@@ -95,7 +95,7 @@ export class ChatGateway
     return result;
   }
 
-  @UseGuards(ChatGuard, RoomBanGuard)
+  @UseGuards(ChatGuard)
   @SubscribeMessage('quitRoom')
   async quitRoom(@MessageBody() data: { 
   channelName: string }, @ConnectedSocket() client: Socket) {
@@ -209,6 +209,21 @@ export class ChatGateway
     //this.server.emit('sendDM', { senderId: sender.id, text: body.message, time: savedMessage.createdAt, username: sender.username });
   }*/
 
+
+  //--------------------------------------------------------------------------------------//
+  //------------------------------------GESTION DES DMS-----------------------------------//
+  //--------------------------------------------------------------------------------------//
+  
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('joinDM')
+  joinDM(@ConnectedSocket() socket: Socket, @MessageBody() body: { room: string }): void {
+    socket.join(body.room);
+    socket.on('disconnect', () => {
+      socket.leave(body.room);
+    });
+    this.server.emit('joinDM', body.room);
+  }
+  
   @UseGuards(ChatGuard)
   @SubscribeMessage('sendDM')
   async handleMessage(
@@ -220,25 +235,18 @@ export class ChatGateway
     let chat = await this.friendChatsRepository.findOne({
       where: { room: body.room }
     });
-  
-    // Si le chat n'existe pas, on le crée
-    if (!chat) {
+    if (!chat) 
+    {
       chat = new FriendChat();
       chat.room = body.room;
       chat = await this.friendChatsRepository.save(chat);
     }
-    console.log("ICI");
-;
 
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
-    //console.log(chat);
-    console.log(sender);
-    console.log(receiver)
     if (!sender || !receiver) {
       return;
     }
-    console.log("ICI 2");
 
     if (receiver.blockedIds && receiver.blockedIds.includes(sender.id)) {
       return;
@@ -247,12 +255,10 @@ export class ChatGateway
     if (sender.blockedIds && sender.blockedIds.includes(receiver.id)) {
       return;
     }
-    console.log("ICI 3");
 
     if (body.message.length === 0) {
       return;
     }
-    console.log("ICI 4");
 
     const newMessage = new FriendMessage();
     newMessage.chat = chat;
@@ -261,7 +267,6 @@ export class ChatGateway
 
     const savedMessage = await this.friendMessageRepository.save(newMessage);
 
-    // Émission du message à travers le websocket
     const receiverSocketId = this.ref_client.get(receiver.id);
     console.log(receiverSocketId);
     console.log(this.ref_client);
