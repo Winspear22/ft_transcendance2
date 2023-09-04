@@ -8,17 +8,12 @@ import { UserEntity } from './user.entity';
 import { Repository } from 'typeorm';
 import { authenticator } from 'otplib';
 import { Response } from 'express';
-import { Request } from 'express';
 import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
-import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 import { UpdateEmailDto, UpdateUserDto } from './dto/updateuser.dto';
 import { ImageDto } from './dto/profile_picture.dto';
-import { Observable, of } from 'rxjs';
-import { join } from 'path';
-//import path = require("path")
 import * as path from 'path'; // Assurez-vous que le module 'path' est importé
 
 export class AuthDto {
@@ -47,8 +42,6 @@ export class UserService {
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
     private jwtService: JwtService,
-    @InjectRepository(BlacklistedToken)
-    private blacklistedTokenRepository: Repository<BlacklistedToken>
   ) {}
 
   async createUser(userDet: any): Promise<UserEntity> {
@@ -417,21 +410,6 @@ export class UserService {
       console.log('TFA EROOOOR ', e);
     }
   }
-
-
-  /*async blacklistToken(token: string, expiryDate: Date): Promise<void> {
-    const blacklistedToken = new BlacklistedToken();
-    blacklistedToken.token = token;
-    blacklistedToken.expiryDate = expiryDate;
-    await this.blacklistedTokenRepository.save(blacklistedToken);
-  }*/
-
-  /*async isTokenBlacklisted(token: string): Promise<boolean> 
-  {
-    console.log("token dans isblacklisted ==== ",  token);
-    const found = await this.blacklistedTokenRepository.findOneBy({ token });
-    return !!found;
-  }*/
 
   async returnPartialUserInfo(username: string): Promise<Partial<UserEntity>>
   {

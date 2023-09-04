@@ -7,7 +7,6 @@ import { UsersRepository } from './user.repository';
 import { PassportModule, PassportStrategy } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
-import { BlacklistedToken } from 'src/chat/entities/blacklisted-token.entity';
 
 /*@Module({
   imports: [
@@ -31,7 +30,7 @@ import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UsersRepository, BlacklistedToken]),  // Ajoutez BlacklistedTokenEntity ici
+    TypeOrmModule.forFeature([UserEntity, UsersRepository]),  // Ajoutez BlacklistedTokenEntity ici
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: 'superSecret2021',
