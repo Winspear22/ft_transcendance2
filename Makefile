@@ -28,7 +28,7 @@ volume_delete:
 	sudo docker volume prune
 volume_delete2:
 	bash
-	sudo docker volume rm $(docker volume ls -q)
+	docker volume rm $(docker volume ls -q)
 	exit
 post:
 	sudo docker exec -it postgresql bash -l
@@ -51,4 +51,3 @@ inspect:
 .PHONY: up down rm rmi show volume_show volume_delete \
 post pgadmin pgadmin_sudo fclean inspect retry all show_network \
 volume_delete2
-

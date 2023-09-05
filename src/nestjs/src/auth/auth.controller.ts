@@ -74,7 +74,8 @@ export class AuthController {
     c_user['email'] = c_user['login'] + "@guest.com"
     const username = await this.userService.createUser2(c_user);
     this.authService.WriteCommandsNames("GUEST CALLBACK");
-    await this.userService.CreateCookiesForNewGuest(res, username.username);
+    return await this.userService.CreateCookiesForNewGuest(res, username.username);
+  
   }
   /*==========================================================================*/
 

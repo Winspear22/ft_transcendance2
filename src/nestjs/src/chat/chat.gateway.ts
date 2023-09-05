@@ -13,6 +13,12 @@ import { UseGuards } from '@nestjs/common';
 import { ChatGuard } from './guard/chat-guard.guard';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { RoomBanGuard } from './guard/chat-guard.guard';
+import { UserEntity } from 'src/user/user.entity';
+import { MessageEntity } from './entities/message.entity';
+import { FriendMessage } from 'src/user/entities/friendmessage.entity';
+import { Friend } from 'src/user/entities/friend.entity';
+import { FriendChat } from 'src/user/entities/friendchat.entity';
 
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
@@ -23,21 +29,25 @@ export class ChatGateway
     private readonly roomService: RoomService,
     @InjectRepository(RoomEntity)
     private roomRepository: Repository<RoomEntity>,
+    @InjectRepository(UserEntity)
+    private usersRepository: Repository<UserEntity>,
+    @InjectRepository(MessageEntity)
+    private messagesRepository: Repository<MessageEntity>,
+    @InjectRepository(Friend)
+    private friendsRepository: Repository<Friend>,
+    @InjectRepository(FriendChat)
+    private friendChatsRepository: Repository<FriendChat>,
+    @InjectRepository(FriendMessage)
+    private friendMessageRepository: Repository<FriendMessage>,
     ) {}
   
-  private ref_client = new Map<string, number>()
+  private ref_client = new Map<number, string>()
 
 
 
   @WebSocketServer()
   server: Server;
   
-  @SubscribeMessage('message')
-  handleMessage(@MessageBody() msg: string)
-  {
-    console.log("Message venant de la socket : ", msg);
-    this.server.emit('message', msg);
-  }
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
@@ -49,9 +59,10 @@ export class ChatGateway
       console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
       return this.handleDisconnect(client);
     }
+    this.emitChannels(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     
-    this.ref_client.set(client.id, user.id);
+    this.ref_client.set(user.id, client.id);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
 
@@ -64,244 +75,204 @@ export class ChatGateway
   }
 
   @UseGuards(ChatGuard)
-  @SubscribeMessage('newMessage')
-  async handleNewMessage(@MessageBody() data: CreateMessageDto, @ConnectedSocket() client: Socket) {
-    console.log("data = ", data);
-    const newMessage = await this.chatService.createMessage(data);
-    
-    console.log("Message = ", newMessage);
-    this.server.emit('newMessage', newMessage);
-    return { status: 'Message sent and saved' };
-  }
-
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('getAllMessages')
-  async GetAllMessages() 
-  {
-    const messages = await this.chatService.getAllMessages();
-    this.server.emit('getAllMessages', messages);
-    return await this.chatService.getAllMessages();
-  }
-  
-  /**
-  * Permet de creer une room
-  */
-  @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
-  async handleCreateRoom(@MessageBody() data: { roomName: string, 
-  password: string, publicRoom: boolean },
-  @ConnectedSocket() client: Socket): Promise<RoomEntity | undefined> 
+  async createRoom(@MessageBody() data: {
+  channelName: string, 
+  hasPassword: boolean,
+  password?: string,
+  isPrivate: boolean }, @ConnectedSocket() client: Socket)
   {
-    const roomName = await this.roomService.getRoomByName(data.roomName);
-    if (roomName == undefined)
-    {
-      const room = await this.roomService.createRoom(data, client.data.user);
-      client.join(room.name);
-      room.roomCreator = await this.roomService.setRoomCreator(room.name, client.data.user.id);
-      await this.roomService.addUserToRoominDb(room.name, client.data.user);
-      this.server.emit("RoomCreationSuccess", "la room " + room.name + " a ete creee avec success !");
-      return room;
+    if (data.channelName && data.channelName.length > 18) {
+      return { success: false, error: 'Channel name too long (18 characters maximum)' };
     }
-    else
-    {
-      this.server.emit("RoomCreationError", "La room " + roomName.name + " existe deja, par consequent elle n'a pas ete creee");
-      return roomName;
-    } 
+    
+    const result = await this.roomService.createRoom(data, client);
+    
+    if (result.success) {
+      this.server.emit('channelCreated', "Channel created : " + { channelName: data.channelName, isPrivate: data.isPrivate });
+    }
+
+    return result;
   }
 
   @UseGuards(ChatGuard)
+  @SubscribeMessage('quitRoom')
+  async quitRoom(@MessageBody() data: { 
+  channelName: string }, @ConnectedSocket() client: Socket) {
+    const result = await this.roomService.quitChannel(data, client);
+    if (result.success) {
+      client.leave(data.channelName);
+      this.server.to(data.channelName).emit('userLeft', { username: client.data.user.username, channelName: data.channelName });
+    }
+
+    return result;
+  }
+
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(@MessageBody() data: { roomName: string, password: string },
-  @ConnectedSocket() client: Socket): Promise<void> 
+  async joinRoom(@MessageBody() data: {
+  channelName: string, 
+  password?: string }, @ConnectedSocket() client: Socket)
   {
-    const room = await this.roomService.getRoomByName(data.roomName); // Supposant que vous avez une méthode getRoomById
-    if (room) 
+    const result = await this.roomService.joinChannel(data, client);
+    if (result.success)
     {
-      if ((room.password != null && await this.roomService.verifyPassword(data.password, room.password) === true) 
-      || (room.password == null && data.password == null))
-      {
-        const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
-        if (user != undefined)
-        {
-          client.join(room.name);
-          this.server.emit("userJoinedRoomSuccess", "User " + client.data.user.username + " is already part of the room " + room.name + ".");
-          return ;
-        }
-        client.join(room.name);
-        await this.roomService.addUserToRoominDb(room.name, client.data.user);
-        this.server.emit("userJoinedRoomSuccess", "User " + client.data.user.username + " joined room " + room.name + " successfully.");
-      }
-      else
-        this.server.emit("userJoinedRoomError", "Error, wrong password.");
+      this.server.emit('channeljoined', client.data.user.username, "Channel joined : ", { channelName: data.channelName });
+      client.join(data.channelName);
+      client.on('disconnect', () => {
+        client.leave(data.channelName);
+      });
+      return (result);
     }
     else
     {
-      const message = "User " + client.data.user.username + " did not join room " + data.roomName + " because it does not exist.";
-      this.server.emit("userJoinedRoomError", message);
-      console.log(message);
+      this.server.emit('channeljoined', "Error, there was a pb in joining the channel");
+      return (result);
     }
   }
 
   @UseGuards(ChatGuard)
-  @SubscribeMessage('deleteRoom')
-  async handleDeleteRoom(@MessageBody() data: { roomName: string }, 
-  @ConnectedSocket() client: Socket): Promise<void> 
-  {
-    const room = await this.roomService.getRoomByName(data.roomName);
-    if (room)
-    {
-      client.leave(room.name);
-      await this.roomService.deleteUserFromRoominDb(data.roomName, client.data.user);
-      await this.chatService.setUserAdminStatusOFF(client, room.id);
-      await this.chatService.setUserCreatorStatusOFF(client, room.id);
-      await this.roomService.deleteRoom(data.roomName);
-      const message = "La room " + room.name + " a ete supprimee avec succes !";
-      console.log(message);
-      this.server.emit("RoomDeletionSuccess", message);
-    }
-    else
-    {
-      const message = "La room " + data.roomName + " n'existe pas.";
-      console.log(message);
-      this.server.emit("RoomDeletionError", message);
-    }
-}
-
-
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(@MessageBody() data: { roomName: string }, @ConnectedSocket() client: Socket): Promise<void> 
-  {
-    const room = await this.roomService.getRoomByName(data.roomName);
-    console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms AVANT leave ", colors.WHITE, client.rooms);
-    /*CAS OU LA ROOM EXISTE*/
-    if (room) 
-    {
-      const user = await this.roomService.getSpecificMemberOfRoom(room.name, client.data.user.id); //pas sur de laisser l'id pour la fonction
-      console.log(colors.BRIGHT + colors.YELLOW + " UTILISATEUR TROUVE DANS LEAVE === " + colors.WHITE, user, colors.RESET);
-      if (user == undefined)
-      {
-        var message2 = "User " + client.data.user.username + " is not part of the room " + room.name + ". He therefore cannot leave it.";
-        this.server.emit("userLeftRoomSuccess", message2);
-        return ;
-      }
-        const membersFromRoom = await this.roomService.getAllMembersFromRoom(room.name);
-        /* CAS OU L'UTILISATEUR EST LE DERNIER DANS LA ROOM */
-        if ((await membersFromRoom).length === 1)
-        {
-          console.log(colors.BRIGHT + colors.RED + "J'ai lance handleDeleteRoom" + colors.RESET);
-          await this.handleDeleteRoom(data, client);
-        }
-        /* CAS OU L'UTILISATEUR N'EST PAS LE DERNIER DANS LA ROOM */
-        else
-        {
-          client.leave(room.name);
-          await this.roomService.deleteUserFromRoominDb(room.name, client.data.user);
-          const message = "User " + client.data.user.username + " left room " + room.name;
-          this.server.emit("userLeftRoomSuccess", message);
-          console.log(colors.BRIGHT + colors.GREEN + "L'utilisateur : ", colors.WHITE, client.data.user.username, colors.GREEN, " fait parti des rooms APRES leave ", colors.WHITE, client.rooms);
-        }
-    }
-    /* CAS OU LA ROOM N'EXISTE PAS*/
-    else
-    {
-      const message = "User " + client.data.user.username + " could not leave " + data.roomName + " because it does not exist.";
-      this.server.emit("userLeftRoomError", message);
-      console.log(message);
-    }
+  @SubscribeMessage('getRooms')
+  async getChannels(@ConnectedSocket() client: Socket) {
+    const channels = await this.roomService.getRooms(client);
+    //await this.server.to(client.id).emit('channel', channels);
+    return channels;
   }
 
-  /*=========================================================================================*/
-  /*----------------------------------POUVOIRS DE L'OWNER------------------------------------*/
-  /*=========================================================================================*/
-
-  /*---------------------------------CHANGER LE MOT DE PASSE---------------------------------*/
   @UseGuards(ChatGuard)
-  @SubscribeMessage('changePassword')
-  async handleChangePassword(@MessageBody() data: { roomName: string, password: string },
-  @ConnectedSocket() client: Socket): Promise<void> 
-  {
-    const room = await this.roomService.getRoomByName(data.roomName);
-    const roomCreator = await this.roomService.getRoomCreator(data.roomName);
-    if (room && roomCreator) 
-    {
-      console.log("Roome creator userneme === " + colors.FG_GREEN + roomCreator.username + colors.RESET);
-      if (roomCreator.id == client.data.user.id)
-      {
-        if (await this.roomService.verifyPassword(data.password, room.password) === true)
-          this.server.emit("changePasswordError", "Error, this is the same password.");
-        else
-        {
-          room.password = await this.roomService.setPassword(data.password);
-          await this.roomRepository.update(room.id, { password: room.password });
-          this.server.emit("changePasswordSuccess", "Password for room " + data.roomName + " changed.");  
+  @SubscribeMessage('emitRooms')
+  async emitChannels(@ConnectedSocket() client: Socket) {
+    const channels = await this.roomService.getRooms(client);
+    return await this.server.to(client.id).emit('emitRooms', channels); // Pas sur, il faut que ca puisse envoyer a tout le monde.
+  }
+
+      /*async emitChannelForConnectedUsers() {
+        const connections: ConnectedUserI[] = await this.connectedUserService.findAll();
+        for (const connection of connections) {
+            const channels: ChannelI[] = await this.channelService.getChannelsForUser(connection.user.userId);
+            await this.server.to(connection.socketId).emit('channel', channels);
         }
-      }
-      else
-        this.server.emit("changePasswordError", "Error, you are not the room owner.");
-    }
-    else
-      this.server.emit("changePasswordError", "Password for room " + data.roomName + " could not be changed, because the room does not exist.");
-  }
+    }*/
 
-  /*-----------------------------------DESIGNER DES ADMINS-----------------------------------*/
+  // Ajout de la méthode getYourChannels
   @UseGuards(ChatGuard)
-  @SubscribeMessage('setNewAdmin')
-  async handleSetAdmin(@MessageBody() data: { roomName: string, adminName: string },
-  @ConnectedSocket() client: Socket): Promise<void> 
-  {
-    const room = await this.roomService.getRoomByName(data.roomName);
-    const roomCreator = await this.roomService.getRoomCreator(data.roomName);
-    const newAdmin = await this.roomService.getSpecificMemberOfRoomByUsername(data.roomName, data.adminName);
-
-    if (room && roomCreator && newAdmin) 
-    {
-      console.log("Roome creator userneme === " + colors.FG_GREEN + roomCreator.username + colors.RESET);
-      if (roomCreator.id == client.data.user.id)
-      {
-          await this.roomService.setRoomAdministrator(room.name, newAdmin.id);
-          this.server.emit("setAdminSuccess", newAdmin.username + "is a new admin in " + room.name);
-      }
-      else
-        this.server.emit("setAdminError", "Error, you are not the room owner.");
-
-    }
-    else
-      this.server.emit("setAdminError", "Error with set new administrator.");
+  @SubscribeMessage('getYourRooms')
+  async getYourChannels(@ConnectedSocket() client: Socket) {
+    const yourChannels = await this.roomService.getYourRooms(client);
+    return yourChannels;
   }
 
-  /*-------------------------------------VIRER DES ADMINS-------------------------------------*/
-
+  // Ajout de la méthode getChannelMessages
   @UseGuards(ChatGuard)
-  @SubscribeMessage('unsetNewAdmin')
-  async handlesUnsetAdmin(@MessageBody() data: { roomName: string, adminName: string },
-  @ConnectedSocket() client: Socket): Promise<void> 
-  {
-    const room = await this.roomService.getRoomByName(data.roomName);
-    const roomCreator = await this.roomService.getRoomCreator(data.roomName);
-    const adminToUnset = await this.roomService.getSpecificMemberOfRoomByUsername(data.roomName, data.adminName);
-
-    if (room && roomCreator && adminToUnset) 
-    {
-        if (roomCreator.id === client.data.user.id) 
-        {
-            await this.roomService.unsetRoomAdministrator(room.name, adminToUnset.id);
-            this.server.emit("unsetAdminSuccess", `${adminToUnset.username} is no longer an admin in ${room.name}`);
-        }
-        else
-            this.server.emit("unsetAdminError", "Error: you are not authorized to remove administrators.");
-    }
-    else
-        this.server.emit("unsetAdminError", "Error with unset administrator.");
+  @SubscribeMessage('getRoomMessages')
+  async getChannelMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
+    const channelMessages = await this.roomService.getRoomMessages(body, client);
+    return channelMessages;
   }
-  /*=========================================================================================*/
+
+  /*@UseGuards(ChatGuard)
+  @SubscribeMessage('sendDM')
+  async handleDMs(@MessageBody() body: { room: string,
+  senderUsername: string,
+  message: string,
+  receiverUsername: string }, @ConnectedSocket() client: Socket): Promise<void> {
+    const sender = await this.chatService.getUserFromSocket(client);//await this.usersRepository.findOne({ where: { username: body.senderUsername } });
+    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    console.log("Is this.server instance of Server?", this.server instanceof require("socket.io").Server);
+    console.log("Is this.server.sockets instance of Namespace?", this.server.sockets instanceof require("socket.io").Namespace);
+    
+    if (!sender || !receiver) {
+      return;
+    }
+
+    if (body.message.length === 0) {
+      return;
+    }
+    const roomId = await this.roomService.getRoomByName(body.room);
+    const newMessage = this.messagesRepository.create({
+      senderId: sender.id,
+      text: body.message,
+      channelId: roomId.id
+    });
+    const savedMessage = await this.messagesRepository.save(newMessage);
+    const receiverSocketId = this.ref_client.get(receiver.id);
+    console.log(receiverSocketId);
+    console.log(this.ref_client);
+
+    if (receiverSocketId !== undefined) {
+      // Utilisez l'ID de la socket pour envoyer un message ou pour d'autres opérations
+      // Par exemple, avec Socket.io, vous pouvez faire quelque chose comme ceci :
+      this.server.to(receiverSocketId).emit("sendDM", newMessage.text);
+    } //else {
+      // Gérez le cas où l'ID de l'utilisateur n'existe pas dans la Map
+    //}
+    //this.server.emit('sendDM', { senderId: sender.id, text: body.message, time: savedMessage.createdAt, username: sender.username });
+  }*/
+
+
+  //--------------------------------------------------------------------------------------//
+  //------------------------------------GESTION DES DMS-----------------------------------//
+  //--------------------------------------------------------------------------------------//
   
-  /*=========================================================================================*/
-  /*-----------------------------POUVOIRS DE L'OWNER ET DES ADMINS---------------------------*/
-  /*=========================================================================================*/
-  /*-------------------------------------BANNIR LES USERS------------------------------------*/
-  /*-------------------------------------KICKER LES USERS------------------------------------*/
-  /*-------------------------------------MUTER  LES USERS------------------------------------*/
-  /*=========================================================================================*/
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('joinDM')
+  joinDM(@ConnectedSocket() socket: Socket, @MessageBody() body: { room: string }): void {
+    socket.join(body.room);
+    socket.on('disconnect', () => {
+      socket.leave(body.room);
+    });
+    this.server.emit('joinDM', body.room);
+  }
+  
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('sendDM')
+  async handleMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { room: string, senderUsername: string, message: string, receiverUsername: string }
+  ): Promise<void> 
+  {
 
+    let chat = await this.friendChatsRepository.findOne({
+      where: { room: body.room }
+    });
+    if (!chat) 
+    {
+      chat = new FriendChat();
+      chat.room = body.room;
+      chat = await this.friendChatsRepository.save(chat);
+    }
+
+    const sender = await this.chatService.getUserFromSocket(client);
+    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    if (!sender || !receiver) {
+      return;
+    }
+
+    if (receiver.blockedIds && receiver.blockedIds.includes(sender.id)) {
+      return;
+    }
+    
+    if (sender.blockedIds && sender.blockedIds.includes(receiver.id)) {
+      return;
+    }
+
+    if (body.message.length === 0) {
+      return;
+    }
+
+    const newMessage = new FriendMessage();
+    newMessage.chat = chat;
+    newMessage.senderId = sender.id;
+    newMessage.text = body.message;
+
+    const savedMessage = await this.friendMessageRepository.save(newMessage);
+
+    const receiverSocketId = this.ref_client.get(receiver.id);
+    console.log(receiverSocketId);
+    console.log(this.ref_client);
+
+    if (receiverSocketId !== undefined) {
+      this.server.to(receiverSocketId).emit("sendDM", savedMessage);
+  }
+}
 }
