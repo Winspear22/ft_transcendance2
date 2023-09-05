@@ -63,13 +63,41 @@ export class DMGateway
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
-  @UseGuards(ChatGuard)
+  /*@UseGuards(ChatGuard)
   @SubscribeMessage('emitDM')
   async emitDMs(@ConnectedSocket() client: Socket) {
     const DMs = await this.DMsService.getAllChatRoomsForUser(client.data.user.username);
     console.log(DMs);
     return await this.server.to(client.id).emit('emitDM', DMs); // Pas sur, il faut que ca puisse envoyer a tout le monde.
+  }*/
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitDM')
+  async emitDMs(@ConnectedSocket() client: Socket) {
+    const user = await this.chatService.getUserFromSocket(client);
+    if (!user) {
+      console.log("User not found");
+      return;
+    }
+
+  // Récupérer tous les FriendChats de cet utilisateur
+    const friendChats = await this.friendChatsRepository
+      .createQueryBuilder('friendChat')
+      .innerJoinAndSelect('friendChat.users', 'user', 'user.id = :userId', { userId: user.id })
+      .getMany();
+
+  // Joindre ces FriendChats
+    console.log(friendChats);
+    friendChats.forEach(friendChat => {
+      client.join(friendChat.room);
+    });
+    console.log("Je suis connecte : ", client.rooms); // Affiche quelque chose comme Set { <socket.id>, 'room1', 'room2', ... }
+  // Envoyer les FriendChats à l'utilisateur
+    const DMs = await this.DMsService.getAllChatRoomsForUser(user.username);
+    console.log(DMs);
+    return await this.server.to(client.id).emit('emitDM', DMs);
   }
+
 
   //--------------------------------------------------------------------------------------//
   //------------------------------------GESTION DES DMS-----------------------------------//
