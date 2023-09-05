@@ -1,46 +1,31 @@
 <template>
   <div class="setting-container">
-    <infoUser @userInfoFetched="handleUserInfo" />
-    <profilePicture :userPic="userProfilePic" />
-    <displayUser v-if="userInfo" :userInfo="userInfo" />
-    <buttonQrcode v-if="userInfo" :userInfo="userInfo" />
+    <infoUser @userInfoFetched="handleUserInfo"></infoUser>
+    <buttonQrcode :userInfo="userInformation"></buttonQrcode>
     <buttonLogout></buttonLogout>
   </div>
 </template>
 
 <script>
-import infoUser from './infoUser.vue';
-import buttonLogout from './buttonLogout';
-import displayUser from './displayUser.vue';
-import buttonQrcode from './buttonQrcode.vue';
-import profilePicture from './profilePicture';
+import buttonLogout from './ButtonLogout';
+import infoUser from './InfoUser.vue';
+import buttonQrcode from './ButtonQrcode.vue';
 
 export default {
   components: {
       buttonLogout,
-      profilePicture,
       infoUser,
-      displayUser,
-      buttonQrcode
+      buttonQrcode,
   },
   data() {
-      return {
-          userProfilePic: null,
-          userInfo: null
-      };
+    return {
+      userInformation: null,
+    };
   },
   methods: {
-      handleUserInfo(receivedUserInfo) {
-          this.userInfo = receivedUserInfo;
-      },
+    handleUserInfo(userInfo) {
+      this.userInformation = userInfo;
+    },
   },
 };
 </script>
-
-<style>
-.setting-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-</style>

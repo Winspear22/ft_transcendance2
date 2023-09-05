@@ -1,27 +1,27 @@
 <template>
-    <div class="login-container">
-        <buttonLogin></buttonLogin>
-        <checkAuth></checkAuth>
-    </div>
+  <div class="login-container">
+      <buttonLogin></buttonLogin>
+      <checkAuth @requireTwoFa="showTwoFa = true" />
+      <twoFa v-if="showTwoFa" />
+  </div>
 </template>
 
 <script>
-import buttonLogin from './buttonLogin';
-import checkAuth from './checkAuth';
-//import recoveryToken from './recoveryToken';
-//import faLogin from './faLogin';
+import { ref } from 'vue';
+import buttonLogin from './ButtonLogin';
+import checkAuth from './CheckAuth';
+import twoFa from './TwoFa';
 
 export default {
-    components: {
-        buttonLogin,
-        checkAuth
-//        recoveryToken,
-//        faLogin
-    },
-//    computed: {
-//        isTwoAuthActive() {
-//            return this.$store.state.twoFaActivated;
-//        }
-//    }
+  components: {
+      buttonLogin,
+      checkAuth,
+      twoFa
+  },
+  setup() {
+      const showTwoFa = ref(false);
+
+      return { showTwoFa };
+  }
 };
 </script>

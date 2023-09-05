@@ -1,53 +1,30 @@
 <template>
     <div class="generateQr-container">
-        <div class="toggle-button" :class="{ 'activated': isTwoFaActivated && qrCodeUrl }" @click="generateTwoFa">
+        <div class="toggle-button" @click="generateTwoFa">
             <div class="slider"></div>
-        </div>
-        <img v-if="showQrImage && qrCodeUrl" :src="qrCodeUrl" alt="QR Code"/>
-        <div>
-            isTwoFaActivated: {{ isTwoFaActivated }}
-            <br>
-            qrCodeUrl: {{ qrCodeUrl }}
         </div>
     </div>
 </template>
 
 <script>
 import axios from 'axios';
-import { mapActions, mapGetters } from 'vuex';
 
 export default {
     data() {
-        return {
-            qrCodeUrl: null,
-            showQrImage: false
-        };
-    },
-    computed: {
-        ...mapGetters(['isTwoFaActivated'])
-    },
-    updated() {
-        if (this.qrCodeUrl) {
-            this.showQrImage = true;
-        }
+        return {};
     },
     methods: {
-        ...mapActions(['activateTwoFa']), 
         async generateTwoFa() {
             try {
                 const response = await axios.post('http://localhost:3000/auth/generate', {}, {withCredentials: true});
-                this.qrCodeUrl = response.data.qrCode;
-                this.showQrImage = true;
-                this.activateTwoFa(true);
+                this.$emit('qrCodeGenerated', response.data.qrCode); // Émission de l'événement
             } catch (error) {
-                this.showQrImage = false;
                 console.error("Erreur lors de la génération du QR Code:", error);
             }
         }
     }
 }
 </script>
-
 
 <style scoped>
 .toggle-button {
@@ -65,18 +42,18 @@ export default {
     left: 2px;
     width: 16px;
     height: 16px;
-    background-color: #2459d5; 
+    background-color: #2459d5;
     border-radius: 50%;
     transition: all 0.4s;
     transform: translateY(-50%);
 }
 
 .toggle-button.activated {
-    background-color: #2459d5; 
+    background-color: #2459d5;
 }
 
 .toggle-button.activated .slider {
     left: 22px;
     background-color: #2fe8ee;
 }
-</style>
+</style>%

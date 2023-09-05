@@ -23,7 +23,7 @@ export default {
                 if (response.status === 200) {
                     store.dispatch('authenticate', false);
                     store.dispatch('activateTwoFa', response.data.partialUser.isTwoFactorAuthenticationEnabled);
-                    router.push('/'); 
+                    router.push('/');
                 }
             } catch (error) {
                 console.error("Erreur lors de la déconnexion :", error);
@@ -50,4 +50,4 @@ export default {
 .logout-btn:hover {
   background-color: #2459d5;
 }
-</style>
+</style>%
