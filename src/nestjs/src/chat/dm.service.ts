@@ -91,13 +91,19 @@ export class DMService
           if (!user) {
             return { success: false };
           }
-      
+          /*TROUVER QUE L'UTILISATEUR*/
           // Trouver toutes les salles de chat où cet utilisateur est présent
-          const chats = await this.friendChatsRepository
+          /*const chats = await this.friendChatsRepository
             .createQueryBuilder('friendChat')
             .innerJoinAndSelect('friendChat.users', 'user', 'user.id = :userId', { userId: user.id })
             .getMany();
-      
+          */
+         /*TROUVER LES 2 UTILISATEURS*/
+          const chats = await this.friendChatsRepository
+            .createQueryBuilder('friendChat')
+            .innerJoinAndSelect('friendChat.users', 'user')
+            .getMany();
+          
           return {
             success: true,
             chats
