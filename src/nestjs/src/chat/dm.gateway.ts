@@ -9,6 +9,9 @@ import { FriendChat } from "src/user/entities/friendchat.entity";
 import { FriendMessage } from "src/user/entities/friendmessage.entity";
 import { ChatService } from "./chat.service";
 import { UserEntity } from "src/user/user.entity";
+import * as colors from '../colors';
+import { DMService } from "./dm.service";
+
 
 @WebSocketGateway({cors: true, namespace: 'dms'})
 export class DMGateway
@@ -23,6 +26,7 @@ export class DMGateway
     private friendMessageRepository: Repository<FriendMessage>,
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
+    private DMsService: DMService
 
     ) {}
 
@@ -30,7 +34,43 @@ export class DMGateway
 
     @WebSocketServer()
     server: Server;
+  
+  //--------------------------------------------------------------------------------------//
+  //---------------------------------CONNEXION/DECONNEXION--------------------------------//
+  //--------------------------------------------------------------------------------------//
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('Connection')
+  async handleConnection(@ConnectedSocket() client: Socket) 
+  {
+    const user = await this.chatService.getUserFromSocket(client);
+    if (user == undefined)
+    {
+      console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
+      return this.handleDisconnect(client);
+    }
+    this.emitDMs(client);
+    console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     
+    this.ref_client.set(user.id, client.id);
+    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
+    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
+
+  }
+
+  handleDisconnect(client: Socket)
+  {
+    client.disconnect();
+    console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitDM')
+  async emitDMs(@ConnectedSocket() client: Socket) {
+    const DMs = await this.DMsService.getAllChatRoomsForUser(client.data.user.username);
+    console.log(DMs);
+    return await this.server.to(client.id).emit('emitDM', DMs); // Pas sur, il faut que ca puisse envoyer a tout le monde.
+  }
+
   //--------------------------------------------------------------------------------------//
   //------------------------------------GESTION DES DMS-----------------------------------//
   //--------------------------------------------------------------------------------------//
@@ -45,24 +85,13 @@ export class DMGateway
     this.server.emit('joinDM', body.room);
   }
   
-  @UseGuards(ChatGuard)
+  /*@UseGuards(ChatGuard)
   @SubscribeMessage('sendDM')
   async handleMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() body: { room: string, senderUsername: string, message: string, receiverUsername: string }
   ): Promise<void> 
   {
-
-    let chat = await this.friendChatsRepository.findOne({
-      where: { room: body.room }
-    });
-    if (!chat) 
-    {
-      chat = new FriendChat();
-      chat.room = body.room;
-      chat = await this.friendChatsRepository.save(chat);
-    }
-
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
     if (!sender || !receiver) {
@@ -81,6 +110,16 @@ export class DMGateway
       return;
     }
 
+    let chat = await this.friendChatsRepository.findOne({
+      where: { room: body.room }
+    });
+    if (!chat) 
+    {
+      chat = new FriendChat();
+      chat.room = body.room;
+      chat = await this.friendChatsRepository.save(chat);
+    }
+
     const newMessage = new FriendMessage();
     newMessage.chat = chat;
     newMessage.senderId = sender.id;
@@ -94,6 +133,66 @@ export class DMGateway
 
     if (receiverSocketId !== undefined) {
       this.server.to(receiverSocketId).emit("sendDM", savedMessage);
+    }
+  }*/
+
+@UseGuards(ChatGuard)
+@SubscribeMessage('sendDM')
+async handleMessage(
+@ConnectedSocket() client: Socket,
+@MessageBody() body: { room: string, senderUsername: string, message: string, receiverUsername: string }
+): Promise<void> 
+{
+  const sender = await this.chatService.getUserFromSocket(client);
+  const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+  
+  if (!sender || !receiver) {
+    return;
+  }
+
+  if (receiver.blockedIds && receiver.blockedIds.includes(sender.id)) {
+    return;
+  }
+
+  if (sender.blockedIds && sender.blockedIds.includes(receiver.id)) {
+    return;
+  }
+
+  if (body.message.length === 0) {
+    return;
+  }
+
+  let chat = await this.friendChatsRepository.findOne({
+    where: { room: body.room },
+    relations: ['users']
+  });
+
+  if (!chat) 
+  {
+    console.log("Je suis ici !!!1");
+    chat = new FriendChat();
+    chat.room = body.room;
+    chat.users = [sender, receiver];
+    chat = await this.friendChatsRepository.save(chat);
+    console.log("Je suis ici !!!2");
+  }
+  console.log("Je suis ici !!!3");
+
+
+  const newMessage = new FriendMessage();
+  newMessage.chat = chat;
+  newMessage.senderId = sender.id;
+  newMessage.text = body.message;
+
+  const savedMessage = await this.friendMessageRepository.save(newMessage);
+
+  const receiverSocketId = this.ref_client.get(receiver.id);
+  console.log(receiverSocketId);
+  console.log(this.ref_client);
+
+  if (receiverSocketId !== undefined) {
+    this.server.to(receiverSocketId).emit("sendDM", savedMessage);
   }
 }
+
 }

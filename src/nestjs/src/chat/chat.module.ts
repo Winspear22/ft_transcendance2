@@ -14,12 +14,14 @@ import { FriendsRepository } from 'src/user/entities/friend.repository';
 import { FriendChat } from 'src/user/entities/friendchat.entity';
 import { FriendChatsRepository } from 'src/user/entities/friendchat.repository';
 import { FriendMessage } from 'src/user/entities/friendmessage.entity';
+import { DMGateway } from './dm.gateway';
+import { DMService } from './dm.service';
 
   @Module({
     imports: [TypeOrmModule.forFeature([MessageEntity, MessagesRepository,
       RoomEntity, RoomsRepository, Friend, FriendsRepository,
       FriendChat, FriendChatsRepository, FriendMessage, FriendsRepository]), UserModule],
-    providers: [ChatService, ChatAuthService, ChatGateway, RoomService],
-    exports: [ChatService, ChatAuthService, ChatGateway, RoomService],
+    providers: [ChatService, ChatAuthService, ChatGateway, RoomService, DMGateway, DMService],
+    exports: [ChatService, ChatAuthService, ChatGateway, RoomService, DMGateway, DMService],
 })
 export class ChatModule {}
