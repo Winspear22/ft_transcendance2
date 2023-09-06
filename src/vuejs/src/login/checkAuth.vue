@@ -33,10 +33,9 @@ export default {
                     const isAuthenticated = response.data.infoUser.user_status === 'Online';
                     store.dispatch('authenticate', isAuthenticated);
                     store.dispatch('activateTwoFa', response.data.infoUser.isTwoFactorAuthenticationEnabled);
-                    if (store.getters.isTwoFaActivated) {
+                    
+                    if (isAuthenticated && store.getters.isTwoFaActivated) {
                         showTurnOnComponent.value = true;
-                    } else {
-                        router.push('/home');
                     }
                 }
             } catch (error) {
@@ -47,6 +46,7 @@ export default {
         function handleTwoFaStatus(status) {
             if (status) {
                 router.push('/home');
+                showTurnOnComponent.value = false;
             }
         }
 

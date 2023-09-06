@@ -1,14 +1,18 @@
 <template>
   <div class="setting-container">
     <infoUser @userInfoFetched="handleUserInfo"></infoUser>
+    <displayPP :userInfo="userInformation"></displayPP>
     <buttonQrcode :userInfo="userInformation"></buttonQrcode>
     <buttonLogout></buttonLogout>
+    <router-link :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
   </div>
 </template>
 
+
 <script>
-import buttonLogout from './ButtonLogout';
 import infoUser from './InfoUser.vue';
+import displayPP from './DisplayPP.vue'; 
+import buttonLogout from './ButtonLogout';
 import buttonQrcode from './ButtonQrcode.vue';
 
 export default {
@@ -16,6 +20,7 @@ export default {
       buttonLogout,
       infoUser,
       buttonQrcode,
+      displayPP, 
   },
   data() {
     return {

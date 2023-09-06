@@ -21,6 +21,7 @@ export default {
                 const response = await axios.post('http://localhost:3000/auth/Logout', {}, { withCredentials: true });
 
                 if (response.status === 200) {
+                    console.log("OFFLINE", response.data);
                     store.dispatch('authenticate', false);
                     store.dispatch('activateTwoFa', response.data.partialUser.isTwoFactorAuthenticationEnabled);
                     router.push('/');
@@ -36,18 +37,3 @@ export default {
     }
 }
 </script>
-
-<style scoped>
-.logout-btn {
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  background: transparent;
-  color: #2fe8ee;
-  transition: 0.3s;
-}
-
-.logout-btn:hover {
-  background-color: #2459d5;
-}
-</style>%

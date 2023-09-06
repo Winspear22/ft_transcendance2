@@ -51,17 +51,15 @@ const routes = [
       title: 'Setting',
       requiresAuth: true
     },
-    children: [
-      {
-        path: 'ProfileModification',
-        name: 'ProfileModification',
-        component: ProfileModification,
-        meta: {
-          title: 'Modify Profile',
-          requiresAuth: true
-        }
-      }
-    ]
+  },
+  {
+    path: '/setting/ProfileModification',
+    name: 'ProfileModification',
+    component: ProfileModification,
+    meta: {
+      title: 'Modify Profile',
+      requiresAuth: true
+    }
   },
 ]
 

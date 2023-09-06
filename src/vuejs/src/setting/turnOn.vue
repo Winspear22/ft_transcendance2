@@ -55,24 +55,23 @@ export default {
         moveToNextInput(event, n) {
             this.code = this.code.slice(0, n-1) + event.target.value + this.code.slice(n);
             if (event.target.value.length === 1 && n < 6) {
-                const nextInput = event.target.parentNode.children[n]; // Obtenir le prochain input
+                const nextInput = event.target.parentNode.children[n];
                 if (nextInput) nextInput.focus();
             } else if (event.target.value.length === 0 && n > 1) {
-                const prevInput = event.target.parentNode.children[n - 2]; // Obtenir l'input précédent
+                const prevInput = event.target.parentNode.children[n - 2]; 
                 if (prevInput) prevInput.focus();
             }
         },
         validate() {
-            console.log('NAMEEEEE',this.username);
             axios.post('http://localhost:3000/auth/turn-on', { TfaCode: this.code, username: this.username }, {withCredentials: true}) // Remplacez 'votreNomDutilisateur' par la valeur appropriée
                 .then(response => {
                     if (response.data.message === '2FA enabled') {
-                        this.twoFaEnabled = true; // Mettez la nouvelle variable à true ici
-                        this.$emit('twoFaStatusChanged', this.twoFaEnabled); // Émettez un événement avec la nouvelle variable
+                        this.twoFaEnabled = true; 
+                        this.$emit('twoFaStatusChanged', this.twoFaEnabled);
                         store.dispatch('activateTwoFa', true);
                     } else {
                         this.errorMessage = response.data.message;
-                        this.code = ''; // Réinitialiser le code pour une nouvelle saisie
+                        this.code = '';
                     }
                 })
                 .catch(error => {
