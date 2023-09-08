@@ -22,7 +22,7 @@
 <script>
 import axios from 'axios';
 import store from '../store';
-import InfoUser from './InfoUser.vue';
+import InfoUser from './infoUser.vue';
 
 export default {
     props: {

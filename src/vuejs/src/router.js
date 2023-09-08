@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import store from './store';
-import Home from './home/HomePage.vue';
-import Game from './game/GamePage.vue';
-import Chat from './chat/ChatPage.vue';
-import Login from './login/LoginPage.vue';
-import Setting from './setting/SettingPage.vue';
+import Home from './home/homePage.vue';
+import Game from './game/gamePage.vue';
+import Chat from './chat/chatPage.vue';
+import Login from './login/loginPage.vue';
+import Setting from './setting/settingPage.vue';
 import ProfileModification from './setting/ProfileModification.vue';
 
 const routes = [

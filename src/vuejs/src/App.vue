@@ -19,7 +19,7 @@
   </template>
   
   <script>
-  import DisplayPong from './DisplayPong'
+  import DisplayPong from './displayPong'
   
   export default {
     components: {

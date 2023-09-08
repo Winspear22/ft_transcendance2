@@ -10,10 +10,10 @@
 
 
 <script>
-import infoUser from './InfoUser.vue';
+import infoUser from './infoUser.vue';
 import displayPP from './DisplayPP.vue'; 
-import buttonLogout from './ButtonLogout';
-import buttonQrcode from './ButtonQrcode.vue';
+import buttonLogout from './buttonLogout';
+import buttonQrcode from './buttonQrcode.vue';
 
 export default {
   components: {

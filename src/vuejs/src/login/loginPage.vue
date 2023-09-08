@@ -6,8 +6,8 @@
 </template>
 
 <script>
-import buttonLogin from './ButtonLogin';
-import checkAuth from './CheckAuth';
+import buttonLogin from './buttonLogin';
+import checkAuth from './checkAuth';
 
 export default {
   components: {
