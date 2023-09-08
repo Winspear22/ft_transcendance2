@@ -2,14 +2,13 @@
   <div>
     <input type="file" @change="onFileChange">
     <button @click="uploadImage" v-if="selectedFile">Envoyer l'image</button>
-
     <popupValidate v-if="showValidationPopup" />
   </div>
 </template>
 
 <script>
 import axios from 'axios';
-import popupValidate from './popupValidate.vue'; // Assurez-vous que le chemin est correct
+import popupValidate from './popupValidate.vue';
 
 export default {
   components: {
@@ -36,7 +35,6 @@ export default {
           const response = await axios.post('http://localhost:3000/user/change/pp', formData, { withCredentials: true });
           console.log('Réponse du serveur:', response.status);
 
-          // Si la réponse du serveur est satisfaisante, affichez la popup.
           if (response && response.status === 201) {
             this.showValidationPopup = true;
           }

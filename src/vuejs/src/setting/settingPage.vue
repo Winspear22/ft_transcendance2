@@ -2,6 +2,10 @@
   <div class="setting-container">
     <infoUser @userInfoFetched="handleUserInfo"></infoUser>
     <displayPP :userInfo="userInformation"></displayPP>
+    <div v-if="userInformation">
+      <p>{{ userInformation.username }}</p> 
+      <p>{{ userInformation.email }}</p> 
+    </div>
     <buttonQrcode :userInfo="userInformation"></buttonQrcode>
     <buttonLogout></buttonLogout>
     <router-link :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
