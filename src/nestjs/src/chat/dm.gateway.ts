@@ -214,7 +214,6 @@ export class DMGateway
     if (receiverSocketId !== undefined) {
       this.server.to(client.id).emit("acceptFriendRequest", "You have accepted the friend request of " + receiver.username);
       this.server.to(receiverSocketId).emit("acceptFriendRequest", "Your friend request has been accepted by " + sender.username);
-
     }
     else
       return ;
@@ -236,9 +235,10 @@ export class DMGateway
     const receiverSocketId = this.ref_client.get(receiver.id);
     console.log(receiverSocketId);
     console.log(this.ref_client);
-    this.DMsService.declineFriendRequest(client.data.user.username, body.receiverUsername);
+    await this.DMsService.declineFriendRequest(client.data.user.username, body.receiverUsername);
     if (receiverSocketId !== undefined) {
-      this.server.to(receiverSocketId).emit("refuseFriendRequest", "Friend request accepted by " + sender.username);
+      this.server.to(client.id).emit("refuseFriendRequest", "You have refused the friend request of " + receiver.username);
+      this.server.to(receiverSocketId).emit("refuseFriendRequest", "Your friend request has been refused by " + sender.username);
     }
     else
       return ;

@@ -223,9 +223,6 @@ export class DMService
     // Sauvegarder les changements pour 'accepter'
     await this.usersRepository.save(accepter);
     await this.friendRepository.save(newFriendForAccepter);
-
-
-
   
     // Créer une nouvelle relation 'Friend' pour 'accepted'
     const newFriendForAccepted = new Friend();
