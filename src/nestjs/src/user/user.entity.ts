@@ -73,4 +73,6 @@ export class UserEntity
 
   @Column('int', { array: true, nullable: true })
   friendRequests: number[];
+  /*@Column('int', { array: true, default: '{}' })
+  friendRequests: number[];*/
 }

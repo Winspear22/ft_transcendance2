@@ -75,6 +75,9 @@ export class UserService {
       profile_picture: userDet?.picture,
       isTwoFactorAuthenticationEnabled: false,
       user_status: 'Online',
+      blockedIds: [],
+      friends: [],
+      friendRequests: []
       //id42: userDet.providerId,
       //provider: userDet.provider,
     });

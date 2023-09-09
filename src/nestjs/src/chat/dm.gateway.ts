@@ -42,6 +42,7 @@ export class DMGateway
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
+    console.log("Je suis ici !!");
     const user = await this.chatService.getUserFromSocket(client);
     if (user == undefined)
     {
@@ -54,6 +55,8 @@ export class DMGateway
     this.ref_client.set(user.id, client.id);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
+    console.log("COUCOU", client.data.user.friendRequest);
+    console.log("COUCOU", client.data.user.friendRequest);
 
   }
 
@@ -182,12 +185,12 @@ export class DMGateway
     const receiverSocketId = this.ref_client.get(receiver.id);
     console.log(receiverSocketId);
     console.log(this.ref_client);
-    this.DMsService.sendFriendRequest(client.data.user.username, body.receiverUsername);
-    if (receiverSocketId !== undefined) {
-      this.server.to(receiverSocketId).emit("sendFriendRequest", "Friend request from " + sender.username);
+    const ret = await this.DMsService.sendFriendRequest(client.data.user.username, body.receiverUsername);
+    if (receiverSocketId !== undefined && ret.success == true) {
+      this.server.to(receiverSocketId).emit("sendFriendRequestSuccess", "Friend request from " + sender.username);
     }
     else
-      return ;
+      this.server.to(receiverSocketId).emit("sendFriendRequestError", "Error. Could not send friend request to " + sender.username);
   }
 
   @UseGuards(ChatGuard)

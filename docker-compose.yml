@@ -70,6 +70,4 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /Users/administrateur/42/data
-  images:
-    driver: local
+      device: /home/adnen/Bureau/volume_adaloui

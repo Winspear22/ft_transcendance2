@@ -5,7 +5,8 @@ import { UserEntity } from 'src/user/user.entity';
 import { FriendChat } from 'src/user/entities/friendchat.entity';
 import { Friend } from 'src/user/entities/friend.entity';
 import { FriendMessage } from 'src/user/entities/friendmessage.entity';
-
+import { Raw } from 'typeorm';
+import * as colors from '../colors';
 
 @Injectable()
 export class DMService 
@@ -110,36 +111,61 @@ export class DMService
   
     const requester = await this.usersRepository.findOne({ where: { username: sender }, relations: ['friends'] });
     const requested = await this.usersRepository.findOne({ where: { username: receiver } });
-    console.log(requested.friendRequests);
-    //requested.friendRequests.push(requester.id);
-    if (requested.friendRequests.includes(requester.id)) {
-      return { error: 'Friend request already sent to this user.', success: false };
+    console.log("requested = ", requested.friendRequests);
+    if (!requested.friendRequests) {
+      console.log("Salut je suis la");
+      requested.friendRequests = [];
     }
-  
+    console.log("requested = ", requested.friendRequests);
+    console.log("requester id = ", requester.id)
+    //requested.friendRequests.push(requester.id);
+    if (requested.friendRequests)
+    {
+      const alreadyRequested = await this.usersRepository.findOne({
+        where: {
+            id: requested.id,
+            friendRequests: Raw(alias => `${alias} @> ARRAY[${requester.id}]::integer[]`)
+        }
+    });
+    /* Friend request deja envoyee*/
+      if (alreadyRequested) {
+          console.log(colors.RED + "Error, you already sent a friend request to this user." + colors.RESET);
+          return { error: 'Friend request already sent to this user.', success: false };
+      }
+    }
+    /* Le user est deja notre ami*/
     for (const friend of requester.friends) {
       if (friend.friendId === requested.id) {
+        console.log(colors.RED + "Error. User already in friend list." + colors.RESET);
         return { error: 'User already in friend list.', success: false };
       }
     }
-  
+
+    /* J'ai bloque l'utilisateur */
     if (requester.blockedIds.includes(requested.id)) {
-      // remove from blockedIds
+      // je retire l'utilisateur de ma liste de personnes bloquees
       await this.usersRepository.update({ username: sender }, { blockedIds: requester.blockedIds.filter((blockedId) => blockedId !== requested.id) });
-  
+      // je suis bloque par lui
       if (requested.blockedIds.includes(requester.id)) {
+        console.log(colors.RED + "Error. The other user blocked you. Though he was removed from your blocked list." + colors.RESET);
         return { error: 'Remove from block list, but user blocked you.', success: false };
       }
-  
+      // il ne m'a pas bloque, donc j'envoie la friend request
       await this.usersRepository.update({ username: receiver }, { friendRequests: [...requested.friendRequests, requester.id] });
+      console.log(colors.GREEN + "Success. You unblocked user and friend request was sent." + colors.RESET);
       return { error: 'Sent and removed from blocked list.', success: true };
     }
-  
+    // je suis bloque par l'utilisateur
     if (requested.blockedIds.includes(requester.id)) {
+      console.log(colors.RED + "Error. The other user blocked you." + colors.RESET);
       return { error: 'User blocked you.', success: false };
     }
   
-    // Update the friend requests for the requested user
-    await this.usersRepository.update({ username: receiver }, { friendRequests: [...requested.friendRequests, requester.id] });
+    // Mise a jour de la iste d'ami dans la base de donnees.
+    console.log(colors.GREEN + "Success. Friend request sent to the user." + colors.RESET);
+    await this.usersRepository.update(requested.id, { friendRequests: [...requested.friendRequests, requester.id] });
+
+    //await this.usersRepository.update({ username: receiver }, { friendRequests: [...requested.friendRequests, requester.id] });
     return { success: true };
   }
 
