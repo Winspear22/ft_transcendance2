@@ -185,6 +185,7 @@ export class DMService
 
   async acceptFriendRequest(accepterUsername: string, acceptedUsername: string) {
     // Récupérer les utilisateurs et leurs relations 'friends'
+
     const accepter = await this.usersRepository.findOne({ where: { username: accepterUsername }, relations: ['friends'] });
     const accepted = await this.usersRepository.findOne({ where: { username: acceptedUsername }, relations: ['friends'] });
   
@@ -222,6 +223,9 @@ export class DMService
     // Sauvegarder les changements pour 'accepter'
     await this.usersRepository.save(accepter);
     await this.friendRepository.save(newFriendForAccepter);
+
+
+
   
     // Créer une nouvelle relation 'Friend' pour 'accepted'
     const newFriendForAccepted = new Friend();
@@ -235,7 +239,6 @@ export class DMService
     console.log("Je suis ici !");
     await this.usersRepository.save(accepted);
     await this.friendRepository.save(newFriendForAccepted);
-
   
     // Retourner le succès
     return { success: true };
