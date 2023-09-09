@@ -98,11 +98,26 @@ async emitDMs(@ConnectedSocket() client: Socket) {
     }
     
     // Include the 'messages' relation from the FriendChat entity
-    const friendChats = await this.friendChatsRepository
+    /*const friendChats = await this.friendChatsRepository
         .createQueryBuilder('friendChat')
         .innerJoinAndSelect('friendChat.users', 'user', 'user.id = :userId', { userId: user.id })
         .leftJoinAndSelect('friendChat.messages', 'message') // Add this line
+        .getMany();*/
+        /*const friendChats = await this.friendChatsRepository
+        .createQueryBuilder('friendChat')
+        .innerJoinAndSelect('friendChat.users', 'user') // Sélectionnez tous les utilisateurs associés à la room
+        .where('user.id = :userId', { userId: user.id }) // Condition pour s'assurer que l'utilisateur actuel est dans la room
+        .leftJoinAndSelect('friendChat.messages', 'message')
+        .getMany();*/
+      const friendChats = await this.friendChatsRepository
+        .createQueryBuilder('friendChat')
+        .innerJoinAndSelect('friendChat.users', 'user', 'user.id = :userId', { userId: user.id }) // Filtre par utilisateur
+        .leftJoinAndSelect('friendChat.users', 'allUsers')  // Sélectionne tous les utilisateurs du chat
+        .leftJoinAndSelect('friendChat.messages', 'message')
         .getMany();
+      
+    
+    
 
     console.log("POPOPOPOPOPOPOPOPOPOPOPOPOPOPO", friendChats);
 
@@ -115,7 +130,7 @@ async emitDMs(@ConnectedSocket() client: Socket) {
     const DMs = await this.DMsService.getAllChatRoomsForUser(user.username);
     console.log("DMDMDMDMDMDMDMDMD", DMs);
     return await this.server.to(client.id).emit('emitDM', friendChats);
-}
+  }
 
 
 
