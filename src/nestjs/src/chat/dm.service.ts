@@ -171,17 +171,6 @@ export class DMService
     return { success: true };
   }
 
-  async getFriendRequests(username: string) {
-    const user = await this.usersRepository.findOne({ where: { username } });
-    
-    const friendRequests = [];
-    for (const requestId of user.friendRequests) {
-      const requestUser = await this.usersRepository.findOne({ where: { id: requestId }, select: ['username'] });
-      friendRequests.push(requestUser.username);
-    }
-    
-    return { success: true, friendRequests };
-  }
 
   async acceptFriendRequest(accepterUsername: string, acceptedUsername: string) {
     // Récupérer les utilisateurs et leurs relations 'friends'
