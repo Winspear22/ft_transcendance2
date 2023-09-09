@@ -264,4 +264,23 @@ export class DMService
     return { success: false };
   }
 
+  async removeFriend(removerUsername: string, removedUsername: string): Promise<{ success: boolean }> {
+    
+    const remover = await this.usersRepository.findOne({ where: { username: removerUsername }, relations: ['friends'] });
+    const removed = await this.usersRepository.findOne({ where: { username: removedUsername }, relations: ['friends'] });
+
+    const friendRelationForRemover = remover.friends.find(friend => friend.friendId === removed.id);
+    const friendRelationForRemoved = removed.friends.find(friend => friend.friendId === remover.id);
+
+    if (!friendRelationForRemover || !friendRelationForRemoved) {
+        return { success: false };
+    }
+
+    await this.friendRepository.remove(friendRelationForRemover);
+    await this.friendRepository.remove(friendRelationForRemoved);
+
+    return { success: true };
+}
+
+
 }

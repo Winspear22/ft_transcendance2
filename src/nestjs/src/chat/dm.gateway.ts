@@ -241,6 +241,35 @@ export class DMGateway
       this.server.to(receiverSocketId).emit("refuseFriendRequest", "Your friend request has been refused by " + sender.username);
     }
     else
-      return ;
+      return;
   }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('removeFriend')
+  async RemoveFriend(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() body: { receiverUsername: string }
+  ): Promise<void> 
+  {
+    const sender = await this.chatService.getUserFromSocket(client);
+    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+
+    if (!sender || !receiver) {
+      return;
+    }
+    const receiverSocketId = this.ref_client.get(receiver.id);
+    console.log(receiverSocketId);
+    console.log(this.ref_client);
+    await this.DMsService.removeFriend(client.data.user.username, body.receiverUsername);
+    if (receiverSocketId !== undefined) {
+      this.server.to(client.id).emit("removeFriend", "You have unfriended " + receiver.username);
+      this.server.to(receiverSocketId).emit("removeFriend", "You have been unfriended by " + sender.username);
+    }
+    else
+    return;
+  }
+
+
+
+
 }
