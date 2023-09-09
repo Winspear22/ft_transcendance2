@@ -14,6 +14,8 @@ export class DMService
     constructor(
         @InjectRepository(UserEntity)
         private usersRepository: Repository<UserEntity>,
+        @InjectRepository(Friend)
+        private friendRepository: Repository<Friend>,
         @InjectRepository(FriendChat)
         private friendChatsRepository: Repository<FriendChat>,
         @InjectRepository(FriendMessage)
@@ -169,7 +171,7 @@ export class DMService
     return { success: true };
   }
 
-  async getFriendRequests(username: string, accessToken: string, refreshToken: string) {
+  async getFriendRequests(username: string) {
     const user = await this.usersRepository.findOne({ where: { username } });
     
     const friendRequests = [];
@@ -210,22 +212,30 @@ export class DMService
     const newFriendForAccepter = new Friend();
     newFriendForAccepter.friendId = accepted.id;
     newFriendForAccepter.chatId = chat.id;
+    newFriendForAccepter.userId = accepter.id;
     accepter.friends.push(newFriendForAccepter);
-  
+    console.log("Accepted friends list = ", accepter.friends);
+
     // Supprimer la demande d'ami
     accepter.friendRequests = accepter.friendRequests.filter((requesterId) => requesterId !== accepted.id);
   
     // Sauvegarder les changements pour 'accepter'
     await this.usersRepository.save(accepter);
+    await this.friendRepository.save(newFriendForAccepter);
   
     // Créer une nouvelle relation 'Friend' pour 'accepted'
     const newFriendForAccepted = new Friend();
     newFriendForAccepted.friendId = accepter.id;
     newFriendForAccepted.chatId = chat.id;
+    newFriendForAccepted.userId = accepted.id;
     accepted.friends.push(newFriendForAccepted);
+    console.log("Accepted friends list = ", accepted.friends);
   
     // Sauvegarder les changements pour 'accepted'
+    console.log("Je suis ici !");
     await this.usersRepository.save(accepted);
+    await this.friendRepository.save(newFriendForAccepted);
+
   
     // Retourner le succès
     return { success: true };

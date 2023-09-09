@@ -178,7 +178,6 @@ export class DMGateway
   {
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
-
     if (!sender || !receiver) {
       return;
     }
@@ -188,9 +187,11 @@ export class DMGateway
     const ret = await this.DMsService.sendFriendRequest(client.data.user.username, body.receiverUsername);
     if (receiverSocketId !== undefined && ret.success == true) {
       this.server.to(receiverSocketId).emit("sendFriendRequestSuccess", "Friend request from " + sender.username);
+      this.server.to(client.id).emit("sendFriendRequestSuccess", "Your friend request has been sent to " + receiver.username);
+
     }
     else
-      this.server.to(receiverSocketId).emit("sendFriendRequestError", "Error. Could not send friend request to " + sender.username);
+      this.server.to(client.id).emit("sendFriendRequestError", "Error. Could not send friend request to " + receiver.username);
   }
 
   @UseGuards(ChatGuard)
@@ -209,9 +210,11 @@ export class DMGateway
     const receiverSocketId = this.ref_client.get(receiver.id);
     console.log(receiverSocketId);
     console.log(this.ref_client);
-    this.DMsService.acceptFriendRequest(client.data.user.username, body.receiverUsername);
+    await this.DMsService.acceptFriendRequest(client.data.user.username, body.receiverUsername);
     if (receiverSocketId !== undefined) {
-      this.server.to(receiverSocketId).emit("acceptFriendRequest", "Friend request accepted by " + sender.username);
+      this.server.to(client.id).emit("acceptFriendRequest", "You have accepted the friend request of " + receiver.username);
+      this.server.to(receiverSocketId).emit("acceptFriendRequest", "Your friend request has been accepted by " + sender.username);
+
     }
     else
       return ;
