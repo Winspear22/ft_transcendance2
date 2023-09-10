@@ -33,6 +33,7 @@ export class DMGateway
     ) {}
 
     private ref_client = new Map<number, string>()
+    private ref_socket = new Map<Socket, string>()
 
     @WebSocketServer()
     server: Server;
@@ -54,6 +55,8 @@ export class DMGateway
     this.emitDMs(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     this.ref_client.set(user.id, client.id);
+    this.ref_socket.set(client, client.id);
+
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
   }
@@ -61,77 +64,38 @@ export class DMGateway
   handleDisconnect(client: Socket)
   {
     client.disconnect();
+    for (let [socket, id] of this.ref_socket.entries()) {
+      if (socket === client) {
+          console.log(colors.GREEN, "La Socket " + colors.WHITE + socket.id + colors.GREEN + " a ete supprimee de la mao !")
+          this.ref_socket.delete(socket);
+          break;
+      }
+    }
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
-
-  /*@UseGuards(ChatGuard)
-  @SubscribeMessage('emitDM')
-  async emitDMs(@ConnectedSocket() client: Socket) {
-    const user = await this.chatService.getUserFromSocket(client);
-    if (!user) {
-      console.log("User not found");
-      return;
-    }
-    const friendChats = await this.friendChatsRepository
-      .createQueryBuilder('friendChat')
-      .innerJoinAndSelect('friendChat.users', 'user', 'user.id = :userId', { userId: user.id })
-      .getMany();
-
-    console.log(friendChats);
-    friendChats.forEach(friendChat => {
-      client.join(friendChat.room);
-    });
-    console.log("Je suis connecte : ", client.rooms);
-    const DMs = await this.DMsService.getAllChatRoomsForUser(user.username);
-    console.log(DMs);
-    return await this.server.to(client.id).emit('emitDM', DMs);
-  }*/
-
   @UseGuards(ChatGuard)
-@SubscribeMessage('emitDM')
-async emitDMs(@ConnectedSocket() client: Socket) {
+  @SubscribeMessage('emitDM')
+  async emitDMs(@ConnectedSocket() client: Socket) 
+  {
     const user = await this.chatService.getUserFromSocket(client);
     if (!user) {
         console.log("User not found");
         return;
     }
-    
-    // Include the 'messages' relation from the FriendChat entity
-    /*const friendChats = await this.friendChatsRepository
-        .createQueryBuilder('friendChat')
-        .innerJoinAndSelect('friendChat.users', 'user', 'user.id = :userId', { userId: user.id })
-        .leftJoinAndSelect('friendChat.messages', 'message') // Add this line
-        .getMany();*/
-        /*const friendChats = await this.friendChatsRepository
-        .createQueryBuilder('friendChat')
-        .innerJoinAndSelect('friendChat.users', 'user') // Sélectionnez tous les utilisateurs associés à la room
-        .where('user.id = :userId', { userId: user.id }) // Condition pour s'assurer que l'utilisateur actuel est dans la room
-        .leftJoinAndSelect('friendChat.messages', 'message')
-        .getMany();*/
-      const friendChats = await this.friendChatsRepository
+    const friendChats = await this.friendChatsRepository
         .createQueryBuilder('friendChat')
         .innerJoinAndSelect('friendChat.users', 'user', 'user.id = :userId', { userId: user.id }) // Filtre par utilisateur
         .leftJoinAndSelect('friendChat.users', 'allUsers')  // Sélectionne tous les utilisateurs du chat
         .leftJoinAndSelect('friendChat.messages', 'message')
         .getMany();
-      
-    
-    
-
     console.log("POPOPOPOPOPOPOPOPOPOPOPOPOPOPO", friendChats);
-
-
     friendChats.forEach(friendChat => {
         client.join(friendChat.room);
     });
-
     console.log("Je suis connecté : ", client.rooms);
-    const DMs = await this.DMsService.getAllChatRoomsForUser(user.username);
-    console.log("DMDMDMDMDMDMDMDMD", DMs);
     return await this.server.to(client.id).emit('emitDM', friendChats);
   }
-
 
 
   //--------------------------------------------------------------------------------------//
@@ -241,12 +205,28 @@ async emitDMs(@ConnectedSocket() client: Socket) {
       return;
     }
     const receiverSocketId = this.ref_client.get(receiver.id);
+    const senderSocketId = this.ref_client.get(sender.id);
+
     console.log(receiverSocketId);
     console.log(this.ref_client);
-    await this.DMsService.acceptFriendRequest(client.data.user.username, body.receiverUsername);
-    if (receiverSocketId !== undefined) {
+    const chat = await this.DMsService.acceptFriendRequest(client.data.user.username, body.receiverUsername);
+    if (receiverSocketId !== undefined || senderSocketId !== undefined) {
       this.server.to(client.id).emit("acceptFriendRequest", "You have accepted the friend request of " + receiver.username);
       this.server.to(receiverSocketId).emit("acceptFriendRequest", "Your friend request has been accepted by " + sender.username);
+      const senderSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === senderSocketId);
+      const receiverSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === receiverSocketId);
+      console.log("senderSocket == ", senderSocket.id);
+      console.log("receiverSocket == ", receiverSocket.id);
+      console.log("receiverSocketId == ", receiverSocketId);
+      console.log("senderSocketId == ", senderSocketId);
+
+      if (chat && senderSocket && receiverSocket) {
+        senderSocket.join(chat.chat.room);
+        receiverSocket.join(chat.chat.room);
+        senderSocket.emit("joinDM", "You have joined " + chat.chat.room );
+        receiverSocket.emit("joinDM",  "You have joined " + chat.chat.room );
+    }
+    
     }
     else
       return ;
@@ -297,6 +277,31 @@ async emitDMs(@ConnectedSocket() client: Socket) {
     if (receiverSocketId !== undefined) {
       this.server.to(client.id).emit("removeFriend", "You have unfriended " + receiver.username);
       this.server.to(receiverSocketId).emit("removeFriend", "You have been unfriended by " + sender.username);
+    }
+    else
+      return;
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('blockDM')
+  async BlockFriend(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() body: { receiverUsername: string }
+  ): Promise<void> 
+  {
+    const sender = await this.chatService.getUserFromSocket(client);
+    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+
+    if (!sender || !receiver) {
+      return;
+    }
+    const receiverSocketId = this.ref_client.get(receiver.id);
+    console.log(receiverSocketId);
+    console.log(this.ref_client);
+    await this.DMsService.blockFriend(sender, receiver);
+    if (receiverSocketId !== undefined) {
+      this.server.to(client.id).emit("blockDM", "You have blocked and unfriended " + receiver.username);
+      this.server.to(receiverSocketId).emit("blockDM", "You have been blocked and unfriended by " + sender.username);
     }
     else
       return;

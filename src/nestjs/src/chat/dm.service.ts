@@ -227,7 +227,7 @@ export class DMService
     await this.friendRepository.save(newFriendForAccepted);
   
     // Retourner le succès
-    return { success: true };
+    return { success: true, chat: chat };
   }
 
   async declineFriendRequest(
@@ -269,7 +269,44 @@ export class DMService
     await this.friendRepository.remove(friendRelationForRemoved);
 
     return { success: true };
-}
+  }
 
+  async blockFriend(blocker: UserEntity, blocked: UserEntity): Promise<{ success: boolean, error?: string }> {
+
+    // Vérifier si l'utilisateur essaie de se bloquer lui-même
+    if (blocker.username == blocked.username) 
+      return { success: false, error: "You can't block yourself" };
+
+    // Vérifier si les utilisateurs sont amis
+    const friendRelations = await this.getFriendId(blocker.username, blocked.username);
+    if (friendRelations.success === true)
+      // S'ils sont amis, retirez-les de la liste d'amis de l'autre
+      this.removeFriend(blocker.username, blocked.username);
+
+    // Si le bloqueur a déjà bloqué l'utilisateur bloqué
+    if (blocker.blockedIds && blocker.blockedIds.includes(blocked.id)) 
+      return { success: true };
+
+    // Si le bloqueur n'a pas de liste blockedIds, initialisez-le et ajoutez l'ID de l'utilisateur bloqué
+    if (!blocker.blockedIds) blocker.blockedIds = [];
+      blocker.blockedIds.push(blocked.id);
+    await this.usersRepository.save(blocker);
+
+    // Si l'utilisateur bloqué a envoyé une demande d'ami au bloqueur, retirez-la
+    if (blocked.friendRequests && blocked.friendRequests.includes(blocker.id)) {
+        blocked.friendRequests = blocked.friendRequests.filter(id => id !== blocker.id);
+        await this.usersRepository.save(blocked);
+    }
+
+    // Si le bloqueur a envoyé une demande d'ami à l'utilisateur bloqué, retirez-la
+    if (blocker.friendRequests && blocker.friendRequests.includes(blocked.id)) {
+        blocker.friendRequests = blocker.friendRequests.filter(id => id !== blocked.id);
+        await this.usersRepository.save(blocker);
+    }
+
+    // Log pour indiquer que l'action a été effectuée avec succès
+    console.log(colors.GREEN + "User" + blocked.username + " has been successfully blocked by " + blocker.username + colors.RESET);
+    return { success: true };
+}
 
 }
