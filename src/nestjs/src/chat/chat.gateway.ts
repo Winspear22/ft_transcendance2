@@ -9,7 +9,7 @@ import { ChatService } from './chat.service';
 import { CreateMessageDto } from './dto/message.dto';
 import { RoomService } from './room.service';
 import { RoomEntity } from './entities/room.entity';
-import { UseGuards } from '@nestjs/common';
+import { Body, UseGuards } from '@nestjs/common';
 import { ChatGuard } from './guard/chat-guard.guard';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -63,6 +63,7 @@ export class ChatGateway
       return this.handleDisconnect(client);
     }
     this.emitRooms(client);
+    this.emitAvailableRooms(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     this.ref_client.set(user.id, client.id);
     this.ref_socket.set(client, client.id);
@@ -77,12 +78,12 @@ export class ChatGateway
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
-  /*@UseGuards(ChatGuard)
-  @SubscribeMessage('emitRooms')
-  async emitChannels(@ConnectedSocket() client: Socket) {
-    const channels = await this.roomService.getRooms(client);
-    return await this.server.to(client.id).emit('emitRooms', channels); // Pas sur, il faut que ca puisse envoyer a tout le monde.
-  }*/
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitAvailableRooms')
+  async emitAvailableRooms(@ConnectedSocket() client: Socket) {
+    const rooms = await this.roomService.getRooms(client);
+    return await this.server.to(client.id).emit('emitAvailableRooms', rooms); // Pas sur, il faut que ca puisse envoyer a tout le monde.
+  }
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitRooms')
@@ -120,7 +121,6 @@ export class ChatGateway
   //------------------------------------GESTION DES DMS-----------------------------------//
   //--------------------------------------------------------------------------------------//
 
-
   @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
   async createRoom(@MessageBody() data: {
@@ -129,16 +129,19 @@ export class ChatGateway
   password?: string,
   isPrivate: boolean }, @ConnectedSocket() client: Socket)
   {
-    if (data.channelName && data.channelName.length > 18) {
-      return { success: false, error: 'Channel name too long (18 characters maximum)' };
-    }
-    
-    const result = await this.roomService.createRoom(data, client);
-    
-    if (result.success) {
-      this.server.emit('channelCreated', "Channel created : " + { channelName: data.channelName, isPrivate: data.isPrivate });
-    }
+    const channelNameRegex = /^[a-zA-Z0-9]{2,12}$/;
 
+    if (!channelNameRegex.test(data.channelName)) {
+      this.server.emit('createRoom', "Channel name is invalid. It should be 2-12 characters long and alphanumeric only.'");
+      return { success: false, error: 'Channel name is invalid. It should be 2-12 characters long and alphanumeric only.' };
+    }
+    const result = await this.roomService.createRoom(data, client);
+
+    if (result.success) {
+      this.server.emit('createRoom', "Channel created : " + data.channelName );
+    } else {
+      this.server.emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
+    }
     return result;
   }
 
@@ -146,25 +149,27 @@ export class ChatGateway
   @SubscribeMessage('quitRoom')
   async quitRoom(@MessageBody() data: { 
   channelName: string }, @ConnectedSocket() client: Socket) {
-    const result = await this.roomService.quitChannel(data, client);
-    if (result.success) {
-      client.leave(data.channelName);
-      this.server.to(data.channelName).emit('userLeft', { username: client.data.user.username, channelName: data.channelName });
-    }
+    const result = await this.roomService.quitRoom(data, client);
 
+    if (result.success) {
+      console.log("Je suis dans quitRoom");
+      this.server.to(client.id).emit('quitRoom', "You have left the room " + data.channelName);
+      client.leave(data.channelName);
+    }
     return result;
   }
 
+  // NE PAS OUBLIER DE REGLER LE DETAILS AVEC LE MDP
   @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('joinRoom')
   async joinRoom(@MessageBody() data: {
   channelName: string, 
   password?: string }, @ConnectedSocket() client: Socket)
   {
-    const result = await this.roomService.joinChannel(data, client);
+    const result = await this.roomService.joinRoom(data, client);
     if (result.success)
     {
-      this.server.emit('channeljoined', client.data.user.username, "Channel joined : ", { channelName: data.channelName });
+      this.server.emit('joinRoom', "Room joined : ", data.channelName);
       client.join(data.channelName);
       client.on('disconnect', () => {
         client.leave(data.channelName);
@@ -173,14 +178,15 @@ export class ChatGateway
     }
     else
     {
-      this.server.emit('channeljoined', "Error, there was a pb in joining the channel");
+      this.server.emit('joinRoom', "Error, there was a problem in joining the room : ", data.channelName);
       return (result);
     }
   }
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('getRooms')
-  async getChannels(@ConnectedSocket() client: Socket) {
+  async getChannels(@ConnectedSocket() client: Socket) 
+  {
     const channels = await this.roomService.getRooms(client);
     //await this.server.to(client.id).emit('channel', channels);
     return channels;

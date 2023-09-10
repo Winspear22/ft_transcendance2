@@ -65,7 +65,7 @@ export class RoomService
         return { success: true };
     }    
 
-    async joinChannel(body: { 
+    async joinRoom(body: { 
     channelName: string, 
     password?: string; }, 
     @ConnectedSocket() client: Socket) 
@@ -106,7 +106,7 @@ export class RoomService
         return { success: true };
     }
 
-    async quitChannel(body: { 
+    async quitRoom(body: { 
         channelName: string; }, 
         @ConnectedSocket() client: Socket) {
         const { channelName } = body;
