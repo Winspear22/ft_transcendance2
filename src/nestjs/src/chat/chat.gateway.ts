@@ -42,12 +42,15 @@ export class ChatGateway
     ) {}
   
   private ref_client = new Map<number, string>()
-
+  private ref_socket = new Map<Socket, string>()
 
 
   @WebSocketServer()
   server: Server;
   
+  //--------------------------------------------------------------------------------------//
+  //---------------------------------CONNEXION/DECONNEXION--------------------------------//
+  //--------------------------------------------------------------------------------------//
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
@@ -59,10 +62,10 @@ export class ChatGateway
       console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
       return this.handleDisconnect(client);
     }
-    this.emitChannels(client);
+    this.emitRooms(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
-    
     this.ref_client.set(user.id, client.id);
+    this.ref_socket.set(client, client.id);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
     console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
 
@@ -73,6 +76,50 @@ export class ChatGateway
     client.disconnect();
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
+
+  /*@UseGuards(ChatGuard)
+  @SubscribeMessage('emitRooms')
+  async emitChannels(@ConnectedSocket() client: Socket) {
+    const channels = await this.roomService.getRooms(client);
+    return await this.server.to(client.id).emit('emitRooms', channels); // Pas sur, il faut que ca puisse envoyer a tout le monde.
+  }*/
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitRooms')
+  async emitRooms(@ConnectedSocket() client: Socket) 
+  {
+    const user = await this.chatService.getUserFromSocket(client);
+
+    if (!user) {
+      console.log("User not found");
+      return;
+    }
+
+    // Récupérez tous les channels auxquels l'utilisateur appartient
+    const rooms = await this.roomRepository
+        .createQueryBuilder('channel')
+        .where(':userId = ANY(channel.users)', { userId: user.id })  // Utilisez ANY pour vérifier l'appartenance à un tableau
+        .leftJoinAndSelect('channel.messages', 'message')
+        .getMany();
+
+    console.log("rooms de l'utilisateur:", rooms);
+
+    // Faites rejoindre l'utilisateur à tous ses rooms
+    rooms.forEach(channel => {
+        client.join(channel.roomName); // Supposons que roomName soit unique pour chaque channel
+    });
+    console.log("rooms rejoint par l'utilisateur: ", client.rooms);
+
+    // Retournez les rooms à l'utilisateur
+    console.log("Je suis connecté : ", client.rooms);
+    return await this.server.to(client.id).emit('emitRooms', rooms);
+  }
+
+
+  //--------------------------------------------------------------------------------------//
+  //------------------------------------GESTION DES DMS-----------------------------------//
+  //--------------------------------------------------------------------------------------//
+
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
@@ -137,13 +184,6 @@ export class ChatGateway
     const channels = await this.roomService.getRooms(client);
     //await this.server.to(client.id).emit('channel', channels);
     return channels;
-  }
-
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('emitRooms')
-  async emitChannels(@ConnectedSocket() client: Socket) {
-    const channels = await this.roomService.getRooms(client);
-    return await this.server.to(client.id).emit('emitRooms', channels); // Pas sur, il faut que ca puisse envoyer a tout le monde.
   }
 
       /*async emitChannelForConnectedUsers() {
@@ -211,7 +251,7 @@ export class ChatGateway
 
 
   //--------------------------------------------------------------------------------------//
-  //------------------------------------GESTION DES DMS-----------------------------------//
+  //---------------------------------GESTION DES MESSAGES---------------------------------//
   //--------------------------------------------------------------------------------------//
   
   @UseGuards(ChatGuard)
