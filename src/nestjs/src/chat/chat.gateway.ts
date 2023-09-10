@@ -75,6 +75,13 @@ export class ChatGateway
   handleDisconnect(client: Socket)
   {
     client.disconnect();
+    for (let [socket, id] of this.ref_socket.entries()) {
+      if (socket === client) {
+          console.log(colors.GREEN, "La Socket " + colors.WHITE + socket.id + colors.GREEN + " a ete supprimee de la mao !")
+          this.ref_socket.delete(socket);
+          break;
+      }
+    }
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
@@ -181,6 +188,44 @@ export class ChatGateway
       this.server.emit('joinRoom', "Error, there was a problem in joining the room : ", data.channelName);
       return (result);
     }
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('banUser')
+  async banUserFromRoom(@MessageBody() data: {
+  channelName: string, 
+  targetUsername: string }, @ConnectedSocket() client: Socket)
+  {
+    const result = await this.roomService.banUserfromRoom(data, client);
+    if (result.success) {
+      const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+      const targetSocketId = this.ref_client.get(bannedUser.id);
+      const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
+      if (targetSocket)
+          targetSocket.leave(data.channelName);
+      this.server.emit('banUser', "User ", data.targetUsername, " has been banned from room ", data.channelName);
+      return (result);
+    }
+    else
+    {
+      this.server.emit('banUser', "Error, there was a problem the user was not banned.");
+      return (result);
+    }
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('unbanUser')
+  async unbanUserFromRoom(@MessageBody() data: {
+  channelName: string, 
+  targetUsername: string }, @ConnectedSocket() client: Socket)
+  {
+    const result = await this.roomService.unbanUserfromRoom(data, client);
+    if (result.success) {
+      this.server.emit('unbanUser', "User ", data.targetUsername, " has been unbanned from room ", data.channelName);
+    } else {
+      this.server.emit('unbanUser', "Error unbanning user ", data.targetUsername, " from room ", data.channelName);
+    }
+    return result;
   }
 
   @UseGuards(ChatGuard)

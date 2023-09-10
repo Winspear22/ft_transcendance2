@@ -44,3 +44,14 @@ Chambre privée avec un nom très commun (pour tester la validation si elle exis
     "hasPassword": false,
     "isPrivate": true
 }
+Bannir un utilisateur :
+{
+    "channelName": "nomDeLaRoom",
+    "targetUsername": "nomDeLutilisateur"
+}
+Débannir un utilisateur :
+{
+    "channelName": "nomDeLaRoom",
+    "targetUsername": "nomDeLutilisateur"
+}
+

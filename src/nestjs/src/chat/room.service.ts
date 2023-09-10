@@ -202,98 +202,120 @@ export class RoomService
     //----------------------------------OWNER/ADMIN POWERS----------------------------------//
     //--------------------------------------------------------------------------------------//
 
-    async banUserChannel(body: {
-        channelName: string;
-        targetUsername: string; }, @ConnectedSocket() client: Socket)
-        {
-            const user = client.data.user;
-            const room = await this.getRoomByName(body.channelName);
-            if (!room) {
-                return { success: false, error: 'Channel not found' };
-            }
-        
-            if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
-                return { success: false, error: 'You are not admin' };
-            }
-        
-            const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
-            if (!targetUser) {
-                return { success: false, error: 'Target user not found' };
-            }
-        
-            if (targetUser.id === (await room).owner) {
-                return { success: false, error: 'Cannot ban owner' };
-            }
-        
-            if (!(await room).users.includes(targetUser.id)) {
-                return { success: false, error: 'Target user is not in this channel' };
-            }
-        
-            if ((await room).admins.includes(targetUser.id)) {
-                if ((await room).owner === user.id) {
-                    (await room).users = (await room).users.filter(id => id !== targetUser.id);
-                    (await room).bannedIds.push(targetUser.id);
-                    await this.roomRepository.save(room);
-                    return { success: true };
-                } else {
-                    return { success: false, error: 'Cannot ban another admin' };
-                }
-            }
+    async banUserfromRoom(body: {
+    channelName: string,
+    targetUsername: string }, @ConnectedSocket() client: Socket)
+    {
+      const user = client.data.user;
+      const room = await this.getRoomByName(body.channelName);
+      if (!room) {
+          return { success: false, error: 'Channel not found' };
+      }
+  
+      if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
+          return { success: false, error: 'You are not admin' };
+      }
+  
+      const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
+      if (!targetUser) {
+          return { success: false, error: 'Target user not found' };
+      }
+  
+      if (targetUser.id === (await room).owner) {
+          return { success: false, error: 'Cannot ban owner' };
+      }
+  
+      if (!(await room).users.includes(targetUser.id)) {
+          return { success: false, error: 'Target user is not in this channel' };
+      }
+  
+      if ((await room).admins.includes(targetUser.id)) {
+          if ((await room).owner === user.id) {
+              (await room).users = (await room).users.filter(id => id !== targetUser.id);
+              (await room).bannedIds.push(targetUser.id);
+              await this.roomRepository.save(room);
+              return { success: true };
+          } else {
+              return { success: false, error: 'Cannot ban another admin' };
+          }
+      }
+      (await room).users = (await room).users.filter(id => id !== targetUser.id);
+      (await room).bannedIds.push(targetUser.id);
+      await this.roomRepository.save(room);
+  
+      return { success: true };
+    }
+
+    async unbanUserfromRoom(body: {
+      channelName: string,
+      targetUsername: string }, @ConnectedSocket() client: Socket)
+    {
+      const user = client.data.user;
+      const room = await this.getRoomByName(body.channelName);
+      if (!room) {
+        return { success: false, error: 'Channel not found' };
+      }
     
-            (await room).users = (await room).users.filter(id => id !== targetUser.id);
-            (await room).bannedIds.push(targetUser.id);
-            await this.roomRepository.save(room);
-        
-            return { success: true };
-        }
+      if (room.owner !== user.id && !room.admins.includes(user.id)) {
+        return { success: false, error: 'You are not admin' };
+      }
     
-        async kickUserChannel(body: { 
-        channelName: string; 
-        targetUsername: string; }, @ConnectedSocket() client: Socket)
-        {
+      const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
+      if (!targetUser) {
+        return { success: false, error: 'Target user not found' };
+      }
     
-            const user = client.data.user;
-            const room = await this.getRoomByName(body.channelName); // Supposons que cette fonction fait un appel à votre propre base de données
-            
-            if (!room) {
-                return { success: false, error: 'Channel not found' };
-            }
-            
-            if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
-                return { success: false, error: 'You are not admin' };
-            }
+      if (!room.bannedIds.includes(targetUser.id)) {
+        return { success: false, error: 'Target user is not banned from this channel' };
+      }
     
-            const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
-            if (!targetUser) {
-                return { success: false, error: 'Target user not found' };
-            }
+      room.bannedIds = room.bannedIds.filter(id => id !== targetUser.id);
+      await this.roomRepository.save(room);
     
-            if (targetUser.id === (await room).owner) {
-                return { success: false, error: 'Cannot kick owner' };
-            }
+      return { success: true };
+    }
     
-            if (!(await room).users.includes(targetUser.id)) {
-                return { success: false, error: 'Target user is not in this channel' };
-            }
-    
-            if ((await room).admins.includes(targetUser.id)) {
-                if ((await room).admins.includes(user.id)) {
-                    return { success: false, error: 'Cannot kick another admin' };
-                } 
-                else if ((await room).owner === user.id) {
-                    (await room).users = (await room).users.filter(id => id !== targetUser.id);
-                    await this.roomRepository.save(room);
-                    return { success: true };
-                }
-                else {
-                    return { success: false, error: 'You are not admin' };
-                }
-            }
-    
-            (await room).users = (await room).users.filter(id => id !== targetUser.id);
-            await this.roomRepository.save(room);
-    
-            return { success: true };
-        }
+
+    async kickUserChannel(body: { 
+    channelName: string; 
+    targetUsername: string; }, @ConnectedSocket() client: Socket)
+    {
+      const user = client.data.user;
+      const room = await this.getRoomByName(body.channelName); // Supposons que cette fonction fait un appel à votre propre base de données
+      
+      if (!room) {
+          return { success: false, error: 'Channel not found' };
+      }
+      
+      if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
+          return { success: false, error: 'You are not admin' };
+      }
+      const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
+      if (!targetUser) {
+          return { success: false, error: 'Target user not found' };
+      }
+      if (targetUser.id === (await room).owner) {
+          return { success: false, error: 'Cannot kick owner' };
+      }
+      if (!(await room).users.includes(targetUser.id)) {
+          return { success: false, error: 'Target user is not in this channel' };
+      }
+      if ((await room).admins.includes(targetUser.id)) {
+          if ((await room).admins.includes(user.id)) {
+              return { success: false, error: 'Cannot kick another admin' };
+          } 
+          else if ((await room).owner === user.id) {
+              (await room).users = (await room).users.filter(id => id !== targetUser.id);
+              await this.roomRepository.save(room);
+              return { success: true };
+          }
+          else {
+              return { success: false, error: 'You are not admin' };
+          }
+      }
+      (await room).users = (await room).users.filter(id => id !== targetUser.id);
+      await this.roomRepository.save(room);
+      return { success: true };
+    }
         //--------------------------------------------------------------------------------------//
 }
