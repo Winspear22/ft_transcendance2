@@ -176,7 +176,7 @@ export class ChatGateway
     const result = await this.roomService.joinRoom(data, client);
     if (result.success)
     {
-      this.server.emit('joinRoom', "Room joined : ", data.channelName);
+      this.server.emit('joinRoom', "Room joined : " + data.channelName);
       client.join(data.channelName);
       client.on('disconnect', () => {
         client.leave(data.channelName);
@@ -185,10 +185,19 @@ export class ChatGateway
     }
     else
     {
-      this.server.emit('joinRoom', "Error, there was a problem in joining the room : ", data.channelName);
+      this.server.emit('joinRoom', "Error, there was a problem in joining the room : " + data.channelName);
       return (result);
     }
   }
+
+  //--------------------------------------------------------------------------------------//
+
+
+  //--------------------------------------------------------------------------------------//
+  //-----------------------------POUVOIRS DES OWNERS/ADMINS-------------------------------//
+  //--------------------------------------------------------------------------------------//
+
+  //------------------------------BANNIR/DEBANNIR LES USERS-------------------------------//
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('banUser')
@@ -221,85 +230,73 @@ export class ChatGateway
   {
     const result = await this.roomService.unbanUserfromRoom(data, client);
     if (result.success) {
-      this.server.emit('unbanUser', "User ", data.targetUsername, " has been unbanned from room ", data.channelName);
+      this.server.emit('unbanUser', "User " + data.targetUsername + " has been unbanned from room " + data.channelName);
     } else {
-      this.server.emit('unbanUser', "Error unbanning user ", data.targetUsername, " from room ", data.channelName);
+      this.server.emit('unbanUser', "Error unbanning user " + data.targetUsername, " from room " + data.channelName);
     }
     return result;
   }
 
+  //--------------------------------------------------------------------------------------//
+
+  //------------------------------------KICK LES USERS------------------------------------//
+
   @UseGuards(ChatGuard)
-  @SubscribeMessage('getRooms')
-  async getChannels(@ConnectedSocket() client: Socket) 
+  @SubscribeMessage('kickUser')
+  async kickUserFromRoom(@MessageBody() data: {
+  channelName: string, 
+  targetUsername: string }, @ConnectedSocket() client: Socket)
   {
-    const channels = await this.roomService.getRooms(client);
-    //await this.server.to(client.id).emit('channel', channels);
-    return channels;
+    const result = await this.roomService.kickUserChannel(data, client);
+    if (result.success) {
+      const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+      const targetSocketId = this.ref_client.get(bannedUser.id);
+      const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
+      if (targetSocket)
+          targetSocket.leave(data.channelName);
+      this.server.emit('kickUser', "User " + data.targetUsername + " has been kicked from room " + data.channelName);
+      return (result);
+    }
+    else
+    {
+      this.server.emit('kickUser', "Error, there was a problem the user was not kicked.");
+      return (result);
+    }
   }
 
-      /*async emitChannelForConnectedUsers() {
-        const connections: ConnectedUserI[] = await this.connectedUserService.findAll();
-        for (const connection of connections) {
-            const channels: ChannelI[] = await this.channelService.getChannelsForUser(connection.user.userId);
-            await this.server.to(connection.socketId).emit('channel', channels);
-        }
-    }*/
-
-  // Ajout de la méthode getYourChannels
+  //--------------------------------------------------------------------------------------//
+  
+  //------------------------------------MUTE LES USERS------------------------------------//
+  // Ne pas oublier de changer les serveur.emit car ils ne sont pas bons.
   @UseGuards(ChatGuard)
-  @SubscribeMessage('getYourRooms')
-  async getYourChannels(@ConnectedSocket() client: Socket) {
-    const yourChannels = await this.roomService.getYourRooms(client);
-    return yourChannels;
-  }
-
-  // Ajout de la méthode getChannelMessages
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('getRoomMessages')
-  async getChannelMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
-    const channelMessages = await this.roomService.getRoomMessages(body, client);
-    return channelMessages;
-  }
-
-  /*@UseGuards(ChatGuard)
-  @SubscribeMessage('sendDM')
-  async handleDMs(@MessageBody() body: { room: string,
-  senderUsername: string,
-  message: string,
-  receiverUsername: string }, @ConnectedSocket() client: Socket): Promise<void> {
-    const sender = await this.chatService.getUserFromSocket(client);//await this.usersRepository.findOne({ where: { username: body.senderUsername } });
-    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
-    console.log("Is this.server instance of Server?", this.server instanceof require("socket.io").Server);
-    console.log("Is this.server.sockets instance of Namespace?", this.server.sockets instanceof require("socket.io").Namespace);
+  @SubscribeMessage('muteUser')
+  async muteUser(@MessageBody() data: {
+  username: string; 
+  roomName: string; 
+  targetUsername: string; 
+  duration: number }, 
+  @ConnectedSocket() client: Socket) 
+  {
     
-    if (!sender || !receiver) {
-      return;
+    const result = await this.roomService.muteUserRoom(data);
+    
+    if (result.success) {
+        this.server.to(data.roomName).emit('userMuted', {
+            message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
+            targetUsername: data.targetUsername,
+            duration: data.duration
+        });
+
+    } else {
+        this.server.to(client.id).emit('muteError', {
+            error: result.error
+        });
     }
 
-    if (body.message.length === 0) {
-      return;
-    }
-    const roomId = await this.roomService.getRoomByName(body.room);
-    const newMessage = this.messagesRepository.create({
-      senderId: sender.id,
-      text: body.message,
-      channelId: roomId.id
-    });
-    const savedMessage = await this.messagesRepository.save(newMessage);
-    const receiverSocketId = this.ref_client.get(receiver.id);
-    console.log(receiverSocketId);
-    console.log(this.ref_client);
-
-    if (receiverSocketId !== undefined) {
-      // Utilisez l'ID de la socket pour envoyer un message ou pour d'autres opérations
-      // Par exemple, avec Socket.io, vous pouvez faire quelque chose comme ceci :
-      this.server.to(receiverSocketId).emit("sendDM", newMessage.text);
-    } //else {
-      // Gérez le cas où l'ID de l'utilisateur n'existe pas dans la Map
-    //}
-    //this.server.emit('sendDM', { senderId: sender.id, text: body.message, time: savedMessage.createdAt, username: sender.username });
-  }*/
-
+    return result;
+  }
+  
+  //--------------------------------------------------------------------------------------//
 
   //--------------------------------------------------------------------------------------//
   //---------------------------------GESTION DES MESSAGES---------------------------------//
