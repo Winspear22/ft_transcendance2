@@ -225,8 +225,7 @@ export class DMGateway
         receiverSocket.join(chat.chat.room);
         senderSocket.emit("joinDM", "You have joined " + chat.chat.room );
         receiverSocket.emit("joinDM",  "You have joined " + chat.chat.room );
-    }
-    
+      }
     }
     else
       return ;
@@ -306,8 +305,4 @@ export class DMGateway
     else
       return;
   }
-
-
-
-
 }
