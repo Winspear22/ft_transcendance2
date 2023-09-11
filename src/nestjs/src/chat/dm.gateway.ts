@@ -1,7 +1,5 @@
-import { UseGuards } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Socket, Server } from 'socket.io';
-import { ChatGuard } from "./guard/chat-guard.guard";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Friend } from "src/user/entities/friend.entity";
 import { Repository } from "typeorm";
@@ -38,10 +36,10 @@ export class DMGateway
   //--------------------------------------------------------------------------------------//
   //---------------------------------CONNEXION/DECONNEXION--------------------------------//
   //--------------------------------------------------------------------------------------//
-  @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
+    console.log("Cookie reçu:", client.handshake.query.cookie);
     const user = await this.chatService.getUserFromSocket(client);
     if (user == undefined)
     {
@@ -64,7 +62,6 @@ export class DMGateway
   }
 
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('emitDM')
   async emitDMs(@ConnectedSocket() client: Socket) {
     const user = await this.chatService.getUserFromSocket(client);
@@ -92,7 +89,6 @@ export class DMGateway
   //------------------------------------GESTION DES DMS-----------------------------------//
   //--------------------------------------------------------------------------------------//
   
-  @UseGuards(ChatGuard)
   @SubscribeMessage('joinDM')
   joinDM(@ConnectedSocket() socket: Socket, @MessageBody() body: { room: string }): void {
     socket.join(body.room);
@@ -102,7 +98,6 @@ export class DMGateway
     this.server.emit('joinDM', body.room);
   }
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('sendDM')
   async handleDMs(
   @ConnectedSocket() client: Socket,
@@ -166,7 +161,6 @@ export class DMGateway
   //----------------------------------GESTION VIE SOCIALE---------------------------------//
   //--------------------------------------------------------------------------------------//
   //Ne MARCHE PAS
-  @UseGuards(ChatGuard)
   @SubscribeMessage('sendFriendRequest')
   async SendFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -190,7 +184,6 @@ export class DMGateway
       return ;
   }
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('acceptFriendRequest')
   async AcceptFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -214,7 +207,6 @@ export class DMGateway
       return ;
   }
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('refuseFriendRequest')
   async RefuseFriendRequest(
   @ConnectedSocket() client: Socket,
