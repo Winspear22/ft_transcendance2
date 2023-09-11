@@ -2,35 +2,47 @@
     <div class="buttonQr-container">
       <div class="header">
         <div class="title">{{ isTwoFaActivated ? 'Désactivation 2FA' : 'Activation 2FA' }}</div>
-        <generateQr v-if="!isTwoFaActivated" :userInfo="userInfo"></generateQr>
+        <generateQr v-if="!isTwoFaActivated" :userInfo="userInfo" @qrCodeGenerated="handleQrCode"></generateQr>
         <deactivateQr v-if="isTwoFaActivated"></deactivateQr>
+        <displayQr :qrCodeUrl="qrCodeUrl"></displayQr>
       </div>
     </div>
-  </template>
-  
-  <script>
-  import generateQr from './generateQr.vue';
-  import deactivateQr from './deactivateQr.vue';
-  import { mapGetters } from 'vuex';
-  
-  export default {
-      name: 'buttonQrcode',
-      components: {
-          generateQr,
-          deactivateQr
-      },
-      props: {
-          userInfo: {
-              type: Object,
-              default: null
-          }
-      },
-      computed: {
-          ...mapGetters(['isTwoFaActivated'])
-      }
-  }
-  </script>  
+</template>
 
+<script>
+import generateQr from './generateQr.vue';
+import deactivateQr from './deactivateQr.vue';
+import displayQr from './displayQr.vue';
+import { mapGetters } from 'vuex';
+
+export default {
+    name: 'buttonQrcode',
+    components: {
+        generateQr,
+        deactivateQr,
+        displayQr
+    },
+    data() {
+        return {
+            qrCodeUrl: null
+        };
+    },
+    props: {
+        userInfo: {
+            type: Object,
+            default: null
+        }
+    },
+    computed: {
+        ...mapGetters(['isTwoFaActivated'])
+    },
+    methods: {
+        handleQrCode(qrCode) {
+            this.qrCodeUrl = qrCode;
+        }
+    }
+}
+</script>
 
 <style scoped>
 .header {
@@ -59,18 +71,18 @@
     left: 2px;
     width: 16px;
     height: 16px;
-    background-color: #2459d5; 
+    background-color: #2459d5;
     border-radius: 50%;
     transition: all 0.4s;
     transform: translateY(-50%);
 }
 
 .toggle-button.activated {
-    background-color: #2459d5; 
+    background-color: #2459d5;
 }
 
 .toggle-button.activated .slider {
     left: 22px;
     background-color: #2fe8ee;
 }
-</style>
+</style>%

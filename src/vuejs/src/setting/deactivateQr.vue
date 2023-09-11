@@ -1,11 +1,11 @@
-<template>
+i<template>
     <button @click="deactivateTwoFa">Désactiver 2FA</button>
   </template>
-  
+
   <script>
   import axios from 'axios';
   import { mapActions } from 'vuex';
-  
+
   export default {
       methods: {
           ...mapActions(['activateTwoFa']),
@@ -21,4 +21,4 @@
           }
       }
   }
-  </script> 
+  </script>

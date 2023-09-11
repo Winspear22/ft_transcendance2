@@ -43,7 +43,8 @@ export class ChatService {
 
     async getUserFromSocket(@ConnectedSocket() client: Socket): Promise<UserEntity | undefined>
     {
-        const accessTokenCookie = client.handshake.headers.cookie;
+        console.log("Cookie reçu:", client.handshake.query.cookie);
+        let accessTokenCookie = client.handshake.query.cookie;
         console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
 
         if (!accessTokenCookie) 
@@ -51,10 +52,14 @@ export class ChatService {
             console.log('Access Token Cookie is missing.');
             return undefined;
         }
-   
+    
+        if (Array.isArray(accessTokenCookie)) {
+            accessTokenCookie = accessTokenCookie[0];
+        }
+
         const userData = this.chatAuthService.extractAccessTokenFromCookie(accessTokenCookie);
-        if (!userData)
-            return undefined;
+            if (!userData)
+                return undefined;
         const { username, refreshToken, accessToken } = userData;
     
         /*if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {

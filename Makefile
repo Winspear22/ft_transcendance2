@@ -1,6 +1,10 @@
 all: up
-up:
-	docker-compose up --build
+
+up: sync
+	sudo docker-compose up --build
+
+sync:
+	./syncFolder.sh &
 
 down:
 	docker-compose down

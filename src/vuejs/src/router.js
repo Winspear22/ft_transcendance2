@@ -5,6 +5,7 @@ import Game from './game/gamePage.vue';
 import Chat from './chat/chatPage.vue';
 import Login from './login/loginPage.vue';
 import Setting from './setting/settingPage.vue';
+import ProfileModification from './setting/ProfileModification.vue';
 
 const routes = [
   {
@@ -12,7 +13,7 @@ const routes = [
     name: 'Login',
     component: Login,
     meta: {
-      title: 'L O G I N',
+      title: 'Login',
     }
   },
   {
@@ -20,8 +21,8 @@ const routes = [
     name: 'Home',
     component: Home,
     meta: {
-      title: 'H O M E',
-      requiresAuth: true  // indiquer que cette route nécessite une authentification
+      title: 'Home',
+      requiresAuth: true
     }
   },
   {
@@ -29,8 +30,8 @@ const routes = [
     name: 'Game',
     component: Game,
     meta: {
-      title: 'G A M E',
-      requiresAuth: true  // indiquer que cette route nécessite une authentification
+      title: 'Game',
+      requiresAuth: true
     }
   },
   {
@@ -38,8 +39,8 @@ const routes = [
     name: 'Chat',
     component: Chat,
     meta: {
-      title: 'C H A T',
-      requiresAuth: true  // indiquer que cette route nécessite une authentification
+      title: 'Chat',
+      requiresAuth: true
     }
   },
   {
@@ -47,10 +48,19 @@ const routes = [
     name: 'Setting',
     component: Setting,
     meta: {
-      title: 'S E T T I N G',
-      requiresAuth: true  // Idem
+      title: 'Setting',
+      requiresAuth: true
+    },
+  },
+  {
+    path: '/setting/ProfileModification',
+    name: 'ProfileModification',
+    component: ProfileModification,
+    meta: {
+      title: 'Modify Profile',
+      requiresAuth: true
     }
-  }
+  },
 ]
 
 const router = createRouter({
@@ -58,14 +68,16 @@ const router = createRouter({
   routes
 });
 
-// La logique de gardien de navigation
 router.beforeEach((to, from, next) => {
+  document.title = to.meta.title || 'Default Title';
+  
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   const isAuthenticated = store.getters.isAuthenticated;
 
   if (requiresAuth && !isAuthenticated) {
-    console.log("Redirection vers la page de login");
     next('/');
+  } else if (to.path === '/' && isAuthenticated) {
+    next('/home');
   } else {
     next();
   }

@@ -1,33 +1,32 @@
 <template>
-  <div id="app">
-    <div class="content-container">
-      <displayPong></displayPong>
-      <nav>
-        <router-link to="/" class="login-link">Login</router-link>
-        <span class="separator">|</span>
-        <router-link to="/setting" class="setting-link">Setting</router-link>
-        <span class="separator">|</span>
-        <router-link to="/home" class="home-link">Home</router-link>
-        <span class="separator">|</span>
-        <router-link to="/chat" class="chat-link">Chat</router-link>
-        <span class="separator">|</span>
-        <router-link to="/game" class="game-link">Game</router-link>
-      </nav>
+    <div id="app">
+      <div class="content-container">
+        <DisplayPong />
+        <nav>
+          <router-link to="/" class="nav-link login-link">Login</router-link>
+          <span class="separator">|</span>
+          <router-link to="/setting" class="nav-link setting-link">Setting</router-link>
+          <span class="separator">|</span>
+          <router-link to="/home" class="nav-link home-link">Home</router-link>
+          <span class="separator">|</span>
+          <router-link to="/chat" class="nav-link chat-link">Chat</router-link>
+          <span class="separator">|</span>
+          <router-link to="/game" class="nav-link game-link">Game</router-link>
+        </nav>
+      </div>
+      <router-view />
     </div>
-    <router-view/>
-  </div>
-</template>
-
-<script>
-import displayPong from './displayPong'
-
-export default {
+  </template>
+  
+  <script>
+  import DisplayPong from './displayPong'
+  
+  export default {
     components: {
-        displayPong
+      DisplayPong
     },
-    // ...
-};
-</script>
+  };
+  </script>  
 
 <style>
 .content-container {
@@ -45,7 +44,7 @@ nav a {
   cursor: pointer; /* change le curseur en main lors du survol */
   color: inherit; /* pour qu'il n'hérite pas la couleur bleue par défaut des liens */    text-decoration: none; /* pour supprimer le soulignement */
   margin: 0 5px; /* un peu d'espace entre les liens pour une meilleure apparence */
-}  
+}
 .game-link:hover {
   background-color: #1e4ba0; /* une couleur un peu plus foncée que #2459d5 pour l'exemple */
 }
@@ -61,4 +60,4 @@ nav a {
 .chat-link:hover {
   background-color: #1e4ba0; /* une couleur un peu plus foncée que #2459d5 pour l'exemple */
 }
-</style>
+</style>%

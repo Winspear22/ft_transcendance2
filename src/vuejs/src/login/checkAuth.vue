@@ -1,39 +1,59 @@
 <template>
     <div>
+        <turn-on v-if="showTurnOnComponent" @twoFaStatusChanged="handleTwoFaStatus"></turn-on>
     </div>
 </template>
 
 <script>
+import { onMounted, ref } from 'vue'; 
 import axios from 'axios';
-import { onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import turnOn from './../setting/turnOn';
 
 export default {
     name: 'CheckAuth',
+    components: {
+        turnOn
+    },
     setup() {
-        const store = useStore(); 
-        const router = useRouter(); 
+        const store = useStore();
+        const router = useRouter();
+        const showTurnOnComponent = ref(false);
 
         onMounted(authenticate);
-        
+
         async function authenticate() {
-            const response = await axios.get('http://localhost:3000/auth/check-auth', { withCredentials: true });
-            if (response.data.success) {
-                if (response.data.cookie) {
-                    store.dispatch('setToken', response.data.cookie);
-                }               
-                if (response.data.infoUser.user_status === 'Online') {
-                    store.dispatch('authenticate', true);
+            try {
+                const response = await axios.get('http://localhost:3000/auth/check-auth', { withCredentials: true });
+                if (response.data.success) {
+                    if (response.data.cookie) {
+                        store.dispatch('setToken', response.data.cookie);
+                    }
+                    const isAuthenticated = response.data.infoUser.user_status === 'Online';
+                    store.dispatch('authenticate', isAuthenticated);
+                    store.dispatch('activateTwoFa', response.data.infoUser.isTwoFactorAuthenticationEnabled);
+                    
+                    if (isAuthenticated && store.getters.isTwoFaActivated) {
+                        showTurnOnComponent.value = true;
+                    }
                 }
-                else
-                    store.dispatch('authenticate', false);
-                store.dispatch('activateTwoFa', response.data.infoUser.isTwoFactorAuthenticationEnabled);
-                router.push('/home');
+            } catch (error) {
+                console.error("Erreur lors de la vérification de l'authentification:", error);
             }
         }
 
-        return {};
+        function handleTwoFaStatus(status) {
+            if (status) {
+                router.push('/home');
+                showTurnOnComponent.value = false;
+            }
+        }
+
+        return {
+            showTurnOnComponent,
+            handleTwoFaStatus
+        };
     }
 };
 </script>

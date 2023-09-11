@@ -1,46 +1,40 @@
 <template>
   <div class="setting-container">
-    <infoUser @userInfoFetched="handleUserInfo" />
-    <profilePicture :userPic="userProfilePic" />
-    <displayUser v-if="userInfo" :userInfo="userInfo" />
-    <buttonQrcode v-if="userInfo" :userInfo="userInfo" />
+    <infoUser @userInfoFetched="handleUserInfo"></infoUser>
+    <displayPP :userInfo="userInformation"></displayPP>
+    <div v-if="userInformation">
+      <p>{{ userInformation.username }}</p> 
+      <p>{{ userInformation.email }}</p> 
+    </div>
+    <buttonQrcode :userInfo="userInformation"></buttonQrcode>
     <buttonLogout></buttonLogout>
+    <router-link :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
   </div>
 </template>
 
+
 <script>
 import infoUser from './infoUser.vue';
+import displayPP from './DisplayPP.vue'; 
 import buttonLogout from './buttonLogout';
-import displayUser from './displayUser.vue';
 import buttonQrcode from './buttonQrcode.vue';
-import profilePicture from './profilePicture';
 
 export default {
   components: {
       buttonLogout,
-      profilePicture,
       infoUser,
-      displayUser,
-      buttonQrcode
+      buttonQrcode,
+      displayPP, 
   },
   data() {
-      return {
-          userProfilePic: null,
-          userInfo: null
-      };
+    return {
+      userInformation: null,
+    };
   },
   methods: {
-      handleUserInfo(receivedUserInfo) {
-          this.userInfo = receivedUserInfo;
-      },
+    handleUserInfo(userInfo) {
+      this.userInformation = userInfo;
+    },
   },
 };
 </script>
-
-<style>
-.setting-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-</style>

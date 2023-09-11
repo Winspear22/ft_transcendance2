@@ -3,23 +3,17 @@
       <button @click="login" class="login-btn">
         <span>Se connecter</span>
       </button>
-      <p v-if="errorMessage">{{ errorMessage }}</p>
     </div>
 </template>
 
 <script>
-import { ref } from 'vue';
-
 export default {
   setup() {
-    const errorMessage = ref('');
-
     function login() {
       window.location.href = 'http://localhost:3000/auth/42/login';
     }
 
     return {
-      errorMessage,
       login
     };
   }
