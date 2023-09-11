@@ -1,43 +1,74 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import authLogin from './components/authLogin.vue';
-import deLog from './components/deLog.vue';
-import displayPong from './components/displayPong.vue';
+import { createRouter, createWebHistory } from 'vue-router';
+import store from './store';
+import Home from './home/homePage.vue';
+import Game from './game/gamePage.vue';
+import Chat from './chat/chatPage.vue';
+import Login from './login/loginPage.vue';
+import Setting from './setting/settingPage.vue';
 
 const routes = [
-    {
-        path: '/login',
-        name: 'Login',
-        component: authLogin,
-        meta: {
-            title: 'Se connecter'
-        }
-    },
-    {
-        path: '/return',
-        name: 'Logout',
-        component: deLog,
-        meta: {
-            title: 'Se deconnecter'
-        }
-    },
-    {
-        path: '/',
-        name: 'Home',
-        component: displayPong,
-        meta: {
-            title: 'P O N G'
-        }
+  {
+    path: '/',
+    name: 'Login',
+    component: Login,
+    meta: {
+      title: 'L O G I N',
     }
+  },
+  {
+    path: '/home',
+    name: 'Home',
+    component: Home,
+    meta: {
+      title: 'H O M E',
+      requiresAuth: true  // indiquer que cette route nécessite une authentification
+    }
+  },
+  {
+    path: '/game',
+    name: 'Game',
+    component: Game,
+    meta: {
+      title: 'G A M E',
+      requiresAuth: true  // indiquer que cette route nécessite une authentification
+    }
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: Chat,
+    meta: {
+      title: 'C H A T',
+      requiresAuth: true  // indiquer que cette route nécessite une authentification
+    }
+  },
+  {
+    path: '/setting',
+    name: 'Setting',
+    component: Setting,
+    meta: {
+      title: 'S E T T I N G',
+      requiresAuth: true  // Idem
+    }
+  }
 ]
 
 const router = createRouter({
-    history: createWebHistory(),
-    routes,
-})
-
-router.beforeEach((to, from, next) => {
-    document.title = to.meta.title || 'Titre par défaut';
-    next();
+  history: createWebHistory(),
+  routes
 });
 
-export default router
+// La logique de gardien de navigation
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
+  const isAuthenticated = store.getters.isAuthenticated;
+
+  if (requiresAuth && !isAuthenticated) {
+    console.log("Redirection vers la page de login");
+    next('/');
+  } else {
+    next();
+  }
+});
+
+export default router;

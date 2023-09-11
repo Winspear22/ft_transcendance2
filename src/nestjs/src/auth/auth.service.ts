@@ -1,18 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { User42Dto } from '../user/user42.dto';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { authenticator } from 'otplib';
 import { toDataURL, toFileStream } from 'qrcode';
 import { JwtService } from '@nestjs/jwt';
 import * as colors from '../colors'
-
-export interface TokenPayload {
-  userId: number;
-  isSecondFactorAuthenticated?: boolean;
-}
-
-export default TokenPayload;
 
 @Injectable()
 export class AuthService {
@@ -48,14 +40,6 @@ export class AuthService {
     return toDataURL(otpAuthUrl);
   }
 
-  public getCookieWithJwtAccessToken(userId: number, isSecondFactorAuthenticated = false) {
-    const payload: TokenPayload = { userId, isSecondFactorAuthenticated };
-    const token = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_TOKEN_SECRET,//this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
-      expiresIn: process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME//`${this.configService.get('JWT_ACCESS_TOKEN_EXPIRATION_TIME')}s`
-    });
-    return `Authentication=${token}; HttpOnly; Path=/; Max-Age=${process.env.JWT_ACCESS_TOKEN_EXPIRATION_TIME}`;
-  }
 
   async WriteCommandsNames(name: string)
   {

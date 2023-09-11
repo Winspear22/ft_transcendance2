@@ -1,18 +1,20 @@
 import {
   ForbiddenException,
   Injectable,
-  NotFoundException, HttpException, HttpStatus
+  NotFoundException, HttpException, HttpStatus, Res, UploadedFile
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './user.entity';
 import { Repository } from 'typeorm';
 import { authenticator } from 'otplib';
 import { Response } from 'express';
-import { Request } from 'express';
 import * as colors from '../colors';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { UpdateEmailDto, UpdateUserDto } from './dto/updateuser.dto';
+import { ImageDto } from './dto/profile_picture.dto';
+import * as path from 'path'; // Assurez-vous que le module 'path' est importé
 
 export class AuthDto {
   @IsString()
@@ -31,6 +33,9 @@ export class AuthDto {
   type: string
 }
 
+const UPLOADS_PATH = path.resolve(__dirname, '../../vuejs/uploads');
+
+
 @Injectable()
 export class UserService {
   constructor(
@@ -48,6 +53,9 @@ export class UserService {
       user_status: 'Online',
       id42: userDet.providerId,
       provider: userDet.provider,
+      blockedIds: [],
+      friends: [],
+      friendRequests: []
     });
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
     console.log(colors.GREEN + colors.BRIGHT, "------------------USER CREATED---------------", colors.RESET);
@@ -59,6 +67,45 @@ export class UserService {
     console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
     return newUser;
   }
+
+  async createUser2(userDet: any): Promise<UserEntity> {
+    const newUser = this.usersRepository.create({
+      username: userDet.login,
+      email: userDet.email,
+      profile_picture: userDet?.picture,
+      isTwoFactorAuthenticationEnabled: false,
+      user_status: 'Online',
+      blockedIds: [],
+      friends: [],
+      friendRequests: []
+      //id42: userDet.providerId,
+      //provider: userDet.provider,
+    });
+    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
+    console.log(colors.GREEN + colors.BRIGHT, "------------------USER2 CREATED---------------", colors.RESET);
+    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
+    this.DisplayUserIdentity(newUser);
+    await this.usersRepository.save(newUser);
+    //On ecrit l'id apres le save car c'est la fonction save qui attribut l'id.
+    console.log(colors.GREEN + colors.BRIGHT, 'My User simple ID === ', colors.WHITE + colors.BRIGHT + newUser.id);
+    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
+    return newUser;
+  }
+
+  generateRandomPseudo(): string {
+    const prefixes = [
+        'Super', 'Mega', 'Ultra', 'Hyper', 'Alpha', 'Omega', 'Ninja', 'Pirate', 'Ghost', 'Laser'
+    ];
+
+    const suffixes = [
+        'Tiger', 'Phoenix', 'Dragon', 'Warrior', 'Knight', 'Shadow', 'Light', 'Hunter', 'Bear', 'Lion'
+    ];
+
+    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+
+    return `${randomPrefix}${randomSuffix}`;
+}
   /*=====================================================================*/
   /*-----------------------------2FA METHODES----------------------------*/
   /*=====================================================================*/
@@ -76,6 +123,7 @@ export class UserService {
 
   async isTwoFactorAuthenticationCodeValid(TfaCode: string, username: string) {
     try {
+
       const user = await this.findUserByUsername(username);
       const verif = authenticator.check(
         TfaCode,
@@ -83,6 +131,7 @@ export class UserService {
       );
       return verif;
     } catch (error) {
+      console.log(colors.BRIGHT + colors.RED + "La fontion authenticator a rate", + colors.RESET);
       console.error(error);
       return false;
     }
@@ -91,14 +140,16 @@ export class UserService {
   async Deactivate2FA(username: string) {
     const user = await this.usersRepository.findOneBy({ username });
   
-    if (user && user.isTwoFactorAuthenticationEnabled) {
+    if (user && user.isTwoFactorAuthenticationEnabled) 
+    {
       await this.usersRepository.update(user.id, {
         isTwoFactorAuthenticationEnabled: false,
         twoFactorAuthenticationSecret: null,
       });
-      return { message: '2FA disabled' };
+      var partialUser = await this.returnPartialUserInfo(user.username);
+      return { message: '2FA disabled', partialUser };
     } else {
-      return { message: '2FA not disabled' };
+      return { message: '2FA not disabled', partialUser };
     }
   }
 
@@ -109,16 +160,21 @@ export class UserService {
   /*=====================================================================*/
 
   async findUserById(id: number): Promise<UserEntity> {
-    return this.usersRepository.findOneBy({ id });
+    return await this.usersRepository.findOneBy({ id });
   }
 
   async findUserByUsername(username: string): Promise<UserEntity> {
-    return this.usersRepository.findOneBy({ username });
+    return await this.usersRepository.findOneBy({ username });
   }
 
   async findUserByEmail(email: string): Promise<UserEntity> {
-    return this.usersRepository.findOneBy({ email });
+    return await this.usersRepository.findOneBy({ email });
   }
+
+  async findUserBy42Id(id42: number): Promise<UserEntity> {
+    return await this.usersRepository.findOneBy({ id42 });
+  }
+
 
   /*=====================================================================*/
   /*-----------------------------USER GETTERS----------------------------*/
@@ -199,6 +255,7 @@ export class UserService {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
       return res.redirect(process.env.IP_FRONTEND);
+      //return res.redirect('http://localhost:8080/home);
     }
     else
     {
@@ -214,10 +271,37 @@ export class UserService {
     }
   }
 
+
+  async CreateCookiesForNewGuest(res: Response, username: string)
+  {
+    const User = this.findUserByUsername(username);
+    if ((await User).isTwoFactorAuthenticationEnabled === false)
+    {
+      const idAsString: string = (await User).id.toString();
+      const tokens = await this.CreateAndSignTokens(idAsString, (await User).username);
+
+      const saltRounds = 12;
+      const salt = await bcrypt.genSalt(saltRounds);
+      const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
+      this.FindAndUpdateUser((await User).username, { MyHashedRefreshToken: hashedRefreshToken });
+      console.log(colors.GREEN + colors.BRIGHT + "User hashed refresh token : " + colors.FG_WHITE + hashedRefreshToken + colors.RESET);
+      this.CreateNewAccessCookie(
+        {
+          username: (await User).username,
+          accessToken: tokens.access_token,
+          refreshToken: hashedRefreshToken,//tokens.refresh_token,
+          avatar: (await User).profile_picture
+        },
+        res,
+      );
+    }
+  }
+
+  /*Ne PAS OUBLIER DE REMETTRE A LA VALUE D'AVANT POUR L'ACCESS TOKEN : 60 * 15 * 20*/
   async CreateAndSignTokens(id: string, username: string) 
   {
     const [new_access_token, new_refresh_token] = await Promise.all([
-      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN,expiresIn: 60 * 15 * 20 }),
+      this.jwtService.signAsync({ sub: id, username }, { secret: process.env.ACCESS_TOKEN, expiresIn: '365d' }),
       this.jwtService.signAsync({ sub: id, username }, { secret: process.env.REFRESH_TOKEN, expiresIn: 60 * 60 * 24 * 7})]);
     return {access_token: new_access_token, refresh_token: new_refresh_token};
   }
@@ -290,7 +374,6 @@ export class UserService {
         throw new HttpException('No user found', HttpStatus.FORBIDDEN);
       }
       if (user.profile_picture !== dto.avatar && dto.avatar !== '') {
-        //await this.userRepository.save(user);
         await this.usersRepository.save(user);
       }
 
@@ -330,4 +413,165 @@ export class UserService {
       console.log('TFA EROOOOR ', e);
     }
   }
+
+  async returnPartialUserInfo(username: string): Promise<Partial<UserEntity>>
+  {
+    const user = await this.findUserByUsername(username);
+    if (!user)
+      throw new NotFoundException('No user found');
+    const { id42, provider, profile_picture, MyHashedRefreshToken, twoFactorAuthenticationSecret, ...partialUser } = user;
+
+    return (partialUser);
+
+  }
+
+  async UpdateUserUsernameSettings(user: UserEntity,
+  @Res({passthrough: true}) res: Response,
+  newData: UpdateUserDto): Promise<void>
+  {
+    try
+    {
+      const { username } = newData;
+      if (username)
+      {
+        await this.FindAndUpdateUser((await user).username, { username: username });
+        user.username = username;
+      }
+      var userId = user.id.toString();
+      const tokens = await this.CreateAndSignTokens(userId, (await user).username);
+      const saltRounds = 12;
+      const salt = await bcrypt.genSalt(saltRounds);
+      const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
+      this.FindAndUpdateUser((await user).username, { MyHashedRefreshToken: hashedRefreshToken });
+      this.CreateNewAccessCookie(
+      {
+        username: (await user).username,
+        accessToken: tokens.access_token,
+        refreshToken: hashedRefreshToken,//tokens.refresh_token,
+        avatar: (await user).profile_picture
+      },
+      res,
+      );
+    }
+    catch (error)
+    {
+      res.json({message: "Error. Could not change user username"})
+    }
+  }
+
+  async UpdateUserEmailSettings(user: UserEntity,
+  @Res({passthrough: true}) res: Response,
+  newData: UpdateEmailDto): Promise<void>
+  {
+    try
+    {
+      const { email } = newData;
+      console.log(email);
+      if (email)
+      {
+        await this.FindAndUpdateUser((await user).username, { email: email });
+        user.email = email;
+      }
+    }
+    catch (error)
+    {
+      res.json({message: "Error. Could not change user email"})
+    }
+  }
+  /* MANIERE POUR FAIRE AVEC LE DOSSIER UPLOADS*/
+
+  /*deleteOldImage(path: string) 
+  {
+		var fs = require('fs');
+    console.log(colors.RED + "Je suis ici." + colors.RESET);
+
+		fs.stat(path, function (err, stats) 
+    {
+		  console.log(stats);
+			if (err) {
+				return console.error(err);
+			}
+			fs.unlinkSync(path);
+		})
+	}*/
+
+  /*async UploadAndSaveImage(@UploadedFile() file,
+    user: UserEntity): Promise<ImageDto> 
+  {	
+    console.log(colors.RED + "Je suis ici." + colors.RESET);
+    console.log(file?.filename);
+    if (!file?.filename)
+			throw new ForbiddenException('Error. Only image files are allowed !');
+    //if (user.profile_picture.startsWith('uploads/'))
+        this.deleteOldImage(user.profile_picture);
+		user.profile_picture = file.filename;
+		try 
+    {
+			await this.FindAndUpdateUser(user.username, {profile_picture: user.profile_picture});
+		} 
+    catch (e) 
+    {
+			console.log(e);
+			throw e;
+		}
+    const image = {
+      filename: file.filename,
+      path: file.path
+    };		
+    return image;
+	}
+
+  async getImage(@Res() res, profilePicture: string): Promise<Observable<object>> {
+		let fs = require('fs');
+		let files = fs.readdirSync('./uploads/');
+		if (Object.values(files).indexOf(profilePicture) === -1) {
+			return of(res.sendFile(join(process.cwd(), process.env.DEFAULT_PROFILE_PICTURE)));
+		}
+		return of(res.sendFile(join(process.cwd(), './uploads/' + profilePicture)));
+	}*/
+
+  /*MANIERE POUR FAIRE AVEC LE CONTENEUR*/
+
+  async UploadAndSaveImage(@UploadedFile() file, user: UserEntity): Promise<ImageDto> {
+    console.log(file?.filename);
+    if (!file?.filename) {
+        throw new ForbiddenException('Error. Only image files are allowed !');
+    }
+    
+    if (user.profile_picture) {
+        this.deleteOldImage(user.profile_picture);
+    }
+
+    user.profile_picture = file.filename;
+
+    try {
+        await this.FindAndUpdateUser(user.username, { profile_picture: user.profile_picture });
+    } catch (e) {
+        console.log(e);
+        throw e;
+    }
+    
+    const image = {
+        filename: file.filename,
+        path: file.path
+    };
+    return image;
+}
+
+
+deleteOldImage(imagePath: string) 
+{
+  var fs = require('fs');
+
+  const fullPath = path.resolve(UPLOADS_PATH, imagePath);
+
+  fs.stat(fullPath, function (err, stats) {
+      if (err) {
+          return console.error(err);
+      }
+      fs.unlinkSync(fullPath);
+  });
+}
+
+
 }

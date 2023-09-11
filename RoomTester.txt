@@ -1,0 +1,57 @@
+Creer une room :
+{
+    "channelName": "TestRoom1",
+    "hasPassword": false,
+    "password": "",
+    "isPrivate": true
+}
+
+Chambre publique sans mot de passe:
+{
+    "channelName": "PublicRoom1",
+    "hasPassword": false,
+    "isPrivate": false
+}
+Chambre publique avec mot de passe:
+{
+    "channelName": "PublicRoom2",
+    "hasPassword": true,
+    "password": "publicPass",
+    "isPrivate": false
+}
+Chambre privée sans mot de passe:
+{
+    "channelName": "PrivateRoom1",
+    "hasPassword": false,
+    "isPrivate": true
+}
+Chambre privée avec mot de passe:
+{
+    "channelName": "PrivateRoom2",
+    "hasPassword": true,
+    "password": "privatePass",
+    "isPrivate": true
+}
+Chambre publique avec un nom plus long (19 caractères, pour tester la validation):
+{
+    "channelName": "VeryLongPublicRoomName",
+    "hasPassword": false,
+    "isPrivate": false
+}
+Chambre privée avec un nom très commun (pour tester la validation si elle existe déjà):
+{
+    "channelName": "CommonRoomName",
+    "hasPassword": false,
+    "isPrivate": true
+}
+Bannir un utilisateur :
+{
+    "channelName": "nomDeLaRoom",
+    "targetUsername": "nomDeLutilisateur"
+}
+Débannir un utilisateur :
+{
+    "channelName": "nomDeLaRoom",
+    "targetUsername": "nomDeLutilisateur"
+}
+

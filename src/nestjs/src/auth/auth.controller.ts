@@ -7,23 +7,19 @@ import {
   Post,
   Body,
   Delete,
-  UnauthorizedException,
   HttpCode,
   HttpStatus,
-  ExecutionContext
 } from '@nestjs/common';
 import { Public } from 'src/decorators/public.decorator';
 import { Response } from 'express';
-import { IntraAuthGuard } from './guard/ft-oauth.guard';
 import { Request as ExpressRequest } from 'express';
-import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/user/user.service';
 import { FtOauthGuard } from './guard/ft-oauth.guard';
 import * as colors from '../colors';
-
-
+import { JwtAuthGuard } from './guard/jwt-guard.guard';
 import { IsNotEmpty, IsString } from 'class-validator';
+import { UserEntity } from 'src/user/user.entity';
 
 export class TwoFactorAuthenticationCodeDto {
   @IsString()
@@ -31,10 +27,9 @@ export class TwoFactorAuthenticationCodeDto {
   twoFactorAuthenticationCode: string;
 }
 
-@Controller()
+@Controller('auth')
 export class AuthController {
   constructor(
-    private jwtService: JwtService,
     private authService: AuthService,
     private userService: UserService,
   ) {}
@@ -61,6 +56,27 @@ export class AuthController {
     const username = req.user['username'];
     await this.userService.CreateCookiesForNewUser(res, username);
   }
+
+  @Public()
+  @Get('login/guest')
+  async redirect2(@Res({ passthrough: true }) res: Response) 
+  {
+    const c_user = { 
+      login: this.userService.generateRandomPseudo(),
+      email: "",
+    }
+    const user = await this.userService.findUserByUsername(c_user['login']);
+    if (!user) {
+      const rand = Math.random().toString(16).substr(2, 5);
+
+      c_user['login'] = c_user['login'] + rand;
+    }
+    c_user['email'] = c_user['login'] + "@guest.com"
+    const username = await this.userService.createUser2(c_user);
+    this.authService.WriteCommandsNames("GUEST CALLBACK");
+    return await this.userService.CreateCookiesForNewGuest(res, username.username);
+  
+  }
   /*==========================================================================*/
 
   /*==========================================================================*/
@@ -68,29 +84,28 @@ export class AuthController {
   /*==========================================================================*/
   @Public()
   @Post('Logout')
-  async logout(@Req() req: ExpressRequest) 
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req: ExpressRequest, @Res() res: Response) 
   { 
     this.authService.WriteCommandsNames("REQUEST LOGOUT");
-    const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
-    if (accessTokenCookie) 
+    const user = req.user as UserEntity;
+    try 
     {
-      try 
-      {
-        const userData = JSON.parse(accessTokenCookie);
-        const { username } = userData;
-        let user = await this.userService.findUserByUsername(username);
-        this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
-        this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
-        let user2 = await this.userService.findUserByUsername(username);
-        await this.userService.DisplayUserIdentity(user2);
-      } 
-      catch (error) 
-      {
-        console.error(error);
-      }
+      await this.userService.FindAndUpdateUser(user.username, { user_status: 'Offline' });
+      await this.userService.FindAndUpdateUser(user.username, { MyHashedRefreshToken: null });
+      await this.userService.DisplayUserIdentity(user);
+      const partialUser = await this.userService.returnPartialUserInfo(user.username);
+      /* VERIFIER S'IL FAUT SUPPRIMER LE COOKIE OU NON*/
+      //res.clearCookie('PongAccessAndRefreshCookie');
+      return res.status(HttpStatus.OK).json({ partialUser });
+    } 
+    catch (error) 
+    {
+      console.error(error);
     }
-
   }
+
+
   @Public()
   @Get('check-auth')
   async checkAuth(@Req() req: ExpressRequest, @Res() res: Response) {
@@ -112,6 +127,21 @@ export class AuthController {
     return res.json({ success: false });
   }
 
+  @Public() 
+  @Get('getUserInfo')
+  @UseGuards(JwtAuthGuard)
+  async getUserInfo(@Req() req: ExpressRequest, @Res() res: Response) {
+      try {
+          const user = req.user as UserEntity;
+          
+          return res.status(HttpStatus.OK).json({ success: true, user });
+      } catch (error) {
+          console.error(error);
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Error retrieving user info' });
+      }
+  }
+
+
   /*==========================================================================*/
   
   /*==========================================================================*/
@@ -120,78 +150,81 @@ export class AuthController {
 
   @Public()
   @HttpCode(HttpStatus.OK)
-  //@UseGuards(RtGuard) //A quoi sert le Guard
   @Post('refresh')
+  @UseGuards(JwtAuthGuard)
   async CreateNewRefreshToken(@Req() req: ExpressRequest)
   {
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
     console.log(colors.GREEN + colors.BRIGHT, "------------------REFRESH ROUTE--------------", colors.RESET);
     console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
-    const accessTokenCookie = req.cookies['PongAccessAndRefreshCookie'];
-    if (accessTokenCookie) 
+    const user = req.user as UserEntity;
+    try 
     {
-      try 
-      {
-        const userData = JSON.parse(accessTokenCookie);
-        const { username } = userData;
-        const user = await this.userService.findUserByUsername(username);
-        if (user)
-          req.user = user; // Ajoute l'utilisateur récupéré à l'objet req pou
-        return this.userService.CreateNewRefreshTokens(user.username, user.MyHashedRefreshToken);
-      }
-      catch (error) 
-      {
-          console.error(error);
-      }
+      return this.userService.CreateNewRefreshTokens(user.username, user.MyHashedRefreshToken);
+    }
+    catch (error) 
+    {
+      console.error(error);
     }
   }
   /*==========================================================================*/
 
 
-
   @Public()
   @Post('generate')
-  //@UseGuards(JwtAuthenticationGuard)
-  async register(@Res() response: Response, @Req() request: ExpressRequest) {
-    const userId = request.body.userId;
+  @UseGuards(JwtAuthGuard)
+  async register(@Res() response: Response, @Req() req: ExpressRequest) 
+  {
+    const userId = req.body.id;
+    console.log("USERID ====", userId);
     const user = await this.userService.findUserById(userId);
     console.log('COUCOU JE SUIS DANS GENERATE');
     const result = await this.authService.generateTwoFactorAuthenticationSecret(
       user,
     );
+    console.log(result);
     return response.json(result);
   }
 
   @Public()
   @Post('turn-on')
-  async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) {
-    console.log('le body ', body);
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async turnOnTwoFactorAuthentication(@Body() body, @Res() res: Response) 
+  {
     this.authService.WriteCommandsNames("ACTIVATE 2FA");
     const isCodeValid =
       await this.userService.isTwoFactorAuthenticationCodeValid(
         body.TfaCode,
         body.username,
       );
-    console.log("IS LOGGED VALID", isCodeValid);
-    if (isCodeValid) {
-      console.log("user id : ", body.username);
-      await this.userService.turnOnTwoFactorAuthentication(
-        body.username,
-      );
-      res.status(200).json({ message: '2FA enabled' });
-    } else {
-      res.status(401).json({ message: 'Invalid 2FA code' });
+    console.log('TfaCode', body.TfaCode, 'username', body.username);
+    console.log("Is the code entered valid ? = ", isCodeValid);
+    if (isCodeValid) 
+    {
+      await this.userService.turnOnTwoFactorAuthentication(body.username,);
+      /* RENVOYER LES DATAS DE L'UTILISATEUR*/
+      var partialUser = await this.userService.returnPartialUserInfo(body.username);
+      console.log(partialUser);
+      res.status(200).json({ message: '2FA enabled', partialUser });
+    } 
+    else 
+    {
+      /* RENVOYER LES DATAS DE L'UTILISATEUR*/
+      var partialUser = await this.userService.returnPartialUserInfo(body.username);
+      console.log(partialUser);
+      res.status(401).json({ message: 'Invalid 2FA code', partialUser });
     }
   }
 
   @Public()
   @Post('authenticate')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   async authenticate(@Req() request, @Body() body, @Res({ passthrough: true }) res: Response) {
     let payload = null;
     this.authService.WriteCommandsNames("AUTHENTICATE");
-    //console.log('le body ', body)
     try
     {
       this.authService.WriteCommandsNames("1 STEP");
@@ -207,7 +240,6 @@ export class AuthController {
         console.log("validation OK", validation)
         payload = await	this.userService.loginWith2fa(body.username, res);
         console.log("Payload", payload)
-
         return payload;
       }
     }
@@ -219,14 +251,18 @@ export class AuthController {
   @Public()
   @Post('deactivate')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
   async Deactivate2FA(@Body() body, @Res() res: Response ) 
   {
     this.authService.WriteCommandsNames("DEACTIVATE 2FA");
     const response = await this.userService.Deactivate2FA(body.username);
+    console.log(response);
     res.status(200).json(response);
   }
-
+  /* A SUPPRIMER AVANT LE PUSH FINAL*/
   @Delete('deleteallusers')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.NO_CONTENT)
   async deleteAllUsers(@Res() res: Response) {
     await this.userService.deleteAllUsers();
     res.status(200).json({ message: 'All the Users in the database were deleted.' });

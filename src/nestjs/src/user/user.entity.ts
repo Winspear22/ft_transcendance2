@@ -1,4 +1,10 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { 
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany
+  } from 'typeorm';
+import { Friend } from './entities/friend.entity';
 
 @Entity()
 export class UserEntity 
@@ -58,6 +64,17 @@ export class UserEntity
 
   @Column({ default: false })
   public isTwoFactorAuthenticationEnabled: boolean;
-  /*==========================================================================*/
 
+  @Column('int', { array: true, nullable: true })
+  blockedIds: number[];
+
+  @OneToMany(() => Friend, (friend) => friend.user)
+  friends: Friend[];
+
+  @Column('int', { array: true, nullable: true })
+  friendRequests: number[];
+
+
+  /*@Column('int', { array: true, default: '{}' })
+  friendRequests: number[];*/
 }

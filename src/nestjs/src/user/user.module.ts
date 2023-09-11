@@ -6,11 +6,11 @@ import { UserService } from './user.service';
 import { UsersRepository } from './user.repository';
 import { PassportModule, PassportStrategy } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtTwoFactorStrategy } from 'src/auth/strategies/jwt.strategy';
+import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
 
-@Module({
+/*@Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UsersRepository]),
+    TypeOrmModule.forFeature([UserEntity, UsersRepository, BlacklistedToken]),  // Ajoutez BlacklistedTokenEntity ici
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: 'superSecret2021',
@@ -20,7 +20,31 @@ import { JwtTwoFactorStrategy } from 'src/auth/strategies/jwt.strategy';
     }),
   ],
   controllers: [UserController],
-  providers: [UserService, JwtTwoFactorStrategy],
-  exports: [JwtTwoFactorStrategy, PassportModule, UserService, JwtModule],
+  providers: [UserService, JwtStrategy],
+  exports: [UserService, JwtStrategy, PassportModule, JwtModule, TypeOrmModule.forFeature([UserEntity, UsersRepository])],
+
+})
+export class UserModule {}*/
+
+import { MulterModule } from '@nestjs/platform-express';
+
+@Module({
+  imports: [
+    TypeOrmModule.forFeature([UserEntity, UsersRepository]),  // Ajoutez BlacklistedTokenEntity ici
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    JwtModule.register({
+      secret: 'superSecret2021',
+      signOptions: {
+        expiresIn: 86400,
+      },
+    }),
+    // Configurez MulterModule pour définir le répertoire de destination des fichiers uploadés
+    MulterModule.register({
+      dest: './uploads',
+    }),
+  ],
+  controllers: [UserController],
+  providers: [UserService, JwtStrategy],
+  exports: [UserService, JwtStrategy, PassportModule, JwtModule, TypeOrmModule.forFeature([UserEntity, UsersRepository])],
 })
 export class UserModule {}
