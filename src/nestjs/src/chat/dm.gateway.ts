@@ -70,7 +70,7 @@ export class DMGateway
     }
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
-
+// RETURN TOUTES LES LISTES DE CONVERSATION DANS LESQUELLES JE SUIS. 
   @SubscribeMessage('emitDM')
   async emitDMs(@ConnectedSocket() client: Socket) 
   {
