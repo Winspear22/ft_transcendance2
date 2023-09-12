@@ -1,5 +1,7 @@
+import { UseGuards } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Socket, Server } from 'socket.io';
+import { ChatGuard } from "./guard/chat-guard.guard";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Friend } from "src/user/entities/friend.entity";
 import { Repository } from "typeorm";
@@ -39,9 +41,11 @@ export class DMGateway
   //--------------------------------------------------------------------------------------//
   //---------------------------------CONNEXION/DECONNEXION--------------------------------//
   //--------------------------------------------------------------------------------------//
+  //@UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
+    console.log("Je suis ici !!");
     const user = await this.chatService.getUserFromSocket(client);
     if (user == undefined)
     {
@@ -49,6 +53,7 @@ export class DMGateway
       return this.handleDisconnect(client);
     }
     this.emitDMs(client);
+    this.emitFriends(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     this.ref_client.set(user.id, client.id);
     this.ref_socket.set(client, client.id);
@@ -70,6 +75,7 @@ export class DMGateway
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('emitDM')
   async emitDMs(@ConnectedSocket() client: Socket) 
   {
@@ -92,11 +98,41 @@ export class DMGateway
     return await this.server.to(client.id).emit('emitDM', friendChats);
   }
 
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitFriends')
+  async emitFriends(@ConnectedSocket() client: Socket) 
+  {
+      const user = await this.chatService.getUserFromSocket(client);
+      if (!user) {
+        console.log("User not found");
+        return;
+      }
+  
+      // Obtenir tous les enregistrements d'amis pour cet utilisateur
+      const friendEntities = await this.friendsRepository.find({ where: { userId: user.id } });
+  
+      // Obtenir les détails de chaque ami
+      const friendDetails = [];
+      for (const friendEntity of friendEntities) {
+          const friendDetail = await this.usersRepository.findOne({ 
+              where: { id: friendEntity.friendId },
+              select: ["id", "username", "user_status", "profile_picture"] 
+          });
+          if (friendDetail) {
+              friendDetails.push(friendDetail);
+          }
+      }
+      console.log("Friend list : ", friendDetails);
+      return await this.server.to(client.id).emit('emitFriends', friendDetails);
+  }
+  
+
 
   //--------------------------------------------------------------------------------------//
   //------------------------------------GESTION DES DMS-----------------------------------//
   //--------------------------------------------------------------------------------------//
   
+  @UseGuards(ChatGuard)
   @SubscribeMessage('joinDM')
   joinDM(@ConnectedSocket() socket: Socket, @MessageBody() body: { room: string }): void {
     socket.join(body.room);
@@ -106,6 +142,7 @@ export class DMGateway
     this.server.emit('joinDM', body.room);
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('sendDM')
   async handleDMs(
   @ConnectedSocket() client: Socket,
@@ -159,7 +196,8 @@ export class DMGateway
   //--------------------------------------------------------------------------------------//
   //----------------------------------GESTION VIE SOCIALE---------------------------------//
   //--------------------------------------------------------------------------------------//
-  //Ne MARCHE PAS
+  
+  @UseGuards(ChatGuard)
   @SubscribeMessage('sendFriendRequest')
   async SendFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -183,6 +221,7 @@ export class DMGateway
       this.server.to(client.id).emit("sendFriendRequestError", "Error. Could not send friend request to " + receiver.username);
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('acceptFriendRequest')
   async AcceptFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -222,6 +261,7 @@ export class DMGateway
       return ;
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('refuseFriendRequest')
   async RefuseFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -246,6 +286,7 @@ export class DMGateway
       return;
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('removeFriend')
   async RemoveFriend(
   @ConnectedSocket() client: Socket,
@@ -270,6 +311,7 @@ export class DMGateway
       return;
   }
 
+  @UseGuards(ChatGuard)
   @SubscribeMessage('blockDM')
   async BlockFriend(
   @ConnectedSocket() client: Socket,
