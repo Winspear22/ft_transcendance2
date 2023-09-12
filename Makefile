@@ -7,18 +7,18 @@ sync:
 	./syncFolder.sh &
 
 down:
-	docker-compose down
+	sudo docker-compose down
 
 rm:
-	docker-compose rm
+	sudo docker-compose rm
 
 rmi:
-	docker-compose down --rmi all
+	sudo docker-compose down --rmi all
 
 fclean:
 	sudo docker-compose -f docker-compose.yml down \
 	&& sudo docker system prune -a --force \
-	&& sudo rm -Rf /home/adnen/Bureau/volume_adaloui/*
+	&& sudo rm -Rf /Users/administrateur/42/data/*
 
 show:
 	sudo docker container ps -a
@@ -46,12 +46,12 @@ vuejs:
 retry:
 	make down
 	make volume_delete
-	sudo find /home/adnen/Bureau/volume_adaloui -mindepth 1 -delete
+	sudo find /Users/administrateur/42/data -mindepth 1 -delete
 	make fclean
 	make up
 inspect:
 	sudo docker inspect postgresql | grep "IPAddress"
 
-.PHONY: up down rm rmi show volume_show volume_delete \
+.PHONY: up down rm rmi show sync volume_show volume_delete \
 post pgadmin pgadmin_sudo fclean inspect retry all show_network \
 volume_delete2

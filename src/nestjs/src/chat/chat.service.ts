@@ -43,7 +43,6 @@ export class ChatService {
 
     async getUserFromSocket(@ConnectedSocket() client: Socket): Promise<UserEntity | undefined>
     {
-        console.log("Cookie reçu:", client.handshake.query.cookie);
         let accessTokenCookie = client.handshake.query.cookie;
         console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
 
