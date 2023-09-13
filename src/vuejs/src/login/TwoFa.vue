@@ -1,6 +1,5 @@
 <template>
     <div v-if="showPopup">
-        <!-- Affichez votre formulaire d'authentification à deux facteurs ici -->
         <input type="text" v-model="twoFaCode" placeholder="Enter 2FA Code" />
         <button @click="verifyTwoFa">Submit</button>
         <p v-if="errorMessage">{{ errorMessage }}</p>

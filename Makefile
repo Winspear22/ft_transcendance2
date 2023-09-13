@@ -1,24 +1,20 @@
 all: up
-
-up: sync
+up:
 	sudo docker-compose up --build
 
-sync:
-	./syncFolder.sh &
-
 down:
-	docker-compose down
+	sudo docker-compose down
 
 rm:
-	docker-compose rm
+	sudo docker-compose rm
 
 rmi:
-	docker-compose down --rmi all
+	sudo docker-compose down --rmi all
 
 fclean:
 	sudo docker-compose -f docker-compose.yml down \
 	&& sudo docker system prune -a --force \
-	&& sudo rm -Rf /home/adnen/Bureau/volume_adaloui/*
+	&& sudo rm -Rf /home/adnen/Desktop/VolumeTranscendance2/*
 
 show:
 	sudo docker container ps -a
@@ -32,7 +28,7 @@ volume_delete:
 	sudo docker volume prune
 volume_delete2:
 	bash
-	docker volume rm $(docker volume ls -q)
+	sudo docker volume rm $(docker volume ls -q)
 	exit
 post:
 	sudo docker exec -it postgresql bash -l
@@ -46,7 +42,7 @@ vuejs:
 retry:
 	make down
 	make volume_delete
-	sudo find /home/adnen/Bureau/volume_adaloui -mindepth 1 -delete
+	sudo find /home/adnen/Desktop/VolumeTranscendance2 -mindepth 1 -delete
 	make fclean
 	make up
 inspect:
@@ -55,3 +51,4 @@ inspect:
 .PHONY: up down rm rmi show volume_show volume_delete \
 post pgadmin pgadmin_sudo fclean inspect retry all show_network \
 volume_delete2
+

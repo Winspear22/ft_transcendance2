@@ -1,6 +1,7 @@
 <template>
     <div>
         <turn-on v-if="showTurnOnComponent" @twoFaStatusChanged="handleTwoFaStatus"></turn-on>
+        <init-socket v-if="shouldInitSocket"></init-socket>
     </div>
 </template>
 
@@ -10,16 +11,19 @@ import axios from 'axios';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
 import turnOn from './../setting/turnOn';
+import initSocket from './initSocket';
 
 export default {
     name: 'CheckAuth',
     components: {
-        turnOn
+        turnOn,
+        initSocket,
     },
     setup() {
         const store = useStore();
         const router = useRouter();
         const showTurnOnComponent = ref(false);
+        const shouldInitSocket = ref(false);
 
         onMounted(authenticate);
 
@@ -37,6 +41,13 @@ export default {
                     if (isAuthenticated && store.getters.isTwoFaActivated) {
                         showTurnOnComponent.value = true;
                     }
+                    if (isAuthenticated) {
+                        shouldInitSocket.value = true;
+                    }
+                    if (isAuthenticated && !store.getters.isTwoFaActivated) {
+                        router.push('/home');
+                    }
+
                 }
             } catch (error) {
                 console.error("Erreur lors de la vérification de l'authentification:", error);
@@ -52,7 +63,8 @@ export default {
 
         return {
             showTurnOnComponent,
-            handleTwoFaStatus
+            handleTwoFaStatus,
+            shouldInitSocket,
         };
     }
 };

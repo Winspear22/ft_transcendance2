@@ -66,6 +66,7 @@ export class DMGateway
     this.emitFriends(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
     // Ajoute les sockets dans deux maps différentes : c'est juste pour m'aider à répertorier les users
+    this.emitFriendRequests(client);
     this.ref_client.set(user.id, client.id);
     this.ref_socket.set(client, client.id);
 
@@ -153,7 +154,41 @@ export class DMGateway
       }
       console.log("Friend list : ", friendDetails);
       return await this.server.to(client.id).emit('emitFriends', friendDetails);
+    }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitFriendRequests')
+  async emitFriendRequests(@ConnectedSocket() client: Socket) {
+    const user = await this.chatService.getUserFromSocket(client);
+    if (!user) {
+        console.log("User not found");
+        return;
+    }
+
+    // Récupérez les IDs des utilisateurs qui ont envoyé des demandes d'ami
+    const friendRequestUserIds = user.friendRequests;
+
+    if (!friendRequestUserIds || friendRequestUserIds.length === 0) {
+        // Aucune demande d'ami n'a été reçue, vous pouvez renvoyer une réponse vide
+        return this.server.to(client.id).emit('emitFriendRequests', []);
+    }
+
+    // Utilisez une requête JOIN pour obtenir les détails des utilisateurs
+    const friendRequestUsers = await this.usersRepository
+        .createQueryBuilder('user')
+        .select(['user.id', 'user.username', 'user.profile_picture'])
+        .whereInIds(friendRequestUserIds)
+        .getMany();
+
+    // Maintenant, friendRequestUsers contient les détails des utilisateurs qui ont envoyé des demandes d'ami
+    console.log("FRIEND REQUESTS : ", friendRequestUsers);
+
+    // Renvoyez ces détails à l'utilisateur
+    return this.server.to(client.id).emit('emitFriendRequests', friendRequestUsers);
   }
+
+
+
   
 
 

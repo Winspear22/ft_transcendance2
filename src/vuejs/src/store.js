@@ -4,7 +4,8 @@ export default createStore({
   state: {
     isAuthenticated: false,
     isTwoFaActivated: false,
-    accessToken: null
+    accessToken: null,
+    socket: null
   },
 
   mutations: {
@@ -16,6 +17,9 @@ export default createStore({
     },
     SET_ACCESS_TOKEN(state, token) {
       state.accessToken = token;
+    },
+    SET_SOCKET(state, socket) {
+      state.socket = socket;
     }
   },
 
@@ -28,12 +32,16 @@ export default createStore({
     },
     setToken({ commit }, token) {
       commit('SET_ACCESS_TOKEN', token);
+    },
+    setSocket({ commit }, socket) {
+      commit('SET_SOCKET', socket);
     }
   },
 
   getters: {
     isAuthenticated: state => state.isAuthenticated,
     isTwoFaActivated: state => state.isTwoFaActivated,
-    accessToken: state => state.accessToken
+    accessToken: state => state.accessToken,
+    socket: state => state.socket
   }
 });
