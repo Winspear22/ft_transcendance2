@@ -1,7 +1,6 @@
 import { UseGuards } from "@nestjs/common";
 import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 import { Socket, Server } from 'socket.io';
-import { ChatGuard } from "./guard/chat-guard.guard";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Friend } from "src/user/entities/friend.entity";
 import { Repository } from "typeorm";
@@ -49,7 +48,6 @@ export class DMGateway
   // - Renvoie tous les amis que l'utilisateurs a
   // Prend comme arguments la Socket du client
   // Renvoie true si tout s'est bien déroulé
-  @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
@@ -99,10 +97,10 @@ export class DMGateway
   // - Renvoie les DMrooms dans lesquelles se situe l'utilisateur (avec ses amis)
   // Prend comme argument la socket du client
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('emitDM')
   async emitDMs(@ConnectedSocket() client: Socket) 
   {
+    console.log("j'essaye d'accder a emit dm");
     const user = await this.chatService.getUserFromSocket(client);
     if (!user) {
         console.log("User not found");
@@ -127,7 +125,6 @@ export class DMGateway
   // - Renvoie tous les amis que l'utilisateurs a
   // Prend comme argument la socket du client.
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('emitFriends')
   async emitFriends(@ConnectedSocket() client: Socket) 
   {
@@ -171,7 +168,6 @@ export class DMGateway
   // - Le nom du recepteur du message
   // L'envoi se fait via deux server.to.emit configurés pour être envoyés au récepteur et envoyeur et sont enregistrés pour 
   // la prochaine connexion et seront renvoyé par l'évènement emitDM (qu'on a vu plus haut).
-  @UseGuards(ChatGuard)
   @SubscribeMessage('sendDM')
   async handleDMs(
   @ConnectedSocket() client: Socket,
@@ -234,7 +230,6 @@ export class DMGateway
   // - Le username de l'utilisateur qui reçoit la demande.
   // Cette fonction va créer dans la base de données une demande d'ami et cette demande d'ami va pouvoir être acceptée, ou refusée par l'utilisateur
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('sendFriendRequest')
   async SendFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -274,7 +269,6 @@ export class DMGateway
   // - Deux fonctions join (qui sont des fonctions appartenant à la classe Socket) sont faits pour que les sockets rejoignent la DMroom.
   // - Deux évènements joinDM pour serveur.emit aux utilisateurs qu'ils ont rejoint la DMroom.
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('acceptFriendRequest')
   async AcceptFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -338,7 +332,6 @@ export class DMGateway
   // Même logique que pour l'acceptation, cette fois-ci on refuse et on ne crée pas de DMRoom. Toutefois, l'utilisateur
   // peut renvoyer une demande si sa demande a été refusée.
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('refuseFriendRequest')
   async RefuseFriendRequest(
   @ConnectedSocket() client: Socket,
@@ -373,7 +366,6 @@ export class DMGateway
   // - le nom de l'ami que l'on veut jarter
   // Renvoie des serveur.emit en fonction de ce qu'il s'est passé
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('removeFriend')
   async RemoveFriend(
   @ConnectedSocket() client: Socket,
@@ -409,7 +401,6 @@ export class DMGateway
   // - Le nom de l'user que l'on veut bloquer
   // Renvoie des serveur.emit selon ce qu'il s'est passé.
 
-  @UseGuards(ChatGuard)
   @SubscribeMessage('blockDM')
   async BlockFriend(
   @ConnectedSocket() client: Socket,

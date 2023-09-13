@@ -48,7 +48,7 @@ export class ChatService {
 
         if (!accessTokenCookie) 
         {
-            console.log('Access Token Cookie is missing.');
+            console.log('Access Token Cookie is missing!!!');
             return undefined;
         }
     

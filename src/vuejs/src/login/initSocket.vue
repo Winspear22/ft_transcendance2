@@ -37,6 +37,7 @@ export default {
 
     socket.on('Connection', () => {});
         console.log("socket", socket);
+        console.log("cookieeee==", cookie);
     },
 
   beforeDestroy() {

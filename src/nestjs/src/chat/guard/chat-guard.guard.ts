@@ -20,6 +20,7 @@ export class ChatGuard implements CanActivate {
 
     async canActivate(context: any): Promise<boolean> 
     {
+        console.log("JE SUIS DANS LE CAN ACTIVATE");
         const accessTokenCookie = context.args[0].handshake.headers['cookie'];
         if (!accessTokenCookie) 
         {
