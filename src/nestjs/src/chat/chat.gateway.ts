@@ -176,16 +176,17 @@ export class ChatGateway
     const result = await this.roomService.joinRoom(data, client);
     if (result.success)
     {
-      this.server.emit('joinRoom', "Room joined : " + data.channelName);
+      console.log("Je suis ici !!! Dans JOIN ROOM");
+      this.server.to(client.id).emit('joinRoom', "Room joined : " + data.channelName);
       client.join(data.channelName);
-      client.on('disconnect', () => {
-        client.leave(data.channelName);
-      });
+      //client.on('disconnect', () => {
+      //  client.leave(data.channelName);
+      //});
       return (result);
     }
     else
     {
-      this.server.emit('joinRoom', "Error, there was a problem in joining the room : " + data.channelName);
+      this.server.to(client.id).emit('joinRoom', "Error, there was a problem in joining the room : " + data.channelName);
       return (result);
     }
   }
@@ -210,14 +211,32 @@ export class ChatGateway
       const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
       const targetSocketId = this.ref_client.get(bannedUser.id);
       const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
-      if (targetSocket)
-          targetSocket.leave(data.channelName);
-      this.server.emit('banUser', "User ", data.targetUsername, " has been banned from room ", data.channelName);
-      return (result);
+      //if (targetSocket)
+      //    targetSocket.leave(data.channelName);
+      //this.server.emit('banUser', "User ", data.targetUsername, " has been banned from room ", data.channelName);
+
+    if (targetSocket) {
+      // Émettre l'événement pour informer l'administrateur
+      this.server.to(client.id).emit('banUser', {
+        message: `You have successfully banned ${data.targetUsername} from room ${data.channelName}`,
+    });
+        // Émettre l'événement pour informer l'utilisateur banni
+        targetSocket.emit('banned', {
+            message: `You have been banned from room ${data.channelName} by an administrator.`,
+        });
+        
+        // Émettre l'événement pour informer la salle
+        this.server.to(data.channelName).emit('userBanned', {
+            username: data.targetUsername,
+            message: `User ${data.targetUsername} has been banned from this room by an administrator.`,
+        });
+      
+        return (result);
+      }
     }
     else
     {
-      this.server.emit('banUser', "Error, there was a problem the user was not banned.");
+      this.server.to(client.id).emit('banUser', "Error, there was a problem the user was not banned.");
       return (result);
     }
   }
@@ -230,8 +249,32 @@ export class ChatGateway
   {
     const result = await this.roomService.unbanUserfromRoom(data, client);
     if (result.success) {
-      this.server.emit('unbanUser', "User " + data.targetUsername + " has been unbanned from room " + data.channelName);
-    } else {
+      //this.server.emit('unbanUser', "User " + data.targetUsername + " has been unbanned from room " + data.channelName);
+      
+      const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+      const targetSocketId = this.ref_client.get(bannedUser.id);
+      const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
+
+    if (targetSocket) {
+      // Émettre l'événement pour informer l'administrateur
+      this.server.to(client.id).emit('unbanUser', {
+        message: `You have successfully unbanned ${data.targetUsername} from room ${data.channelName}`,
+    });
+        // Émettre l'événement pour informer l'utilisateur banni
+        targetSocket.emit('unbanned', {
+            message: `You have been unbanned from room ${data.channelName} by an administrator.`,
+        });
+        
+        // Émettre l'événement pour informer la salle
+        this.server.to(data.channelName).emit('userunBanned', {
+            username: data.targetUsername,
+            message: `User ${data.targetUsername} has been unbanned from this room by an administrator.`,
+        });
+      
+        return (result);
+      }
+    }
+    else {
       this.server.emit('unbanUser', "Error unbanning user " + data.targetUsername, " from room " + data.channelName);
     }
     return result;

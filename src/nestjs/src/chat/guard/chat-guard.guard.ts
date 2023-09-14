@@ -78,10 +78,12 @@ export class RoomBanGuard implements CanActivate {
 
   ) {}
 
-  async canActivate(context: any): Promise<boolean> {
-    // Extraction de l'information du cookie et de la room, adaptée à votre implémentation
-    const accessTokenCookie = context.args[0].handshake.headers['cookie'];
+  async canActivate(context: ExecutionContext): Promise<boolean> 
+  {    // Extraction de l'information du cookie et de la room, adaptée à votre implémentation
+    const client = context.switchToWs().getClient();
     const data = context.switchToWs().getData();
+    const accessTokenCookie = client.handshake.query.Cookie;
+
     const roomName = data.channelName;
     //const roomName = context.args[0].handshake.query.roomName;
     console.log("ROOMNAME === ", roomName, " DATA ======== ", data);
