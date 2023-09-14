@@ -176,12 +176,8 @@ export class ChatGateway
     const result = await this.roomService.joinRoom(data, client);
     if (result.success)
     {
-      console.log("Je suis ici !!! Dans JOIN ROOM");
       this.server.to(client.id).emit('joinRoom', "Room joined : " + data.channelName);
       client.join(data.channelName);
-      //client.on('disconnect', () => {
-      //  client.leave(data.channelName);
-      //});
       return (result);
     }
     else
@@ -295,14 +291,28 @@ export class ChatGateway
       const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
       const targetSocketId = this.ref_client.get(bannedUser.id);
       const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
-      if (targetSocket)
-          targetSocket.leave(data.channelName);
-      this.server.emit('kickUser', "User " + data.targetUsername + " has been kicked from room " + data.channelName);
-      return (result);
+      if (targetSocket) {
+        // Émettre l'événement pour informer l'administrateur
+        this.server.to(client.id).emit('kickUser', {
+          message: `You have successfully kicked ${data.targetUsername} from room ${data.channelName}`,
+      });
+          // Émettre l'événement pour informer l'utilisateur banni
+          targetSocket.emit('kicked', {
+              message: `You have been kicked from room ${data.channelName} by an administrator.`,
+          });
+          
+          // Émettre l'événement pour informer la salle
+          this.server.to(data.channelName).emit('userKicked', {
+              username: data.targetUsername,
+              message: `User ${data.targetUsername} has been kicked from this room by an administrator.`,
+          });
+        
+          return (result);
+        }
     }
     else
     {
-      this.server.emit('kickUser', "Error, there was a problem the user was not kicked.");
+      this.server.to(client.id).emit('kickUser', "Error, there was a problem the user was not kicked.");
       return (result);
     }
   }
@@ -324,20 +334,28 @@ export class ChatGateway
     const result = await this.roomService.muteUserRoom(data);
     
     if (result.success) {
-        this.server.to(data.roomName).emit('userMuted', {
-            message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
-            targetUsername: data.targetUsername,
-            duration: data.duration
-        });
+      const mutedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+      const targetSocketId = this.ref_client.get(mutedUser.id);
+
+      this.server.to(client.id).emit('muteUser', "User " + data.targetUsername + " has been muted for " + data.duration);
+      this.server.to(targetSocketId).emit('muted', "You have been muted by an administrator for " + data.duration);
+
+      this.server.to(data.roomName).emit('userMuted', {
+          message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
+          targetUsername: data.targetUsername,
+          duration: data.duration
+      });
+      return (result);
 
     } else {
-        this.server.to(client.id).emit('muteError', {
+        this.server.to(client.id).emit('userMuted', {
             error: result.error
         });
     }
 
     return result;
   }
+
   
   //--------------------------------------------------------------------------------------//
 
@@ -345,65 +363,42 @@ export class ChatGateway
   //---------------------------------GESTION DES MESSAGES---------------------------------//
   //--------------------------------------------------------------------------------------//
   
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('joinDM')
-  joinDM(@ConnectedSocket() socket: Socket, @MessageBody() body: { room: string }): void {
-    socket.join(body.room);
-    socket.on('disconnect', () => {
-      socket.leave(body.room);
-    });
-    this.server.emit('joinDM', body.room);
-  }
   
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('sendDM')
-  async handleMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() body: { room: string, senderUsername: string, message: string, receiverUsername: string }
-  ): Promise<void> 
-  {
-
-    let chat = await this.friendChatsRepository.findOne({
-      where: { room: body.room }
-    });
-    if (!chat) 
-    {
-      chat = new FriendChat();
-      chat.room = body.room;
-      chat = await this.friendChatsRepository.save(chat);
-    }
-
+  @SubscribeMessage('sendMessage')
+  async handleMessage(@ConnectedSocket() client: Socket,
+  @MessageBody() body: { channelName: string,
+  senderUsername: string,
+  message: string }): Promise<void> {
     const sender = await this.chatService.getUserFromSocket(client);
-    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
-    if (!sender || !receiver) {
-      return;
-    }
-
-    if (receiver.blockedIds && receiver.blockedIds.includes(sender.id)) {
-      return;
-    }
-    
-    if (sender.blockedIds && sender.blockedIds.includes(receiver.id)) {
-      return;
+    //const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    const room = await this.roomService.getRoomByName(body.channelName);
+    if (room.mutedIds.includes(sender.id))
+    {
+      this.server.to(client.id).emit('sendMessage', "Error, you have been muted.");
+      return ;
     }
 
     if (body.message.length === 0) {
       return;
     }
 
-    const newMessage = new FriendMessage();
-    newMessage.chat = chat;
-    newMessage.senderId = sender.id;
-    newMessage.text = body.message;
+    // Créez le message avec TypeORM
+    const message = new MessageEntity();
+    message.room = room;
+    message.senderId = sender.id;
+    message.text = body.message;
+    message.channelId = room.id;
 
-    const savedMessage = await this.friendMessageRepository.save(newMessage);
+    const savedMessage = await this.messagesRepository.save(message);
 
-    const receiverSocketId = this.ref_client.get(receiver.id);
-    console.log(receiverSocketId);
-    console.log(this.ref_client);
-
-    if (receiverSocketId !== undefined) {
-      this.server.to(receiverSocketId).emit("sendDM", savedMessage);
+    // Émettez le message aux clients
+    this.server.to(savedMessage.room.roomName).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture});
+    /*this.server.to(message.room.roomName).emit('message', {
+      senderId: sender.id,
+      text: body.message,
+      time: message.createdAt,
+      username: sender.username,
+      avatar: sender.profile_picture
+    });*/
   }
-}
 }
