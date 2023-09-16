@@ -62,3 +62,8 @@ Mute un user
   "targetUsername":"MegaHunter12b5d", 
   "duration": 1 
   } 
+
+PARLER
+{
+    
+}

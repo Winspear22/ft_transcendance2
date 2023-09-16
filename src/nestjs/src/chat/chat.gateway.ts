@@ -158,9 +158,11 @@ export class ChatGateway
   channelName: string }, @ConnectedSocket() client: Socket) {
     const result = await this.roomService.quitRoom(data, client);
 
-    if (result.success) {
+    if (result.success) 
+    {
       console.log("Je suis dans quitRoom");
       this.server.to(client.id).emit('quitRoom', "You have left the room " + data.channelName);
+      this.server.to(data.channelName).emit('quitRoom', client.data.user.username + " has left the room " + data.channelName);
       client.leave(data.channelName);
     }
     return result;
@@ -320,7 +322,7 @@ export class ChatGateway
   //--------------------------------------------------------------------------------------//
   
   //------------------------------------MUTE LES USERS------------------------------------//
-  // Ne pas oublier de changer les serveur.emit car ils ne sont pas bons.
+  
   @UseGuards(ChatGuard)
   @SubscribeMessage('muteUser')
   async muteUser(@MessageBody() data: {
@@ -355,6 +357,39 @@ export class ChatGateway
 
     return result;
   }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('unmuteUser')
+  async unmuteUser(
+    @MessageBody() data: {
+    username: string,
+    roomName: string,
+    targetUsername: string}, 
+    @ConnectedSocket() client: Socket) 
+    {
+      const result = await this.roomService.unmuteUserRoom(data);
+      
+      if (result.success) {
+          const unmutedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+          const targetSocketId = this.ref_client.get(unmutedUser.id);
+
+          this.server.to(client.id).emit('unmuteUser', "User " + data.targetUsername + " has been unmuted");
+          this.server.to(targetSocketId).emit('unmuted', "You have been unmuted by an administrator");
+
+          this.server.to(data.roomName).emit('userUnmuted', {
+              message: `${data.targetUsername} has been unmuted.`,
+              targetUsername: data.targetUsername
+          });
+          return result;
+      } else {
+          this.server.to(client.id).emit('userUnmuted', {
+              error: result.error
+          });
+      }
+
+      return result;
+    }
+
 
   
   //--------------------------------------------------------------------------------------//
