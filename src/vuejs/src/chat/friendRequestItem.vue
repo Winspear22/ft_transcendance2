@@ -1,5 +1,5 @@
 <template>
-    <div class="friend-request-item">
+    <div :key="componentKey" class="friend-request-item">
       <img :src="request.profile_picture" alt="Profile" />
       <span>{{ request.username }}</span>
       <button @click="acceptRequest">Accepter</button>
@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 
 export default {
@@ -23,23 +23,36 @@ export default {
     const store = useStore();
     const socket = store.getters.socket;
 
-    // En utilisant computed pour garder le username de la demande
-    const senderUsername = computed(() => props.request.username);
+    const componentKey = ref(0); // Clé initiale pour forcer le re-rendu
 
     const acceptRequest = () => {
-      socket.emit('acceptFriendRequest', { receiverUsername: senderUsername.value });
+      socket.emit('acceptFriendRequest', { receiverUsername: props.request.username });
     };
 
     const declineRequest = () => {
-      socket.emit('refuseFriendRequest', { receiverUsername: senderUsername.value });
+      socket.emit('refuseFriendRequest', { receiverUsername: props.request.username });
     };
+
+    const handleAcceptFriendRequest = () => {
+      componentKey.value++;
+    };
+
+    onMounted(() => {
+      socket.on('acceptFriendRequest', handleAcceptFriendRequest);
+    });
+
+    onBeforeUnmount(() => {
+      socket.off('acceptFriendRequest', handleAcceptFriendRequest);
+    });
 
     return {
       acceptRequest,
-      declineRequest
+      declineRequest,
+      componentKey
     };
   }
 };
+
 </script>
 
 <style scoped>
@@ -55,4 +68,4 @@ export default {
     border-radius: 50%;
     margin-right: 0.5em;
   }
-  </style>  
+</style>
