@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 
 export default {
@@ -17,24 +17,30 @@ export default {
         const popupMessage = ref('');
         const store = useStore();
         const socket = store.getters.socket;
+
+        const handleSuccess = (message) => {
+            if (/^Your/.test(message)) {
+                popupMessage.value = message;
+            }
+        };
+
+        const handleError = (message) => {
+            popupMessage.value = message;
+        };
         
         onMounted(() => {
-            socket.on('sendFriendRequestSuccess', message => {
-                if (message.startsWith('Your')) {
-                    popupMessage.value = message;
-                }
-            });
+            socket.on('sendFriendRequestSuccess', handleSuccess);
+            socket.on('sendFriendRequestError', handleError);
+        });
 
-            socket.on('sendFriendRequestError', message => {
-                popupMessage.value = message;
-            });
+        onBeforeUnmount(() => {
+            socket.off('sendFriendRequestSuccess', handleSuccess);
+            socket.off('sendFriendRequestError', handleError);
         });
         
         const sendFriendRequest = () => {
-            if (socket) {
-                socket.emit('sendFriendRequest', { receiverUsername: username.value });
-            }
-        }
+            socket.emit('sendFriendRequest', { receiverUsername: username.value });
+        };
         
         return {
             username,
