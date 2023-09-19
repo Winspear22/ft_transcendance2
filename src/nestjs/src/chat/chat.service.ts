@@ -43,9 +43,11 @@ export class ChatService {
 
     async getUserFromSocket(@ConnectedSocket() client: Socket): Promise<UserEntity | undefined>
     {
-        let accessTokenCookie = client.handshake.query.cookie;
-        console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
+        let accessTokenCookie = client.handshake.query.Cookie;
 
+        //const accessTokenCookie = client.handshake.headers.cookie;
+        console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
+        console.log("JE SUIS ICIIIIIIIIIIIIIIII", client.handshake.query);
         if (!accessTokenCookie) 
         {
             console.log('Access Token Cookie is missing!!!');
@@ -92,65 +94,4 @@ export class ChatService {
             return undefined;
     }
 
-    /*async setUserAdminStatusON(@ConnectedSocket() client: Socket,
-    roomId: number): Promise<void>
-    {
-        const user = await this.usersRepository.findOne({ where: { id: client.data.user.id }, relations: ['administratedRooms'] })
-        const room = await this.roomService.getRoomById(roomId);
-        console.log(colors.BRIGHT + colors.BLUE + "SocketID === " + colors.WHITE, client.id + " ", client.data.user.username + colors.RESET);
-        console.log("AdminStatus size === ", user.administratedRooms.length);
-        if (!user.administratedRooms.includes(room)) {
-            user.administratedRooms.push(room);
-        }
-        console.log("AdminStatus size === ", user.administratedRooms.length);
-        console.log("Room administrator === ", user.administratedRooms);
-
-    }
-
-    async setUserAdminStatusOFF(@ConnectedSocket() client: Socket,
-    roomId: number): Promise<void>
-    {
-        const user = await this.usersRepository.findOne({ where: { id: client.data.user.id }, relations: ['administratedRooms'] })
-        const room = await this.roomService.getRoomById(roomId);
-        console.log(colors.BRIGHT + colors.BLUE + "SocketID === " + colors.WHITE, client.id + " ", client.data.user.username + colors.RESET);
-        console.log("AdminStatus size === ", user.administratedRooms.length);
-        if (user.administratedRooms.includes(room)) {
-            user.administratedRooms = user.administratedRooms.filter(roomItem => roomItem.id !== room.id);
-        }
-        console.log(colors.GREEN, "AdminStatus size === ", user.administratedRooms.length, colors.RESET);
-        console.log("Room administrator === ", user.administratedRooms);
-    }
-
-    async setUserCreatorStatusON(@ConnectedSocket() client: Socket,
-    roomId: number): Promise<void>
-    {
-        const user = await this.usersRepository.findOne({ where: { id: client.data.user.id }, relations: ['createdRooms'] })
-        const room = await this.roomService.getRoomById(roomId);
-        console.log(colors.BRIGHT + colors.BLUE + "SocketID === " + colors.WHITE, client.id + " ", client.data.user.username + colors.RESET);
-        console.log("CreatedRooms size === ", user.createdRooms.length);
-        if (!user.createdRooms.includes(room)) {
-            user.createdRooms.push(room);
-        }
-        console.log(colors.CYAN, "CreatedRooms size === ", user.createdRooms.length);
-        console.log("Room created : ", user.createdRooms);
-
-    }
-
-    async setUserCreatorStatusOFF(@ConnectedSocket() client: Socket,
-    roomId: number): Promise<void>
-    {
-        const user = await this.usersRepository.findOne({ where: { id: client.data.user.id }, relations: ['createdRooms'] })
-        const room = await this.roomService.getRoomById(roomId);
-        console.log(colors.BRIGHT + colors.BLUE + "SocketID === " + colors.WHITE, client.id + " ", client.data.user.username + colors.RESET);
-        console.log("CreatedRooms size === ", + colors.CYAN + user.createdRooms.length);
-        if (user.createdRooms.includes(room)) {
-            user.createdRooms = user.createdRooms.filter(roomItem => roomItem.id !== room.id);
-        }
-        console.log(colors.CYAN, "CreatedRooms size === ", user.createdRooms.length);
-        console.log("Room created : ", + colors.MAGENTA, user.createdRooms);
-    }*/
-
-    /*===============================ROOM DATA===============================*/
-
-    /*=======================================================================*/
 }

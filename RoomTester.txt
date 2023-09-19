@@ -55,3 +55,15 @@ Débannir un utilisateur :
     "targetUsername": "nomDeLutilisateur"
 }
 
+Mute un user
+{
+    "username": "adaloui", 
+  "roomName": "TestRoom2", 
+  "targetUsername":"MegaHunter12b5d", 
+  "duration": 1 
+  } 
+
+PARLER
+{
+    
+}

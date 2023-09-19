@@ -41,57 +41,63 @@ export class ChatGateway
     private friendMessageRepository: Repository<FriendMessage>,
     ) {}
   
+  // Map pour stocker les références entre l'ID utilisateur et l'ID de socket
   private ref_client = new Map<number, string>()
+
+  // Map pour stocker les références entre l'objet socket et l'ID de socket
   private ref_socket = new Map<Socket, string>()
 
-
+  // Instance du serveur WebSocket
   @WebSocketServer()
   server: Server;
-  
+
   //--------------------------------------------------------------------------------------//
   //---------------------------------CONNEXION/DECONNEXION--------------------------------//
   //--------------------------------------------------------------------------------------//
 
+  // Gère la connexion d'un utilisateur au serveur WebSocket.
+  // Authentifie l'utilisateur et stocke ses informations dans les maps.
+  // Envoie également à l'utilisateur la liste des rooms et des rooms disponibles.
   @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
     const user = await this.chatService.getUserFromSocket(client);
-    if (user == undefined)
-    {
-      console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
+    if (!user) {
+      console.log(colors.BRIGHT + colors.RED, "Erreur. Socket id : " + colors.WHITE + client.id + colors.RED + " n'a pas pu se connecter." + colors.RESET);
       return this.handleDisconnect(client);
     }
     this.emitRooms(client);
     this.emitAvailableRooms(client);
-    console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
+    console.log(colors.BRIGHT + colors.GREEN, "Utilisateur : " +  colors.WHITE + user.username + colors .GREEN +" vient de se connecter." + colors.RESET);
     this.ref_client.set(user.id, client.id);
     this.ref_socket.set(client, client.id);
-    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
-    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
-
   }
 
+  // Gère la déconnexion d'un utilisateur du serveur WebSocket.
+  // Supprime également l'utilisateur des maps.
   handleDisconnect(client: Socket)
   {
     client.disconnect();
     for (let [socket, id] of this.ref_socket.entries()) {
       if (socket === client) {
-          console.log(colors.GREEN, "La Socket " + colors.WHITE + socket.id + colors.GREEN + " a ete supprimee de la mao !")
+          console.log(colors.GREEN, "La Socket " + colors.WHITE + socket.id + colors.GREEN + " a été supprimée de la map !");
           this.ref_socket.delete(socket);
           break;
       }
     }
-    console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
+  // Renvoie une liste des rooms disponibles à l'utilisateur.
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitAvailableRooms')
   async emitAvailableRooms(@ConnectedSocket() client: Socket) {
     const rooms = await this.roomService.getRooms(client);
-    return await this.server.to(client.id).emit('emitAvailableRooms', rooms); // Pas sur, il faut que ca puisse envoyer a tout le monde.
+    return await this.server.to(client.id).emit('emitAvailableRooms', rooms);
   }
 
+  // Récupère et renvoie à l'utilisateur la liste des rooms auxquels il appartient.
+  // Fait également rejoindre l'utilisateur à tous ces rooms.
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitRooms')
   async emitRooms(@ConnectedSocket() client: Socket) 
@@ -99,27 +105,23 @@ export class ChatGateway
     const user = await this.chatService.getUserFromSocket(client);
 
     if (!user) {
-      console.log("User not found");
+      console.log("Utilisateur non trouvé");
       return;
     }
 
-    // Récupérez tous les channels auxquels l'utilisateur appartient
+    // Récupération de tous les rooms auxquels l'utilisateur appartient
     const rooms = await this.roomRepository
         .createQueryBuilder('channel')
-        .where(':userId = ANY(channel.users)', { userId: user.id })  // Utilisez ANY pour vérifier l'appartenance à un tableau
+        .where(':userId = ANY(channel.users)', { userId: user.id })
         .leftJoinAndSelect('channel.messages', 'message')
         .getMany();
 
-    console.log("rooms de l'utilisateur:", rooms);
-
-    // Faites rejoindre l'utilisateur à tous ses rooms
+    // Ajout de l'utilisateur à tous ses rooms
     rooms.forEach(channel => {
-        client.join(channel.roomName); // Supposons que roomName soit unique pour chaque channel
+        client.join(channel.roomName);
     });
-    console.log("rooms rejoint par l'utilisateur: ", client.rooms);
 
-    // Retournez les rooms à l'utilisateur
-    console.log("Je suis connecté : ", client.rooms);
+    // Envoi des rooms à l'utilisateur
     return await this.server.to(client.id).emit('emitRooms', rooms);
   }
 
@@ -128,99 +130,149 @@ export class ChatGateway
   //------------------------------------GESTION DES DMS-----------------------------------//
   //--------------------------------------------------------------------------------------//
 
+    /**
+   * Crée une nouvelle salle de chat.
+   * 
+   * @param data - Contient les informations nécessaires pour créer une salle, y compris le nom, si elle a un mot de passe, le mot de passe (facultatif) et si elle est privée.
+   * @param client - L'objet Socket représentant le client qui émet l'événement.
+   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+   */
   @UseGuards(ChatGuard)
   @SubscribeMessage('createRoom')
   async createRoom(@MessageBody() data: {
-  channelName: string, 
-  hasPassword: boolean,
-  password?: string,
-  isPrivate: boolean }, @ConnectedSocket() client: Socket)
+    channelName: string, 
+    hasPassword: boolean,
+    password?: string,
+    isPrivate: boolean }, @ConnectedSocket() client: Socket)
   {
-    const channelNameRegex = /^[a-zA-Z0-9]{2,12}$/;
+      // Validation du nom de la salle
+      const channelNameRegex = /^[a-zA-Z0-9]{2,12}$/;
+      if (!channelNameRegex.test(data.channelName)) {
+        this.server.emit('createRoom', "Channel name is invalid. It should be 2-12 characters long and alphanumeric only.'");
+        return { success: false, error: 'Channel name is invalid. It should be 2-12 characters long and alphanumeric only.' };
+      }
 
-    if (!channelNameRegex.test(data.channelName)) {
-      this.server.emit('createRoom', "Channel name is invalid. It should be 2-12 characters long and alphanumeric only.'");
-      return { success: false, error: 'Channel name is invalid. It should be 2-12 characters long and alphanumeric only.' };
-    }
-    const result = await this.roomService.createRoom(data, client);
+      // Création de la salle en utilisant le service roomService
+      const result = await this.roomService.createRoom(data, client);
 
-    if (result.success) {
-      this.server.emit('createRoom', "Channel created : " + data.channelName );
-    } else {
-      this.server.emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
-    }
-    return result;
+      // Notification aux clients du résultat de la création
+      if (result.success) {
+        this.server.emit('createRoom', "Channel created : " + data.channelName );
+      } else {
+        this.server.emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
+      }
+      return result;
   }
 
+  /**
+   * Permet à un utilisateur de quitter une salle de chat.
+   * 
+   * @param data - Contient le nom de la salle à quitter.
+   * @param client - L'objet Socket représentant le client qui émet l'événement.
+   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+   */
   @UseGuards(ChatGuard)
   @SubscribeMessage('quitRoom')
   async quitRoom(@MessageBody() data: { 
-  channelName: string }, @ConnectedSocket() client: Socket) {
-    const result = await this.roomService.quitRoom(data, client);
+    channelName: string }, @ConnectedSocket() client: Socket) {
+      // Utilise le service roomService pour quitter la salle
+      const result = await this.roomService.quitRoom(data, client);
 
-    if (result.success) {
-      console.log("Je suis dans quitRoom");
-      this.server.to(client.id).emit('quitRoom', "You have left the room " + data.channelName);
-      client.leave(data.channelName);
-    }
-    return result;
+      // Notifications sur le succès de l'opération
+      if (result.success) 
+      {
+        console.log("Je suis dans quitRoom");
+        this.server.to(client.id).emit('quitRoom', "You have left the room " + data.channelName);
+        this.server.to(data.channelName).emit('quitRoom', client.data.user.username + " has left the room " + data.channelName);
+        client.leave(data.channelName);
+      }
+      return result;
   }
 
-  // NE PAS OUBLIER DE REGLER LE DETAILS AVEC LE MDP
+  /**
+   * Permet à un utilisateur de rejoindre une salle de chat.
+   * 
+   * @param data - Contient le nom de la salle à rejoindre et le mot de passe (facultatif) si nécessaire.
+   * @param client - L'objet Socket représentant le client qui émet l'événement.
+   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+   */
   @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('joinRoom')
   async joinRoom(@MessageBody() data: {
-  channelName: string, 
-  password?: string }, @ConnectedSocket() client: Socket)
+    channelName: string, 
+    password?: string }, @ConnectedSocket() client: Socket)
   {
-    const result = await this.roomService.joinRoom(data, client);
-    if (result.success)
-    {
-      this.server.emit('joinRoom', "Room joined : " + data.channelName);
-      client.join(data.channelName);
-      client.on('disconnect', () => {
-        client.leave(data.channelName);
-      });
-      return (result);
-    }
-    else
-    {
-      this.server.emit('joinRoom', "Error, there was a problem in joining the room : " + data.channelName);
-      return (result);
-    }
+      // Utilise le service roomService pour rejoindre la salle
+      const result = await this.roomService.joinRoom(data, client);
+      if (result.success)
+      {
+        // Notifications sur le succès de l'opération
+        this.server.to(client.id).emit('joinRoom', "Room joined : " + data.channelName);
+        this.server.to(data.channelName).emit('joinRoom', client.data.user.username + " just joined the room " + data.channelName);
+        client.join(data.channelName);
+        return (result);
+      }
+      else
+      {
+        // En cas d'erreur lors de la tentative de rejoindre
+        this.server.to(client.id).emit('joinRoom', "Error, there was a problem in joining the room : " + data.channelName);
+        return (result);
+      }
   }
 
-  //--------------------------------------------------------------------------------------//
-
-
-  //--------------------------------------------------------------------------------------//
-  //-----------------------------POUVOIRS DES OWNERS/ADMINS-------------------------------//
-  //--------------------------------------------------------------------------------------//
-
-  //------------------------------BANNIR/DEBANNIR LES USERS-------------------------------//
-
+  /**
+   * Permet à un administrateur de bannir un utilisateur d'une salle de chat.
+   * 
+   * @param data - Contient le nom de la salle et le nom d'utilisateur de la personne à bannir.
+   * @param client - L'objet Socket représentant le client qui émet l'événement.
+   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+   */
   @UseGuards(ChatGuard)
   @SubscribeMessage('banUser')
   async banUserFromRoom(@MessageBody() data: {
-  channelName: string, 
-  targetUsername: string }, @ConnectedSocket() client: Socket)
+    channelName: string, 
+    targetUsername: string }, @ConnectedSocket() client: Socket)
   {
-    const result = await this.roomService.banUserfromRoom(data, client);
-    if (result.success) {
-      const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
-      const targetSocketId = this.ref_client.get(bannedUser.id);
+      // Utilise le service roomService pour bannir un utilisateur de la salle
+      const result = await this.roomService.banUserfromRoom(data, client);
+      if (result.success) {
+        // Récupère l'ID socket de l'utilisateur banni pour lui envoyer une notification
+        const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+        const targetSocketId = this.ref_client.get(bannedUser.id);
       const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
-      if (targetSocket)
-          targetSocket.leave(data.channelName);
-      this.server.emit('banUser', "User ", data.targetUsername, " has been banned from room ", data.channelName);
-      return (result);
+    if (targetSocket) {
+      // Émettre l'événement pour informer l'administrateur
+      this.server.to(client.id).emit('banUser', {
+        message: `You have successfully banned ${data.targetUsername} from room ${data.channelName}`,
+    });
+        // Émettre l'événement pour informer l'utilisateur banni
+        targetSocket.emit('banned', {
+            message: `You have been banned from room ${data.channelName} by an administrator.`,
+        });
+        
+        // Émettre l'événement pour informer la salle
+        this.server.to(data.channelName).emit('userBanned', {
+            username: data.targetUsername,
+            message: `User ${data.targetUsername} has been banned from this room by an administrator.`,
+        });
+      
+        return (result);
+      }
     }
     else
     {
-      this.server.emit('banUser', "Error, there was a problem the user was not banned.");
+      this.server.to(client.id).emit('banUser', "Error, there was a problem the user was not banned.");
       return (result);
     }
   }
+
+   /**
+  * Permet à un administrateur de lever le bannissement d'un utilisateur dans une salle de chat.
+  * 
+  * @param data - Contient le nom de la salle et le nom d'utilisateur de la personne à débannir.
+  * @param client - L'objet Socket représentant le client qui émet l'événement.
+  * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+  */
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('unbanUser')
@@ -230,8 +282,32 @@ export class ChatGateway
   {
     const result = await this.roomService.unbanUserfromRoom(data, client);
     if (result.success) {
-      this.server.emit('unbanUser', "User " + data.targetUsername + " has been unbanned from room " + data.channelName);
-    } else {
+      //this.server.emit('unbanUser', "User " + data.targetUsername + " has been unbanned from room " + data.channelName);
+      
+      const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+      const targetSocketId = this.ref_client.get(bannedUser.id);
+      const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
+
+    if (targetSocket) {
+      // Émettre l'événement pour informer l'administrateur
+      this.server.to(client.id).emit('unbanUser', {
+        message: `You have successfully unbanned ${data.targetUsername} from room ${data.channelName}`,
+    });
+        // Émettre l'événement pour informer l'utilisateur banni
+        targetSocket.emit('unbanned', {
+            message: `You have been unbanned from room ${data.channelName} by an administrator.`,
+        });
+        
+        // Émettre l'événement pour informer la salle
+        this.server.to(data.channelName).emit('userunBanned', {
+            username: data.targetUsername,
+            message: `User ${data.targetUsername} has been unbanned from this room by an administrator.`,
+        });
+      
+        return (result);
+      }
+    }
+    else {
       this.server.emit('unbanUser', "Error unbanning user " + data.targetUsername, " from room " + data.channelName);
     }
     return result;
@@ -240,6 +316,14 @@ export class ChatGateway
   //--------------------------------------------------------------------------------------//
 
   //------------------------------------KICK LES USERS------------------------------------//
+
+  /**
+   * Permet à un administrateur d'expulser un utilisateur d'une salle de chat.
+   * 
+   * @param data - Contient le nom de la salle et le nom d'utilisateur de la personne à expulser.
+   * @param client - L'objet Socket représentant le client qui émet l'événement.
+   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+   */
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('kickUser')
@@ -252,14 +336,28 @@ export class ChatGateway
       const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
       const targetSocketId = this.ref_client.get(bannedUser.id);
       const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
-      if (targetSocket)
-          targetSocket.leave(data.channelName);
-      this.server.emit('kickUser', "User " + data.targetUsername + " has been kicked from room " + data.channelName);
-      return (result);
+      if (targetSocket) {
+        // Émettre l'événement pour informer l'administrateur
+        this.server.to(client.id).emit('kickUser', {
+          message: `You have successfully kicked ${data.targetUsername} from room ${data.channelName}`,
+      });
+          // Émettre l'événement pour informer l'utilisateur banni
+          targetSocket.emit('kicked', {
+              message: `You have been kicked from room ${data.channelName} by an administrator.`,
+          });
+          
+          // Émettre l'événement pour informer la salle
+          this.server.to(data.channelName).emit('userKicked', {
+              username: data.targetUsername,
+              message: `User ${data.targetUsername} has been kicked from this room by an administrator.`,
+          });
+        
+          return (result);
+        }
     }
     else
     {
-      this.server.emit('kickUser', "Error, there was a problem the user was not kicked.");
+      this.server.to(client.id).emit('kickUser', "Error, there was a problem the user was not kicked.");
       return (result);
     }
   }
@@ -267,7 +365,15 @@ export class ChatGateway
   //--------------------------------------------------------------------------------------//
   
   //------------------------------------MUTE LES USERS------------------------------------//
-  // Ne pas oublier de changer les serveur.emit car ils ne sont pas bons.
+
+   /**
+  * Permet à un administrateur de mettre un utilisateur en sourdine dans une salle de chat.
+  * 
+  * @param data - Contient des informations telles que le nom d'utilisateur de l'administrateur, le nom de la salle, le nom d'utilisateur cible et la durée de mise en sourdine.
+  * @param client - L'objet Socket représentant le client qui émet l'événement.
+  * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+  */
+  
   @UseGuards(ChatGuard)
   @SubscribeMessage('muteUser')
   async muteUser(@MessageBody() data: {
@@ -281,20 +387,69 @@ export class ChatGateway
     const result = await this.roomService.muteUserRoom(data);
     
     if (result.success) {
-        this.server.to(data.roomName).emit('userMuted', {
-            message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
-            targetUsername: data.targetUsername,
-            duration: data.duration
-        });
+      const mutedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+      const targetSocketId = this.ref_client.get(mutedUser.id);
+
+      this.server.to(client.id).emit('muteUser', "User " + data.targetUsername + " has been muted for " + data.duration);
+      this.server.to(targetSocketId).emit('muted', "You have been muted by an administrator for " + data.duration);
+
+      this.server.to(data.roomName).emit('userMuted', {
+          message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
+          targetUsername: data.targetUsername,
+          duration: data.duration
+      });
+      return (result);
 
     } else {
-        this.server.to(client.id).emit('muteError', {
+        this.server.to(client.id).emit('userMuted', {
             error: result.error
         });
     }
 
     return result;
   }
+
+   /**
+  * Permet à un administrateur de retirer la sourdine d'un utilisateur dans une salle de chat.
+  * 
+  * @param data - Contient des informations telles que le nom d'utilisateur de l'administrateur, le nom de la salle et le nom d'utilisateur cible.
+  * @param client - L'objet Socket représentant le client qui émet l'événement.
+  * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
+  */
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('unmuteUser')
+  async unmuteUser(
+    @MessageBody() data: {
+    username: string,
+    roomName: string,
+    targetUsername: string}, 
+    @ConnectedSocket() client: Socket) 
+    {
+      const result = await this.roomService.unmuteUserRoom(data);
+      
+      if (result.success) {
+          const unmutedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+          const targetSocketId = this.ref_client.get(unmutedUser.id);
+
+          this.server.to(client.id).emit('unmuteUser', "User " + data.targetUsername + " has been unmuted");
+          this.server.to(targetSocketId).emit('unmuted', "You have been unmuted by an administrator");
+
+          this.server.to(data.roomName).emit('userUnmuted', {
+              message: `${data.targetUsername} has been unmuted.`,
+              targetUsername: data.targetUsername
+          });
+          return result;
+      } else {
+          this.server.to(client.id).emit('userUnmuted', {
+              error: result.error
+          });
+      }
+
+      return result;
+    }
+
+
   
   //--------------------------------------------------------------------------------------//
 
@@ -302,65 +457,41 @@ export class ChatGateway
   //---------------------------------GESTION DES MESSAGES---------------------------------//
   //--------------------------------------------------------------------------------------//
   
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('joinDM')
-  joinDM(@ConnectedSocket() socket: Socket, @MessageBody() body: { room: string }): void {
-    socket.join(body.room);
-    socket.on('disconnect', () => {
-      socket.leave(body.room);
-    });
-    this.server.emit('joinDM', body.room);
-  }
-  
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('sendDM')
-  async handleMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() body: { room: string, senderUsername: string, message: string, receiverUsername: string }
-  ): Promise<void> 
-  {
-
-    let chat = await this.friendChatsRepository.findOne({
-      where: { room: body.room }
-    });
-    if (!chat) 
-    {
-      chat = new FriendChat();
-      chat.room = body.room;
-      chat = await this.friendChatsRepository.save(chat);
-    }
-
+   /**
+  * Gère l'envoi de messages dans une salle de chat.
+  * 
+  * @param client - L'objet Socket représentant le client qui émet le message.
+  * @param body - Contient des informations sur le message, y compris le nom de la salle, le nom d'utilisateur de l'expéditeur et le contenu du message.
+  * @returns void - Cette fonction n'a pas de valeur de retour explicite.
+  */
+  @SubscribeMessage('sendMessage')
+  async handleMessage(@ConnectedSocket() client: Socket,
+  @MessageBody() body: { channelName: string,
+  senderUsername: string,
+  message: string }): Promise<void> {
     const sender = await this.chatService.getUserFromSocket(client);
-    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
-    if (!sender || !receiver) {
-      return;
-    }
-
-    if (receiver.blockedIds && receiver.blockedIds.includes(sender.id)) {
-      return;
-    }
-    
-    if (sender.blockedIds && sender.blockedIds.includes(receiver.id)) {
-      return;
+    //const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    const room = await this.roomService.getRoomByName(body.channelName);
+    if (room.mutedIds.includes(sender.id))
+    {
+      this.server.to(client.id).emit('sendMessage', "Error, you have been muted.");
+      return ;
     }
 
     if (body.message.length === 0) {
       return;
     }
 
-    const newMessage = new FriendMessage();
-    newMessage.chat = chat;
-    newMessage.senderId = sender.id;
-    newMessage.text = body.message;
+    // Créez le message avec TypeORM
+    const message = new MessageEntity();
+    message.room = room;
+    message.senderId = sender.id;
+    message.text = body.message;
+    message.channelId = room.id;
 
-    const savedMessage = await this.friendMessageRepository.save(newMessage);
+    const savedMessage = await this.messagesRepository.save(message);
 
-    const receiverSocketId = this.ref_client.get(receiver.id);
-    console.log(receiverSocketId);
-    console.log(this.ref_client);
-
-    if (receiverSocketId !== undefined) {
-      this.server.to(receiverSocketId).emit("sendDM", savedMessage);
+    // Émettez le message aux clients
+    this.server.to(savedMessage.room.roomName).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture});
   }
-}
 }

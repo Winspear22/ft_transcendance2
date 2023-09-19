@@ -16,8 +16,8 @@ export default {
   name: 'ChatContainer',
   components: {
       AddFriend,
-      receivingFriend,
       seeDm,
+      receivingFriend
   }
 };
 </script>

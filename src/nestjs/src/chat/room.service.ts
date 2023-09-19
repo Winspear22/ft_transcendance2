@@ -116,7 +116,7 @@ export class RoomService
         if (!room) {
             return { success: false, error: 'Channel not found' };
         }
-    
+        console.log("JE SUIS DANS QUITROOM SERVICE");
         if (user.id === room.owner) {
             // Supprimez tous les messages du canal et ensuite le canal lui-même
             await this.messagesRepository.delete({ id: room.id });
@@ -393,6 +393,45 @@ export class RoomService
   }, body.duration * 1000);
   return { success: true };
 }
+
+async unmuteUserRoom(body: { 
+  username: string, 
+  roomName: string, 
+  targetUsername: string}) 
+  {
+    // Récupère l'utilisateur demandeur à partir de la base de données
+    const user = await this.usersRepository.findOne({ where: { username: body.username } });
+    
+    if (!user) return { success: false, error: 'User not found' };
+
+    const room = await this.roomRepository.findOne({ where: { roomName: body.roomName }});
+    
+    if (!room) return { success: false, error: 'Room not found' };
+    
+    if (room.owner !== user.id && !room.admins.includes(user.id))
+        return { success: false, error: 'You are not an admin' };
+
+    const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
+    
+    if (!targetUser)
+        return { success: false, error: 'Target user not found' };
+    if (targetUser.id === room.owner)
+        return { success: false, error: 'Cannot unmute owner' };
+    if (!room.users.includes(targetUser.id))
+        return { success: false, error: 'Target user is not in this room' };
+
+    const idx = room.mutedIds.indexOf(targetUser.id);
+    
+    if (idx !== -1) {
+        room.mutedIds.splice(idx, 1);
+        await this.roomRepository.save(room);
+    } else {
+        return { success: false, error: 'User is not muted' };
+    }
+
+    return { success: true };
+  }
+
 
 
 //--------------------------------------------------------------------------------------//
