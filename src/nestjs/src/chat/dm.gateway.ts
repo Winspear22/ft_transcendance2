@@ -278,9 +278,15 @@ export class DMGateway
   {
 
     // On récupère les données de l'utilisateur qui envoie et réceptionne la demande d'ami
+    console.log("Je suis dans SENDFRIENDREQUEST");
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
     if (!sender || !receiver) {
+      return;
+    }
+    if (receiver.friendRequests && receiver.friendRequests.includes(sender.id)
+    || sender.friendRequests && sender.friendRequests.includes(receiver.id)) {
+      this.AcceptFriendRequest(client, body);
       return;
     }
     const receiverSocketId = this.ref_client.get(receiver.id);
@@ -382,14 +388,17 @@ export class DMGateway
   {
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    console.log("Je suis ici");
 
     if (!sender || !receiver) {
       return;
     }
+    console.log("Je suis ici");
     const receiverSocketId = this.ref_client.get(receiver.id);
     console.log(receiverSocketId);
     console.log(this.ref_client);
     await this.DMsService.declineFriendRequest(client.data.user.username, body.receiverUsername);
+    console.log("Je suis ici");
     if (receiverSocketId !== undefined) {
       this.server.to(client.id).emit("refuseFriendRequest", "You have refused the friend request of " + receiver.username);
       this.server.to(receiverSocketId).emit("refuseFriendRequest", "Your friend request has been refused by " + sender.username);
@@ -409,32 +418,53 @@ export class DMGateway
   // Renvoie des serveur.emit en fonction de ce qu'il s'est passé
 
   @UseGuards(ChatGuard)
-  @SubscribeMessage('removeFriend')
-  async RemoveFriend(
+@SubscribeMessage('removeFriend')
+async RemoveFriend(
   @ConnectedSocket() client: Socket,
   @MessageBody() body: { receiverUsername: string }
-  ): Promise<void> 
-  {
-    const sender = await this.chatService.getUserFromSocket(client);
-    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+): Promise<void> 
+{
+  const sender = await this.chatService.getUserFromSocket(client);
+  const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
 
-    if (!sender || !receiver) {
-      return;
-    }
-    const receiverSocketId = this.ref_client.get(receiver.id);
-    console.log(receiverSocketId);
-    console.log(this.ref_client);
-    await this.DMsService.removeFriend(client.data.user.username, body.receiverUsername);
-    if (receiverSocketId !== undefined) {
-      this.server.to(client.id).emit("removeFriend", "You have unfriended " + receiver.username);
-      this.server.to(receiverSocketId).emit("removeFriend", "You have been unfriended by " + sender.username);
-    }
-    else
-    {
-      this.server.to(client.id).emit("removeFriend", "Error in the friend removal proccess.");
-      this.server.to(receiverSocketId).emit("removeFriend", "Error in the friend removal proccess.");
-    }
+  if (!sender || !receiver) {
+    return;
   }
+
+  const receiverSocketId = this.ref_client.get(receiver.id);
+
+  // Essayez de trouver la room avec le nom basé sur les IDs de sender et receiver
+  const roomName1 = `friendChat(${sender.id},${receiver.id})`;
+  const roomName2 = `friendChat(${receiver.id},${sender.id})`;
+
+  let room = await this.friendChatsRepository.findOne({ where: { room: roomName1 } });
+
+  if (!room) {
+    room = await this.friendChatsRepository.findOne({ where: { room: roomName2 } });
+  }
+
+  if (!room) {
+    this.server.to(client.id).emit("removeFriend", "Error in the friend removal process (unfound room).");
+    return;
+  }
+
+  // Supprimer les messages associés à la salle de chat
+  await this.friendMessageRepository.delete({ chatId: room.id });
+  
+  // Supprimer la salle de chat elle-même
+  await this.friendChatsRepository.delete({ id: room.id });
+
+  await this.DMsService.removeFriend(client.data.user.username, body.receiverUsername);
+
+  if (receiverSocketId !== undefined) {
+    this.server.to(client.id).emit("removeFriend", "You have unfriended " + receiver.username);
+    this.server.to(receiverSocketId).emit("removeFriend", "You have been unfriended by " + sender.username);
+  }
+  else {
+    this.server.to(client.id).emit("removeFriend", "Error in the friend removal process.");
+    this.server.to(receiverSocketId).emit("removeFriend", "Error in the friend removal process.");
+  }
+}
 
   // Méthode finale de la gestion de la vie sociale : bloquer les amis
   // Méthode plus radicale : on unfriend l'ami et on l'empêche de renvoyer une requête ou de demander une partie
@@ -458,6 +488,26 @@ export class DMGateway
       return;
     }
     const receiverSocketId = this.ref_client.get(receiver.id);
+      // Essayez de trouver la room avec le nom basé sur les IDs de sender et receiver
+    const roomName1 = `friendChat(${sender.id},${receiver.id})`;
+    const roomName2 = `friendChat(${receiver.id},${sender.id})`;
+
+    let room = await this.friendChatsRepository.findOne({ where: { room: roomName1 } });
+
+    if (!room) {
+      room = await this.friendChatsRepository.findOne({ where: { room: roomName2 } });
+    }
+    if (!room) {
+      this.server.to(client.id).emit("blockDM", "Error in the block process (unfound room).");
+      return;
+    }
+
+    // Supprimer les messages associés à la salle de chat
+    await this.friendMessageRepository.delete({ chatId: room.id });
+    
+    // Supprimer la salle de chat elle-même
+    await this.friendChatsRepository.delete({ id: room.id });
+
     console.log(receiverSocketId);
     console.log(this.ref_client);
     await this.DMsService.blockFriend(sender, receiver);
