@@ -1,78 +1,99 @@
 <template>
-    <div> <!-- Elément racine ajouté -->
-        <info-user @userInfoFetched="handleUserInfo"></info-user>
-        <div v-for="chat in chats" :key="chat.id">
-            <h3>Chat with {{ getChatName(chat) }}</h3>
-            <div v-if="chat.messages && chat.messages.length > 0">
-                <div v-for="message in chat.messages" :key="message.id">
-                    <span>{{ message.senderName }}: {{ message.text }}</span>
-                </div>
-            </div>
-            <div v-else>
-                <p>No messages yet. Start a conversation!</p>
-            </div>
+    <div>
+      <!-- Onglets -->
+      <info-user @userInfoFetched="handleUserInfo"></info-user>
+      <div class="tabs">
+        <div v-for="(chat, index) in chats" 
+             :key="chat.id" 
+             @click="activeTabIndex = index" 
+             :class="{ active: activeTabIndex === index }">
+          {{ getChatName(chat) }}
         </div>
-    </div> <!-- Fin de l'élément racine -->
+      </div>
+  
+      <!-- Contenu de l'onglet actif -->
+      <see-conv v-if="chats[activeTabIndex]" 
+                :chat="chats[activeTabIndex]" 
+                :user-info="userInfo"></see-conv>
+      <!-- Send DM Form -->
+      <send-dm v-if="chats[activeTabIndex]" 
+           :chat="chats[activeTabIndex]" 
+           :user-info="userInfo"></send-dm>
+    </div>
 </template>
-
+  
 <script>
 import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
-import InfoUser from '../setting/infoUser.vue'; 
-
+import SeeConv from './seeConv.vue';
+import SendDm from './sendDm.vue';
+import infoUser from '../setting/infoUser';
 
 export default {
-    components: {
-        InfoUser,
-    },
-    setup() {
-        const store = useStore();
-        const socket = store.getters.socket;
-        const userInfo = ref(null);
+  components: {
+    SeeConv,
+    SendDm,
+    infoUser
+  },
+  setup() {
+    const store = useStore();
+    const socket = store.getters.socket;
+    const userInfo = ref(null);
+    const chats = ref([]);
 
-        const chats = ref([]);
+    onMounted(() => {
+      socket.on('emitDM', (data) => {
+        chats.value = data;
+      });
 
-        onMounted(() => {
-            socket.on('emitDM', (data) => {
-                chats.value = data;
-            console.log("LALALA", chats.value);
-            if (chats.value.length > 0 && chats.value[0].users.length > 0) {
-                const firstUserOfFirstChat = chats.value[0].users[0];
-                console.log("First user of the first chat:", firstUserOfFirstChat);
-            }
-
-            if (chats.value.length > 0 && chats.value[0].users.length > 1) {
-                const secondUserOfFirstChat = chats.value[0].users[1];
-                console.log("Second user of the first chat:", secondUserOfFirstChat);
-            }
-            });
-            socket.emit('emitDM');
-        });
-
-        function handleUserInfo(user) {
-            userInfo.value = user;
-            console.log('Informations de l\'utilisateur reçues:', user);
+      socket.on('newMessage', (message) => {
+        const chat = chats.value.find(c => c.id === message.chatId);
+        if (chat) {
+          chat.messages.push(message);
         }
+      });
 
-        function getChatName(chat) {
-            if (chat.users.length > 0) {
-                if (userInfo.value && chat.users[0].username !== userInfo.value.username) {
-                    return chat.users[0].username;
-                }
-                else if (chat.users.length > 1) {
-                    return chat.users[1].username;
-                }
-            }
-            return "Unknown";
-        }  
+      socket.emit('emitDM');
+    });
 
-
-        return {
-            chats,
-            getChatName,
-            userInfo,
-            handleUserInfo, 
-        }
+    function handleUserInfo(user) {
+      userInfo.value = user;
     }
+
+    const activeTabIndex = ref(0); // Pour garder une trace de l'onglet actif
+
+    function getChatName(chat) {
+      if (chat.users.length > 0) {
+        if (userInfo.value && chat.users[0].username !== userInfo.value.username) {
+          return chat.users[0].username;
+        } else if (chat.users.length > 1) {
+          return chat.users[1].username;
+        }
+      }
+      return "Unknown";
+    }
+
+    return {
+      chats,
+      userInfo,
+      handleUserInfo,
+      activeTabIndex,
+      getChatName
+    }
+  },
 };
 </script>
+
+<style>
+.tabs > div {
+  cursor: pointer;
+  padding: 10px;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.tabs > div.active {
+  font-weight: bold;
+  border-bottom: 2px solid blue;
+}
+</style>

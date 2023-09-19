@@ -29,7 +29,7 @@ export default {
 
     const socket = io('http://localhost:3000/dms', {
       query: {
-        cookie: cookie
+        Cookie: cookie
       }
     });
 
