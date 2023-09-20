@@ -49,6 +49,7 @@ export class DMGateway
   // - Renvoie tous les amis que l'utilisateurs a
   // Prend comme arguments la Socket du client
   // Renvoie true si tout s'est bien déroulé
+  // OK FRONT
   @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
@@ -99,7 +100,7 @@ export class DMGateway
   // Comme pour la phase de connexion, on a un guard, c'est toujours le même
   // - Renvoie les DMrooms dans lesquelles se situe l'utilisateur (avec ses amis)
   // Prend comme argument la socket du client
-
+// OK FRONT 
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitDM')
   async emitDMs(@ConnectedSocket() client: Socket) 
@@ -127,7 +128,7 @@ export class DMGateway
   // Guard
   // - Renvoie tous les amis que l'utilisateurs a
   // Prend comme argument la socket du client.
-
+// OK FRONT
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitFriends')
   async emitFriends(@ConnectedSocket() client: Socket) 
@@ -155,7 +156,7 @@ export class DMGateway
       console.log("Friend list : ", friendDetails);
       return await this.server.to(client.id).emit('emitFriends', friendDetails);
     }
-
+// OK FRONT
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitFriendRequests')
   async emitFriendRequests(@ConnectedSocket() client: Socket) {
@@ -282,11 +283,13 @@ export class DMGateway
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
     if (!sender || !receiver) {
+      this.server.to(client.id).emit("sendFriendRequestError", "Personne introuvable");
       return;
     }
     if (receiver.friendRequests && receiver.friendRequests.includes(sender.id)
     || sender.friendRequests && sender.friendRequests.includes(receiver.id)) {
       this.AcceptFriendRequest(client, body);
+      console.log("==============Quand j'envoie une demande d'ami a qq'un a qui j'ai deja demande je passe ici============")
       return;
     }
     const receiverSocketId = this.ref_client.get(receiver.id);
@@ -296,11 +299,13 @@ export class DMGateway
     const ret = await this.DMsService.sendFriendRequest(client.data.user.username, body.receiverUsername);
     // Si tout s'est bien passé on emit aux deux sockets qu'une demande d'ami a été envoyée ou réceptionnée (en fonction de qui est l'envoyeur ou le réceptionneur)
     if (receiverSocketId !== undefined && ret.success == true) {
-      this.server.to(receiverSocketId).emit("sendFriendRequestSuccess", "Friend request from " + sender.username);
-      this.server.to(client.id).emit("sendFriendRequestSuccess", "Your friend request has been sent to " + receiver.username);
+      this.server.to(receiverSocketId).emit("sendFriendRequestSuccess", "Demande d'ami de " + sender.username);
+      this.server.to(client.id).emit("sendFriendRequestSuccess", "Votre demande d'ami a été envoyé à " + receiver.username);
+      const newFriendRequests = await this.emitFriendRequests(client);
+      this.server.to(client.id).emit('emitFriendRequests', newFriendRequests);
     }
     else // S'il y'a eu un soucis (ex : une demande d'ami a déjà été envoyée ou on a été bloqué), un message d'erreur est envoyé à l'envoyeur 
-      this.server.to(client.id).emit("sendFriendRequestError", "Error. Could not send friend request to " + receiver.username);
+      this.server.to(client.id).emit("sendFriendRequestError", "Vous ne pouvez pas envoyer de demande d'ami à " + receiver.username);
   }
 
   // On entre dans la seconde phase l'acceptation ou le refus de la demande d'ami.

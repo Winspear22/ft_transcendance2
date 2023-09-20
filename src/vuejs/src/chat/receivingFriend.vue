@@ -22,7 +22,7 @@ export default {
     const senderUsername = ref('');
 
     const handleRequest = (message) => {
-      if (/^Friend request from/.test(message)) {
+      if (/^Demande d'ami de/.test(message)) {
         hasFriendRequest.value = true;
         requestMessage.value = message;
         senderUsername.value = message.split(' ')[3];
@@ -62,7 +62,6 @@ export default {
 </script>
 
 <style scoped>
-/* Style pour la popup */
 .friend-request-popup {
   position: fixed;
   right: 20px;

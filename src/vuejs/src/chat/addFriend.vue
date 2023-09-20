@@ -1,7 +1,7 @@
 <template>
     <div>
         <input v-model="username" placeholder="Nom d'utilisateur" />
-        <button @click="sendFriendRequest">Envoyer une demande d'ami</button>
+        <button @click="sendFriendRequest" :disabled="!username">Envoyer une demande d'ami</button>
         <div v-if="popupMessage">{{ popupMessage }}</div>
     </div>
 </template>
@@ -18,28 +18,27 @@ export default {
         const store = useStore();
         const socket = store.getters.socket;
 
-        const handleSuccess = (message) => {
-            if (/^Your/.test(message)) {
-                popupMessage.value = message;
-            }
+        const handleResponse = (message) => {
+            popupMessage.value = message;
+            username.value = '';
         };
 
-        const handleError = (message) => {
-            popupMessage.value = message;
-        };
-        
         onMounted(() => {
-            socket.on('sendFriendRequestSuccess', handleSuccess);
-            socket.on('sendFriendRequestError', handleError);
+            socket.on('sendFriendRequestSuccess', handleResponse);
+            socket.on('sendFriendRequestError', handleResponse);
         });
 
         onBeforeUnmount(() => {
-            socket.off('sendFriendRequestSuccess', handleSuccess);
-            socket.off('sendFriendRequestError', handleError);
+            socket.off('sendFriendRequestSuccess', handleResponse);
+            socket.off('sendFriendRequestError', handleResponse);
         });
         
         const sendFriendRequest = () => {
-            socket.emit('sendFriendRequest', { receiverUsername: username.value });
+            if (username.value.trim()) {
+                socket.emit('sendFriendRequest', { receiverUsername: username.value });
+            } else {
+                popupMessage.value = "Veuillez entrer un nom d'utilisateur valide.";
+            }
         };
         
         return {
@@ -50,3 +49,4 @@ export default {
     }
 };
 </script>
+
