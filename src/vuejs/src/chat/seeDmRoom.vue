@@ -1,12 +1,14 @@
 <template>
   <div>
     <info-user @userInfoFetched="handleUserInfo"></info-user>
+    
     <div class="tabs">
       <div v-for="(chat, index) in chats" 
            :key="chat.id" 
            @click="switchTab(index)" 
            :class="{ active: activeTabIndex === index }">
         {{ getChatName(chat) }}
+        <button @click.stop="blockDM(chat)">Block DM</button>
       </div>
     </div>
 
@@ -26,6 +28,7 @@ import { useStore } from 'vuex';
 import SeeConv from './seeConv.vue';
 import SendDm from './sendDm.vue';
 import InfoUser from '../setting/infoUser';
+import { useRouter } from 'vue-router';
 
 export default {
   components: {
@@ -39,6 +42,7 @@ export default {
     const userInfo = ref(null);
     const chats = ref([]);
     const activeTabIndex = ref(0);
+    const router = useRouter();
 
     const appendNewMessage = (message) => {
       const chat = chats.value.find(c => c.room === message.chat.room);
@@ -49,6 +53,14 @@ export default {
         chat.messages.push(message);
       } else {
         chats.value.push(message);
+      }
+    };
+
+    const blockDM = (chat) => {
+      const usernameToBlock = getChatName(chat);
+      if (usernameToBlock !== "Unknown") {
+        socket.emit('blockDM', { receiverUsername: usernameToBlock });
+        router.push({ name: 'Login' });
       }
     };
 
@@ -99,24 +111,23 @@ export default {
       handleUserInfo,
       activeTabIndex,
       switchTab,
-      getChatName
+      getChatName,
+      blockDM
     }
   }
 };
 </script>
 
-
-
 <style>
 .tabs > div {
-cursor: pointer;
-padding: 10px;
-display: inline-block;
-margin-right: 10px;
+  cursor: pointer;
+  padding: 10px;
+  display: inline-block;
+  margin-right: 10px;
 }
 
 .tabs > div.active {
-font-weight: bold;
-border-bottom: 2px solid blue;
+  font-weight: bold;
+  border-bottom: 2px solid blue;
 }
 </style>
