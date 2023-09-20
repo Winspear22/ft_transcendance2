@@ -253,6 +253,7 @@ export class DMGateway
     if (receiverSocketId !== undefined) {
       this.server.to(receiverSocketId).emit("sendDM", savedMessage);
       this.server.to(client.id).emit("sendDM", savedMessage);
+      console.log("YF JTFGYUGBIHBOILHNLIH OUIGHLJ MOIHLUIGIUGLGLIJHU ICI ICICICICICICICICCIIC");
     }
     else
       return ;

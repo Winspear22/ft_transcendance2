@@ -1,0 +1,122 @@
+<template>
+  <div>
+    <info-user @userInfoFetched="handleUserInfo"></info-user>
+    <div class="tabs">
+      <div v-for="(chat, index) in chats" 
+           :key="chat.id" 
+           @click="switchTab(index)" 
+           :class="{ active: activeTabIndex === index }">
+        {{ getChatName(chat) }}
+      </div>
+    </div>
+
+    <see-conv v-if="chats[activeTabIndex]" 
+              :chat="chats[activeTabIndex]" 
+              :user-info="userInfo"></see-conv>
+
+    <send-dm v-if="chats[activeTabIndex]" 
+             :chat="chats[activeTabIndex]" 
+             :user-info="userInfo"></send-dm>
+  </div>
+</template>
+
+<script>
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useStore } from 'vuex';
+import SeeConv from './seeConv.vue';
+import SendDm from './sendDm.vue';
+import InfoUser from '../setting/infoUser';
+
+export default {
+  components: {
+    SeeConv,
+    SendDm,
+    InfoUser
+  },
+  setup() {
+    const store = useStore();
+    const socket = store.getters.socket;
+    const userInfo = ref(null);
+    const chats = ref([]);
+    const activeTabIndex = ref(0);
+
+    const appendNewMessage = (message) => {
+      const chat = chats.value.find(c => c.room === message.chat.room);
+      if (chat) {
+        if (!chat.messages) {
+          chat.messages = [];
+        }
+        chat.messages.push(message);
+      } else {
+        chats.value.push(message);
+      }
+    };
+
+    const updateChats = (data) => {
+      chats.value = data;
+    }
+
+    const initializeSocketListeners = () => {
+      socket.on('emitDM', (data) => {
+        updateChats(data);
+      });
+      socket.on('sendDM', (message) => {
+        appendNewMessage(message);
+      });
+    }
+
+    const cleanupSocketListeners = () => {
+      socket.off('emitDM', updateChats);
+      socket.off('sendDM', appendNewMessage);
+    }
+
+    onMounted(() => {
+      initializeSocketListeners();
+      socket.emit('emitDM');
+    });
+
+    onBeforeUnmount(() => {
+      cleanupSocketListeners();
+    });
+
+    const handleUserInfo = (user) => {
+      userInfo.value = user;
+    }
+
+    const switchTab = (index) => {
+      activeTabIndex.value = index;
+    }
+
+    const getChatName = (chat) => {
+      if (!chat.users.length) return "Unknown";
+      const otherUser = chat.users.find(u => !userInfo.value || u.username !== userInfo.value.username);
+      return otherUser ? otherUser.username : "Unknown";
+    }
+
+    return {
+      chats,
+      userInfo,
+      handleUserInfo,
+      activeTabIndex,
+      switchTab,
+      getChatName
+    }
+  }
+};
+</script>
+
+
+
+<style>
+.tabs > div {
+cursor: pointer;
+padding: 10px;
+display: inline-block;
+margin-right: 10px;
+}
+
+.tabs > div.active {
+font-weight: bold;
+border-bottom: 2px solid blue;
+}
+</style>
