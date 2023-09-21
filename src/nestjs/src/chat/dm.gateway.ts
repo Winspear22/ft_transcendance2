@@ -286,8 +286,7 @@ export class DMGateway
       this.server.to(client.id).emit("sendFriendRequestError", "Personne introuvable");
       return;
     }
-    if (receiver.friendRequests && receiver.friendRequests.includes(sender.id)
-    || sender.friendRequests && sender.friendRequests.includes(receiver.id)) {
+    if (sender.friendRequests && sender.friendRequests.includes(receiver.id)){
       this.AcceptFriendRequest(client, body);
       console.log("==============Quand j'envoie une demande d'ami a qq'un a qui j'ai deja demande je passe ici============")
       return;
