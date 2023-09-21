@@ -5,6 +5,7 @@
     <FriendRequests />
     <ReceivingFriend />
     <SeeDmRoom />
+    <testChat/>
   </div>
 </template>
 
@@ -13,6 +14,7 @@ import AddFriend from './addFriend';
 import FriendRequests from './friendRequests';
 import ReceivingFriend from './receivingFriend';
 import SeeDmRoom from './seeDmRoom';
+import testChat from './testChat';
 
 export default {
   name: 'ChatContainer',
@@ -20,7 +22,8 @@ export default {
     AddFriend,
     FriendRequests,
     ReceivingFriend,
-    SeeDmRoom
+    SeeDmRoom,
+    testChat
   }
 };
 </script>

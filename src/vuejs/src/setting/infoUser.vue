@@ -22,7 +22,6 @@
           const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
           if (response.data.success) {
             this.userInfo = response.data.user;
-            console.log(this.userInfo);
             this.$emit('userInfoFetched', this.userInfo);
           }
         } catch (error) {

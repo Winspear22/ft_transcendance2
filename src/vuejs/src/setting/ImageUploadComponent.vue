@@ -33,8 +33,6 @@ export default {
 
         try {
           const response = await axios.post('http://localhost:3000/user/change/pp', formData, { withCredentials: true });
-          console.log('Réponse du serveur:', response.status);
-
           if (response && response.status === 201) {
             this.showValidationPopup = true;
           }

@@ -21,7 +21,6 @@ export default {
                 const response = await axios.post('http://localhost:3000/auth/Logout', {}, { withCredentials: true });
 
                 if (response.status === 200) {
-                    console.log("OFFLINE", response.data);
                     store.dispatch('authenticate', false);
                     store.dispatch('activateTwoFa', response.data.partialUser.isTwoFactorAuthenticationEnabled);
                     router.push('/');

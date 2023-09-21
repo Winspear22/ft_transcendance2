@@ -2,8 +2,8 @@ import {
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
-import { Socket, Server } from 'socket.io';
+  WebSocketServer, ConnectedSocket } from '@nestjs/webSockets';
+import { Socket, Server } from 'Socket.io';
 import * as colors from '../colors';
 import { ChatService } from './chat.service';
 import { CreateMessageDto } from './dto/message.dto';
@@ -41,11 +41,11 @@ export class ChatGateway
     private friendMessageRepository: Repository<FriendMessage>,
     ) {}
   
-  // Map pour stocker les références entre l'ID utilisateur et l'ID de socket
+  // Map pour stocker les références entre l'ID utilisateur et l'ID de Socket
   private ref_client = new Map<number, string>()
 
-  // Map pour stocker les références entre l'objet socket et l'ID de socket
-  private ref_socket = new Map<Socket, string>()
+  // Map pour stocker les références entre l'objet Socket et l'ID de Socket
+  private ref_Socket = new Map<Socket, string>()
 
   // Instance du serveur WebSocket
   @WebSocketServer()
@@ -71,7 +71,7 @@ export class ChatGateway
     this.emitAvailableRooms(client);
     console.log(colors.BRIGHT + colors.GREEN, "Utilisateur : " +  colors.WHITE + user.username + colors .GREEN +" vient de se connecter." + colors.RESET);
     this.ref_client.set(user.id, client.id);
-    this.ref_socket.set(client, client.id);
+    this.ref_Socket.set(client, client.id);
   }
 
   // Gère la déconnexion d'un utilisateur du serveur WebSocket.
@@ -79,10 +79,10 @@ export class ChatGateway
   handleDisconnect(client: Socket)
   {
     client.disconnect();
-    for (let [socket, id] of this.ref_socket.entries()) {
-      if (socket === client) {
-          console.log(colors.GREEN, "La Socket " + colors.WHITE + socket.id + colors.GREEN + " a été supprimée de la map !");
-          this.ref_socket.delete(socket);
+    for (let [Socket, id] of this.ref_Socket.entries()) {
+      if (Socket === client) {
+          console.log(colors.GREEN, "La Socket " + colors.WHITE + Socket.id + colors.GREEN + " a été supprimée de la map !");
+          this.ref_Socket.delete(Socket);
           break;
       }
     }
@@ -236,10 +236,10 @@ export class ChatGateway
       // Utilise le service roomService pour bannir un utilisateur de la salle
       const result = await this.roomService.banUserfromRoom(data, client);
       if (result.success) {
-        // Récupère l'ID socket de l'utilisateur banni pour lui envoyer une notification
+        // Récupère l'ID Socket de l'utilisateur banni pour lui envoyer une notification
         const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
         const targetSocketId = this.ref_client.get(bannedUser.id);
-      const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
+      const targetSocket = [...this.ref_Socket.keys()].find(Socket => this.ref_Socket.get(Socket) === targetSocketId);
     if (targetSocket) {
       // Émettre l'événement pour informer l'administrateur
       this.server.to(client.id).emit('banUser', {
@@ -286,7 +286,7 @@ export class ChatGateway
       
       const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
       const targetSocketId = this.ref_client.get(bannedUser.id);
-      const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
+      const targetSocket = [...this.ref_Socket.keys()].find(Socket => this.ref_Socket.get(Socket) === targetSocketId);
 
     if (targetSocket) {
       // Émettre l'événement pour informer l'administrateur
@@ -335,7 +335,7 @@ export class ChatGateway
     if (result.success) {
       const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
       const targetSocketId = this.ref_client.get(bannedUser.id);
-      const targetSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === targetSocketId);
+      const targetSocket = [...this.ref_Socket.keys()].find(Socket => this.ref_Socket.get(Socket) === targetSocketId);
       if (targetSocket) {
         // Émettre l'événement pour informer l'administrateur
         this.server.to(client.id).emit('kickUser', {

@@ -1,6 +1,6 @@
 import { UseGuards } from "@nestjs/common";
-import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
-import { Socket, Server } from 'socket.io';
+import { ConnectedSocket, MessageBody, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/webSockets";
+import { Socket, Server } from 'Socket.io';
 import { ChatGuard } from "./guard/chat-guard.guard";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Friend } from "src/user/entities/friend.entity";
@@ -33,7 +33,7 @@ export class DMGateway
     ) {}
 
     private ref_client = new Map<number, string>()
-    private ref_socket = new Map<Socket, string>()
+    private ref_Socket = new Map<Socket, string>()
 
     @WebSocketServer()
     server: Server;
@@ -66,29 +66,29 @@ export class DMGateway
     // Renvoie tous les Friends que l'utilisateur a.
     this.emitFriends(client);
     console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
-    // Ajoute les sockets dans deux maps différentes : c'est juste pour m'aider à répertorier les users
+    // Ajoute les Sockets dans deux maps différentes : c'est juste pour m'aider à répertorier les users
     this.emitFriendRequests(client);
     this.ref_client.set(user.id, client.id);
-    this.ref_socket.set(client, client.id);
+    this.ref_Socket.set(client, client.id);
 
-    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
-    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
+    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User Socket id : " + colors.WHITE + client.id + colors.RESET);
+    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User Socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
     return true;
   }
 
 
   // Phase de deconnexion : a chaque fois qu'un utilisateur va se déconnecter, il va passer par là
-  // Sa socket sera déconnectée par client.disconnect()
+  // Sa Socket sera déconnectée par client.disconnect()
 
   handleDisconnect(@ConnectedSocket() client: Socket)
   {
-    //La socket de l'utilisateur est déconnecté du serveur 
+    //La Socket de l'utilisateur est déconnecté du serveur 
     client.disconnect();
-    //On retire l'id de la socket de la map.
-    for (let [socket, id] of this.ref_socket.entries()) {
-      if (socket === client) {
-          console.log(colors.GREEN, "La Socket " + colors.WHITE + socket.id + colors.GREEN + " a ete supprimee de la mao !")
-          this.ref_socket.delete(socket);
+    //On retire l'id de la Socket de la map.
+    for (let [Socket, id] of this.ref_Socket.entries()) {
+      if (Socket === client) {
+          console.log(colors.GREEN, "La Socket " + colors.WHITE + Socket.id + colors.GREEN + " a ete supprimee de la mao !")
+          this.ref_Socket.delete(Socket);
           break;
       }
     }
@@ -99,7 +99,7 @@ export class DMGateway
   // Phase de renvoi des DMrooms 
   // Comme pour la phase de connexion, on a un guard, c'est toujours le même
   // - Renvoie les DMrooms dans lesquelles se situe l'utilisateur (avec ses amis)
-  // Prend comme argument la socket du client
+  // Prend comme argument la Socket du client
 // OK FRONT 
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitDM')
@@ -127,7 +127,7 @@ export class DMGateway
   // Phase de renvoi des amis
   // Guard
   // - Renvoie tous les amis que l'utilisateurs a
-  // Prend comme argument la socket du client.
+  // Prend comme argument la Socket du client.
 // OK FRONT
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitFriends')
@@ -266,7 +266,7 @@ export class DMGateway
   // demandes d'amis, les accepter, les refuser, supprimer des amis ou les bloquer (suppression d'ami + empêcher de renvoyer une demande). 
   
   // La première phase consiste à envoyer une demande d'ami, on a comme arguments :
-  // - La socket de l'utilisateur
+  // - La Socket de l'utilisateur
   // - Le username de l'utilisateur qui reçoit la demande.
   // Cette fonction va créer dans la base de données une demande d'ami et cette demande d'ami va pouvoir être acceptée, ou refusée par l'utilisateur
 
@@ -297,7 +297,7 @@ export class DMGateway
     console.log(this.ref_client);
     // On crée dans la base de données la demande en ami (avec tous les checks nécéssaires).
     const ret = await this.DMsService.sendFriendRequest(client.data.user.username, body.receiverUsername);
-    // Si tout s'est bien passé on emit aux deux sockets qu'une demande d'ami a été envoyée ou réceptionnée (en fonction de qui est l'envoyeur ou le réceptionneur)
+    // Si tout s'est bien passé on emit aux deux Sockets qu'une demande d'ami a été envoyée ou réceptionnée (en fonction de qui est l'envoyeur ou le réceptionneur)
     if (receiverSocketId !== undefined && ret.success == true) {
       this.server.to(receiverSocketId).emit("sendFriendRequestSuccess", "Demande d'ami de " + sender.username);
       this.server.to(client.id).emit("sendFriendRequestSuccess", "Votre demande d'ami a été envoyé à " + receiver.username);
@@ -311,13 +311,13 @@ export class DMGateway
   // On entre dans la seconde phase l'acceptation ou le refus de la demande d'ami.
   // Cette phase est très importante car c'est celle qui permet de créer la DMroom et d'ajouter des amis;
   // Comme pour la fonction sendFriendRequest, elle prend comme arguments :
-  // - La socket de l'utilisateur (nous)
+  // - La Socket de l'utilisateur (nous)
   // - Le username de l'utilisateur qui reçoit la demande.
   // Toutefois il ne faut pas s'embrouiller l'esprit et confondre le receiver (nous, la Socket prise en compte dans les arguments celui qui a reçu la demande d'ami), et 
   // le sender (celui qui a envoyé la demande d'ami, qui est une autre Socket).
   // Si tout se passe bien :
   // - On a une dmRoom qui est crée, les deux utilisateurs y sont intégrés
-  // - Deux fonctions join (qui sont des fonctions appartenant à la classe Socket) sont faits pour que les sockets rejoignent la DMroom.
+  // - Deux fonctions join (qui sont des fonctions appartenant à la classe Socket) sont faits pour que les Sockets rejoignent la DMroom.
   // - Deux évènements joinDM pour serveur.emit aux utilisateurs qu'ils ont rejoint la DMroom.
 
   @UseGuards(ChatGuard)
@@ -334,7 +334,7 @@ export class DMGateway
     if (!sender || !receiver) {
       return;
     }
-    // on recherche les socketIds des utilisateurs
+    // on recherche les SocketIds des utilisateurs
     const receiverSocketId = this.ref_client.get(receiver.id);
     const senderSocketId = this.ref_client.get(sender.id);
 
@@ -342,14 +342,14 @@ export class DMGateway
     console.log(this.ref_client);
     // on crée le chat
     const chat = await this.DMsService.acceptFriendRequest(client.data.user.username, body.receiverUsername);
-    // Si on a récupéré les deux sockets avec succès
+    // Si on a récupéré les deux Sockets avec succès
     if (receiverSocketId !== undefined || senderSocketId !== undefined) {
       // On envoie les serveur.emit pour prévenir les utilisateurs que la demande a été acceptée avec un message différent
       this.server.to(client.id).emit("acceptFriendRequest", "You have accepted the friend request of " + receiver.username);
       this.server.to(receiverSocketId).emit("acceptFriendRequest", "Your friend request has been accepted by " + sender.username);
-      // On récupère la socket entière pour pouvoir join la conversation
-      const senderSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === senderSocketId);
-      const receiverSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === receiverSocketId);
+      // On récupère la Socket entière pour pouvoir join la conversation
+      const senderSocket = [...this.ref_Socket.keys()].find(Socket => this.ref_Socket.get(Socket) === senderSocketId);
+      const receiverSocket = [...this.ref_Socket.keys()].find(Socket => this.ref_Socket.get(Socket) === receiverSocketId);
       console.log("senderSocket == ", senderSocket.id);
       console.log("receiverSocket == ", receiverSocket.id);
       console.log("receiverSocketId == ", receiverSocketId);
@@ -418,7 +418,7 @@ export class DMGateway
   // Dans cette fonction, on retire le rang d'ami à quelqu'un. Il n'apparaît plus dans la liste de nos amis et 
   // la conversation que l'on avait avec lui est supprimée (si je me suis pas gourré).
   // Cette fonction, comme les deux précédantes prend :
-  // - La socket de l'utilisateur
+  // - La Socket de l'utilisateur
   // - le nom de l'ami que l'on veut jarter
   // Renvoie des serveur.emit en fonction de ce qu'il s'est passé
 
@@ -475,7 +475,7 @@ async RemoveFriend(
   // Méthode plus radicale : on unfriend l'ami et on l'empêche de renvoyer une requête ou de demander une partie
   // Même logique que les méthodes précédentes
   // Prend comme arguments :
-  // - La socket de l'utilisateur
+  // - La Socket de l'utilisateur
   // - Le nom de l'user que l'on veut bloquer
   // Renvoie des serveur.emit selon ce qu'il s'est passé.
 

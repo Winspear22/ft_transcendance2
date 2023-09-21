@@ -16,7 +16,7 @@ export default {
         const username = ref('');
         const popupMessage = ref('');
         const store = useStore();
-        const socket = store.getters.socket;
+        const socketDm = store.getters.socketDm;
 
         const handleResponse = (message) => {
             popupMessage.value = message;
@@ -24,18 +24,18 @@ export default {
         };
 
         onMounted(() => {
-            socket.on('sendFriendRequestSuccess', handleResponse);
-            socket.on('sendFriendRequestError', handleResponse);
+            socketDm.on('sendFriendRequestSuccess', handleResponse);
+            socketDm.on('sendFriendRequestError', handleResponse);
         });
 
         onBeforeUnmount(() => {
-            socket.off('sendFriendRequestSuccess', handleResponse);
-            socket.off('sendFriendRequestError', handleResponse);
+            socketDm.off('sendFriendRequestSuccess', handleResponse);
+            socketDm.off('sendFriendRequestError', handleResponse);
         });
         
         const sendFriendRequest = () => {
             if (username.value.trim()) {
-                socket.emit('sendFriendRequest', { receiverUsername: username.value });
+                socketDm.emit('sendFriendRequest', { receiverUsername: username.value });
             } else {
                 popupMessage.value = "Veuillez entrer un nom d'utilisateur valide.";
             }

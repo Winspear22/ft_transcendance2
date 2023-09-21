@@ -38,7 +38,7 @@ export default {
   },
   setup() {
     const store = useStore();
-    const socket = store.getters.socket;
+    const socketDm = store.getters.socketDm;
     const userInfo = ref(null);
     const chats = ref([]);
     const activeTabIndex = ref(0);
@@ -59,7 +59,7 @@ export default {
     const blockDM = (chat) => {
       const usernameToBlock = getChatName(chat);
       if (usernameToBlock !== "Unknown") {
-        socket.emit('blockDM', { receiverUsername: usernameToBlock });
+        socketDm.emit('blockDM', { receiverUsername: usernameToBlock });
         router.push({ name: 'Login' });
       }
     };
@@ -68,27 +68,27 @@ export default {
       chats.value = data;
     }
 
-    const initializeSocketListeners = () => {
-      socket.on('emitDM', (data) => {
+    const initializesocketDmListeners = () => {
+      socketDm.on('emitDM', (data) => {
         updateChats(data);
       });
-      socket.on('sendDM', (message) => {
+      socketDm.on('sendDM', (message) => {
         appendNewMessage(message);
       });
     }
 
-    const cleanupSocketListeners = () => {
-      socket.off('emitDM', updateChats);
-      socket.off('sendDM', appendNewMessage);
+    const cleanupsocketDmListeners = () => {
+      socketDm.off('emitDM', updateChats);
+      socketDm.off('sendDM', appendNewMessage);
     }
 
     onMounted(() => {
-      initializeSocketListeners();
-      socket.emit('emitDM');
+      initializesocketDmListeners();
+      socketDm.emit('emitDM');
     });
 
     onBeforeUnmount(() => {
-      cleanupSocketListeners();
+      cleanupsocketDmListeners();
     });
 
     const handleUserInfo = (user) => {

@@ -16,7 +16,7 @@ export default {
     },
     setup(props) {
         const store = useStore();
-        const socket = store.getters.socket;
+        const socketDm = store.getters.socketDm;
 
         const message = ref("");
 
@@ -34,7 +34,7 @@ export default {
                 receiverUsername: props.chat.users.find(u => u.username !== props.userInfo.username).username
             };
 
-            socket.emit('sendDM', payload);
+            socketDm.emit('sendDM', payload);
             message.value = ""; // Reset the input after sending the message
         }
 

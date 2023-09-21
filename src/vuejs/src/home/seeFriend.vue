@@ -22,22 +22,22 @@ export default {
     setup() {
       const friends = ref([]);
       const store = useStore();
-      const socket = store.getters.socket;
+      const socketDm = store.getters.socketDm;
       const router = useRouter();  // Ajout de cette ligne pour utiliser le router
 
       onMounted(() => {
-        socket.emit('emitFriends');  // Demande de la liste d'amis
+        socketDm.emit('emitFriends');  // Demande de la liste d'amis
 
-        socket.on('emitFriends', (friendDetails) => {
+        socketDm.on('emitFriends', (friendDetails) => {
           friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
         });
       });
 
       const removeFriend = (username) => {
         if (confirm(`Voulez-vous vraiment supprimer ${username} de votre liste d'amis ?`)) {
-          socket.emit('removeFriend', { receiverUsername: username });
+          socketDm.emit('removeFriend', { receiverUsername: username });
 
-          socket.on('removeFriend', (message) => {
+          socketDm.on('removeFriend', (message) => {
             alert(message);
             if (!message.includes('Error')) {
                 router.push('/home');  // Redirection vers la page d'accueil après une suppression réussie

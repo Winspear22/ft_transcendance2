@@ -15,7 +15,7 @@ import { useStore } from 'vuex';
 export default {
   setup() {
     const store = useStore();
-    const socket = store.getters.socket;
+    const socketDm = store.getters.socketDm;
 
     const hasFriendRequest = ref(false);
     const requestMessage = ref('');
@@ -34,20 +34,20 @@ export default {
     };
 
     onMounted(() => {
-      socket.on('sendFriendRequestSuccess', handleRequest);
+      socketDm.on('sendFriendRequestSuccess', handleRequest);
     });
 
     onBeforeUnmount(() => {
-      socket.off('sendFriendRequestSuccess', handleRequest);
+      socketDm.off('sendFriendRequestSuccess', handleRequest);
     });
 
     const acceptRequest = () => {
-      socket.emit('acceptFriendRequest', { receiverUsername: senderUsername.value });
+      socketDm.emit('acceptFriendRequest', { receiverUsername: senderUsername.value });
       hasFriendRequest.value = false;
     };
 
     const declineRequest = () => {
-      socket.emit('refuseFriendRequest', { receiverUsername: senderUsername.value });
+      socketDm.emit('refuseFriendRequest', { receiverUsername: senderUsername.value });
       hasFriendRequest.value = false;
     };
 

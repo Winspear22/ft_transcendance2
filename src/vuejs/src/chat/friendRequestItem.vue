@@ -22,35 +22,33 @@ props: {
 },
 setup(props) {
   const store = useStore();
-  const socket = store.getters.socket;
+  const socketDm = store.getters.socketDm;
   const router = useRouter();
 
-  const handleAcceptFriendRequest = (message) => {
-    console.log(message);
+  const handleAcceptFriendRequest = () => {
     router.push({ name: 'Home' });
   };
 
-  const handleRefuseFriendRequest = (message) => {
-    console.log(message);
+  const handleRefuseFriendRequest = () => {
     router.push({ name: 'Home' });
   };
 
   const acceptRequest = () => {
-    socket.emit('acceptFriendRequest', { receiverUsername: props.request.username });
+    socketDm.emit('acceptFriendRequest', { receiverUsername: props.request.username });
   };
 
   const declineRequest = () => {
-    socket.emit('refuseFriendRequest', { receiverUsername: props.request.username });
+    socketDm.emit('refuseFriendRequest', { receiverUsername: props.request.username });
   };
 
   onMounted(() => {
-    socket.on('acceptFriendRequest', handleAcceptFriendRequest);
-    socket.on('refuseFriendRequest', handleRefuseFriendRequest);
+    socketDm.on('acceptFriendRequest', handleAcceptFriendRequest);
+    socketDm.on('refuseFriendRequest', handleRefuseFriendRequest);
   });
 
   onBeforeUnmount(() => {
-    socket.off('acceptFriendRequest', handleAcceptFriendRequest);
-    socket.off('refuseFriendRequest', handleRefuseFriendRequest);
+    socketDm.off('acceptFriendRequest', handleAcceptFriendRequest);
+    socketDm.off('refuseFriendRequest', handleRefuseFriendRequest);
   });
 
   return {

@@ -19,7 +19,7 @@ export default {
   },
   setup() {
     const store = useStore();
-    const socket = store.getters.socket;
+    const socketDm = store.getters.socketDm;
 
     const pendingFriendRequests = ref([]);
 
@@ -32,16 +32,16 @@ export default {
     };
 
     onMounted(() => {
-      socket.emit('emitFriendRequests');
-      socket.on('emitFriendRequests', updateFriendRequests);
+      socketDm.emit('emitFriendRequests');
+      socketDm.on('emitFriendRequests', updateFriendRequests);
       // IL VA FALLOIR MODIFIER ICI QUAND LE BACK EMETTERA A PARTIR D'EMIT ET NON SEND
-      socket.emit('sendFriendRequest', { receiverUsername: "desiredUsername" });
-      socket.on('newFriendRequest', handleNewFriendRequest); 
+      socketDm.emit('sendFriendRequest', { receiverUsername: "desiredUsername" });
+      socketDm.on('newFriendRequest', handleNewFriendRequest); 
     });
 
     onBeforeUnmount(() => {
-      socket.off('emitFriendRequests', updateFriendRequests);
-      socket.off('newFriendRequest', handleNewFriendRequest);
+      socketDm.off('emitFriendRequests', updateFriendRequests);
+      socketDm.off('newFriendRequest', handleNewFriendRequest);
     });
 
     return {

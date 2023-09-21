@@ -5,7 +5,8 @@ export default createStore({
     isAuthenticated: false,
     isTwoFaActivated: false,
     accessToken: null,
-    socket: null
+    socketDm: null,
+    socketChat: null,
   },
 
   mutations: {
@@ -18,9 +19,12 @@ export default createStore({
     SET_ACCESS_TOKEN(state, token) {
       state.accessToken = token;
     },
-    SET_SOCKET(state, socket) {
-      state.socket = socket;
-    }
+    SET_SOCKET_DM(state, socketDm) {
+      state.socketDm = socketDm;
+    },
+    SET_SOCKET_CHAT(state, socketChat) {
+      state.socketChat = socketChat;
+    },
   },
 
   actions: {
@@ -33,15 +37,19 @@ export default createStore({
     setToken({ commit }, token) {
       commit('SET_ACCESS_TOKEN', token);
     },
-    setSocket({ commit }, socket) {
-      commit('SET_SOCKET', socket);
-    }
+    setsocketDm({ commit }, socketDm) {
+      commit('SET_SOCKET_DM', socketDm);
+    },
+    setsocketChat({ commit }, socketChat) {
+      commit('SET_SOCKET_CHAT', socketChat);
+    },
   },
 
   getters: {
     isAuthenticated: state => state.isAuthenticated,
     isTwoFaActivated: state => state.isTwoFaActivated,
     accessToken: state => state.accessToken,
-    socket: state => state.socket
+    socketDm: state => state.socketDm,
+    socketChat: state => state.socketChat,
   }
 });

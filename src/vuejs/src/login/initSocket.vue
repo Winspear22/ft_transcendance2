@@ -16,7 +16,8 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setSocket'])
+    ...mapActions(['setsocketDm']),
+    ...mapActions(['setsocketChat'])
   },
 
   mounted() {
@@ -27,21 +28,31 @@ export default {
       return;
     }
 
-    const socket = io('http://localhost:3000/dms', {
+    const socketDm = io('http://localhost:3000/dms', {
+      query: {
+        Cookie: cookie
+      }
+    });
+    const socketChat = io('http://localhost:3000/chats', {
       query: {
         Cookie: cookie
       }
     });
 
-    this.setSocket(socket);
+    this.setsocketDm(socketDm);
+    this.setsocketChat(socketChat);
 
-    socket.on('Connection', () => {});
+    socketDm.on('Connection', () => {});
+    socketChat.on('Connection', () => {});
     },
 
-  beforeDestroy() {
-    if (this.$store.state.socket) {
-      this.$store.state.socket.disconnect();
+    beforeDestroy() {
+      if (this.$store.state.socketDm) {
+        this.$store.state.socketDm.disconnect();
+      }
+      if (this.$store.state.socketChat) {
+        this.$store.state.socketChat.disconnect();
+      }
     }
-  }
-};
+  };
 </script>
