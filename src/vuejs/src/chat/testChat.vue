@@ -4,6 +4,7 @@
         
         <RoomsComponent />
         <AvailableRooms />
+        <CreateChatRoom />
     </div>
 </template>
 
@@ -11,13 +12,15 @@
 // Import the child components
 import RoomsComponent from './roomsComponent.vue';
 import AvailableRooms from './availableRooms.vue';
+import CreateChatRoom from './createChatRoom.vue';
 
 export default {
   name: "RoomsContainer",
   
   components: {
     RoomsComponent,
-    AvailableRooms
+    AvailableRooms,
+    CreateChatRoom,
   }
 };
 </script>

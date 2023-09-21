@@ -2,7 +2,7 @@
     <div>
         <h2>Public Rooms</h2>
         <ul>
-            <li v-for="room in rooms" :key="room.id">{{ room.name }}</li>
+            <li v-for="room in rooms" :key="room.id">{{ room.roomName }}</li>
         </ul>
     </div>
 </template>
