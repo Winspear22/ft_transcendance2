@@ -1,15 +1,21 @@
 <template>
-    <div>
-        <h2>Public Rooms</h2>
-        <ul>
-            <li v-for="room in rooms" :key="room.id">{{ room.roomName }}</li>
-        </ul>
-    </div>
+  <div>
+    <h2>Public Rooms</h2>
+    <ul>
+      <li v-for="room in rooms" :key="room.id">
+        <JoinRoom :room="room" />
+      </li>
+    </ul>
+  </div>
 </template>
 
 <script>
+import JoinRoom from "./joinRoom.vue";
+
 export default {
-  name: "RoomsComponent",
+  components: {
+    JoinRoom
+  },
   
   data() {
     return {
