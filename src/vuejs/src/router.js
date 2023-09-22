@@ -6,6 +6,7 @@ import Chat from './chat/chatPage.vue';
 import Login from './login/loginPage.vue';
 import Setting from './setting/settingPage.vue';
 import ProfileModification from './setting/ProfileModification.vue';
+import ProfileFriend from './home/profileFriend.vue'; // Assurez-vous d'ajuster le chemin si nécessaire
 
 const routes = [
   {
@@ -60,6 +61,16 @@ const routes = [
       title: 'Modify Profile',
       requiresAuth: true
     }
+  },
+  {
+    path: '/profile/:username',
+    name: 'Profile',
+    component: ProfileFriend,
+    meta: {
+        title: 'Profile',
+        requiresAuth: true
+    },
+    props: route => ({ username: route.params.username })
   },
 ]
 

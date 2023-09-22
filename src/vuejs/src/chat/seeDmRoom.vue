@@ -100,7 +100,7 @@ export default {
     }
 
     const getChatName = (chat) => {
-      if (!chat.users.length) return "Unknown";
+      if (chat && chat.users && !chat.users.length) return "Unknown";
       const otherUser = chat.users.find(u => !userInfo.value || u.username !== userInfo.value.username);
       return otherUser ? otherUser.username : "Unknown";
     }

@@ -1,17 +1,26 @@
 <template>
     <div class= "home-container">
-      <h1>H O M E</h1>
-      <see-friend></see-friend>
+      <ListFriend></ListFriend>
+      <ListOnline></ListOnline>
     </div>
 </template>
 
 <script>
-import seeFriend from './seeFriend';
+import ListFriend from './listFriend';
+import ListOnline from './listOnline';
 
 export default {
   name: 'home-container',
   components: {
-    seeFriend,
+    ListFriend,
+    ListOnline,
   },
 };
 </script>
+
+<style>
+.home-container {
+    display: flex; 
+    justify-content: space-between; 
+}
+</style>

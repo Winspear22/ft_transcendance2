@@ -27,21 +27,13 @@ export default {
       pendingFriendRequests.value = requests;
     };
 
-    const handleNewFriendRequest = (newRequest) => {
-      pendingFriendRequests.value.push(newRequest);
-    };
-
     onMounted(() => {
       socketDm.emit('emitFriendRequests');
       socketDm.on('emitFriendRequests', updateFriendRequests);
-      // IL VA FALLOIR MODIFIER ICI QUAND LE BACK EMETTERA A PARTIR D'EMIT ET NON SEND
-      socketDm.emit('sendFriendRequest', { receiverUsername: "desiredUsername" });
-      socketDm.on('newFriendRequest', handleNewFriendRequest); 
     });
 
     onBeforeUnmount(() => {
       socketDm.off('emitFriendRequests', updateFriendRequests);
-      socketDm.off('newFriendRequest', handleNewFriendRequest);
     });
 
     return {
