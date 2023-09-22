@@ -24,6 +24,8 @@
 </template>
 
 <script>
+import bcrypt from 'bcryptjs';
+
 export default {
     data() {
         return {
@@ -49,10 +51,18 @@ export default {
                 return;
             }
 
+            // Hashage du mot de passe avec bcrypt
+            let hashedPassword = null;
+            if (this.hasPassword) {
+                const salt = await bcrypt.genSalt(10);
+                hashedPassword = await bcrypt.hash(this.password, salt);
+                console.log("MDP CRYPTE", hashedPassword);
+            }
+
             const data = {
                 channelName: this.channelName,
                 hasPassword: this.hasPassword,
-                password: this.hasPassword ? this.password : undefined,
+                password: this.hasPassword ? hashedPassword : undefined,
                 isPrivate: this.isPrivate
             };
 

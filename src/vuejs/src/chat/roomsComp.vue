@@ -1,25 +1,25 @@
 <template>
   <div>
-    <h2>Public Rooms</h2>
+    <h2>My Rooms</h2>
     <ul>
-      <li v-for="room in rooms" :key="room.id">
-        <JoinRoom :room="room" />
+      <li v-for="(room, index) in rooms" :key="room.id">
+        <QuitRoom :room="room" :index="index" />
       </li>
     </ul>
   </div>
 </template>
 
 <script>
-import JoinRoom from "./joinRoom.vue";
+import QuitRoom from './quitRoom.vue'; 
 
 export default {
   components: {
-    JoinRoom
+    QuitRoom
   },
   
   data() {
     return {
-      rooms: []
+      rooms: [],
     };
   },
 
@@ -34,7 +34,7 @@ export default {
 
     if (this.socketChat) {
       this.socketChat.on('emitRooms', (rooms) => {
-        console.log("Liste des rooms public:", rooms);
+        console.log("Mes rooms dispo:", rooms);
         this.rooms = rooms;
       });
     } else {

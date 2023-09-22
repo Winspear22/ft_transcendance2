@@ -1,6 +1,6 @@
 <template>
     <div @click.stop="selectRoom" :class="{ active: isActive }">
-      {{ room.channelName }}
+      {{ room.roomName }}
       <button @click.stop="quitCurrentRoom" class="quit-button">✖</button>
       <NotificationPopup v-if="notification" :message="notification" />
     </div>
@@ -42,7 +42,7 @@ export default {
       this.$emit('select', this.index);
     },
     quitCurrentRoom() {
-      this.socketChat.emit('quitRoom', { channelName: this.room.channelName });
+      this.socketChat.emit('quitRoom', { channelName: this.room.roomName });
     }
   },
   created() {

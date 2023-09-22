@@ -1,10 +1,10 @@
 <template>
-    <div>
-      {{ room.roomName }}
-      <input v-model="password" placeholder="Password (if any)" />
-      <button @click="attemptJoin">✔</button>
-    </div>
-  </template>
+  <div>
+    {{ room.channelName }}
+    <input v-if="room.hasPassword" v-model="password" placeholder="Password (if any)" />
+    <button @click="attemptJoin">✔</button>
+  </div>
+</template>
   
   <script>
   export default {
@@ -26,11 +26,14 @@
         return this.$store.getters.socketChat;
       }
     },
+    created() {
+  console.log("Room received:", this.room);
+},
   
     methods: {
       attemptJoin() {
         this.socketChat.emit('joinRoom', {
-          channelName: this.room.roomName,
+          channelName: this.room.channelName,
           password: this.password
         });
       }

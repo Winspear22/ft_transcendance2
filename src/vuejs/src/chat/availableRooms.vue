@@ -1,8 +1,8 @@
 <template>
   <div>
-    <h2>My Rooms</h2>
+    <h2>Public Rooms</h2>
     <div class="tabs">
-      <QuitRoom 
+      <JoinRoom 
         v-for="(room, index) in availableRooms" 
         :key="index" 
         :room="room" 
@@ -14,11 +14,11 @@
 </template>
 
 <script>
-import QuitRoom from './quitRoom.vue'; 
+import JoinRoom from "./joinRoom.vue";
 
 export default {
   components: {
-    QuitRoom
+    JoinRoom
   },
   
   data() {
@@ -51,7 +51,6 @@ export default {
     if (this.socketChat) {
       this.socketChat.on('emitAvailableRooms', (rooms) => {
         this.availableRooms = rooms.channels;  
-        console.log("Liste des rooms auxquelles j'ai accès:", rooms.channels);
       });
     } else {
       console.error("Socket Chat non initialisé!");
