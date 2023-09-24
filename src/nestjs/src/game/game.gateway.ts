@@ -279,7 +279,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('onlineUsers')
   async sendOnlineUsers(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
-    const onlineUsers = await this.usersRepository.find({
+    let onlineUsers = await this.usersRepository.find({
+      relations: {
+        friends: true,
+      },
       where: {
         user_status: "Online",
       }

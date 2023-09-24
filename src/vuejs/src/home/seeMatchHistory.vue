@@ -34,11 +34,16 @@ export default {
       // const router = useRouter();  // Ajout de cette ligne pour utiliser le router
       const gameSocket = store.getters.gameSocket;
       const userMatchHistory = ref();
+      // const online_users = ref([]);
 
       onMounted(() => {
+        gameSocket.emit('onlineUsers');
         gameSocket.emit('matchHistory');
         gameSocket.on('matchHistory', (matchHistory) => {
           userMatchHistory.value = matchHistory;
+        });
+        gameSocket.on('onlineUsers', (onlineUsers) => {
+          console.log(onlineUsers)
         });
       });
 
