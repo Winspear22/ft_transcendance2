@@ -36,3 +36,21 @@ export default {
     }
 }
 </script>
+
+<style scooped>
+.logout-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent; /* Aucune couleur de fond */
+    color: #2fe8ee; /* Couleur de texte bleue */
+    cursor: pointer; /* Changement du curseur au survol */
+    font-size: 16px;
+    transition: color 0.3s; /* Transition douce pour le changement de couleur */
+}
+
+.logout-btn:hover {
+    color: #000000; /* Changement de la couleur à noir lorsque la souris passe dessus */
+}
+
+</style>
