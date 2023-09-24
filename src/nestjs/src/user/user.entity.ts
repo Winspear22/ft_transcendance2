@@ -2,9 +2,12 @@ import {
   Entity,
   Column,
   PrimaryGeneratedColumn,
-  OneToMany
+  OneToMany,
+  OneToOne,
+  JoinColumn
   } from 'typeorm';
 import { Friend } from './entities/friend.entity';
+import { MatchHistoryEntity } from 'src/game/match-history.entity';
 
 @Entity()
 export class UserEntity 
@@ -77,4 +80,10 @@ export class UserEntity
 
   /*@Column('int', { array: true, default: '{}' })
   friendRequests: number[];*/
+
+  @OneToOne(() => MatchHistoryEntity, (matchHistory) => matchHistory.user, {
+    eager: true,
+  })
+  @JoinColumn()
+  matchHistory: MatchHistoryEntity;
 }

@@ -1,24 +1,24 @@
 all: up
 
 up: sync
-	sudo docker-compose up --build
+	sudo docker compose up --build
 
 sync:
 	./syncFolder.sh &
 
 down:
-	sudo docker-compose down
+	sudo docker compose down
 
 rm:
-	sudo docker-compose rm
+	sudo docker compose rm
 
 rmi:
-	sudo docker-compose down --rmi all
+	sudo docker compose down --rmi all
 
 fclean:
-	sudo docker-compose -f docker-compose.yml down \
+	sudo docker compose -f docker-compose.yml down \
 	&& sudo docker system prune -a --force \
-	&& sudo rm -Rf /Users/administrateur/42/data/*
+	&& sudo rm -Rf /home/naben-za/volume_naben-za/*
 
 show:
 	sudo docker container ps -a
@@ -46,7 +46,7 @@ vuejs:
 retry:
 	make down
 	make volume_delete
-	sudo find /Users/administrateur/42/data -mindepth 1 -delete
+	sudo find /home/naben-za/volume_naben-za -mindepth 1 -delete
 	make fclean
 	make up
 inspect:

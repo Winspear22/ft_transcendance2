@@ -6,8 +6,8 @@ import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from 'src/user/user.service';
-import { ConnectedSocket, WebSocketServer } from '@nestjs/webSockets';
-import { Socket, Server } from 'Socket.io';
+import { ConnectedSocket, WebSocketServer } from '@nestjs/websockets';
+import { Socket, Server } from 'socket.io';
 import { MessageEntity } from './entities/message.entity';
 
 

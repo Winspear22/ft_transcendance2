@@ -3,8 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MessageEntity } from './entities/message.entity';
 import { CreateMessageDto } from './dto/message.dto';
-import { ConnectedSocket } from '@nestjs/webSockets';
-import { Socket } from 'Socket.io';
+import { ConnectedSocket } from '@nestjs/websockets';
+import { Socket } from 'socket.io';
 import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors'
 import { ChatAuthService } from './chat-auth.service';

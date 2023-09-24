@@ -17,7 +17,8 @@ export default {
 
   methods: {
     ...mapActions(['setsocketDm']),
-    ...mapActions(['setsocketChat'])
+    ...mapActions(['setsocketChat']),
+    ...mapActions(['setGameSocket'])
   },
 
   mounted() {
@@ -38,12 +39,19 @@ export default {
         Cookie: cookie
       }
     });
+    const gameSocket = io('http://localhost:3000/game', {
+      query: {
+        Cookie: cookie
+      }
+    });
 
     this.setsocketDm(socketDm);
     this.setsocketChat(socketChat);
+    this.setGameSocket(gameSocket);
 
     socketDm.on('Connection', () => {});
     socketChat.on('Connection', () => {});
+    gameSocket.on('Connect', () => {});
     },
 
     beforeDestroy() {
@@ -52,6 +60,9 @@ export default {
       }
       if (this.$store.state.socketChat) {
         this.$store.state.socketChat.disconnect();
+      }
+      if (this.$store.state.gameSocket) {
+        this.$store.state.gameSocket.disconnect();
       }
     }
   };

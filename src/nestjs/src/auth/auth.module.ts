@@ -14,6 +14,9 @@ import { join } from 'path';
 import { Friend } from 'src/user/entities/friend.entity';
 import { FriendChat } from 'src/user/entities/friendchat.entity';
 import { FriendMessage } from 'src/user/entities/friendmessage.entity';
+import { MatchHistoryEntity } from 'src/game/match-history.entity';
+import { MatchEntity } from 'src/game/match.entity';
+import { GameModule } from 'src/game/game.module';
 
 @Module({
   imports: [
@@ -25,7 +28,7 @@ import { FriendMessage } from 'src/user/entities/friendmessage.entity';
       password: process.env.POSTGRES_PASSWORD,
       database: process.env.POSTGRES_DB,
       entities: [UserEntity,
-      MessageEntity, RoomEntity, Friend, FriendChat, FriendMessage],  // Ajoutez BlacklistedTokenEntity ici
+      MessageEntity, RoomEntity, Friend, FriendChat, FriendMessage, MatchHistoryEntity, MatchEntity],  // Ajoutez BlacklistedTokenEntity ici
       synchronize: true,
     }), // Verifier à quoi sert ce module.
     ServeStaticModule.forRoot({
@@ -35,6 +38,7 @@ import { FriendMessage } from 'src/user/entities/friendmessage.entity';
     UserModule,
     HttpModule,
     ChatModule,
+    GameModule
   ],
   controllers: [AuthController],
   providers: [AuthService, IntraStrategy],

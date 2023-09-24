@@ -7,6 +7,7 @@ export default createStore({
     accessToken: null,
     socketDm: null,
     socketChat: null,
+    gameSocket: null
   },
 
   mutations: {
@@ -25,6 +26,9 @@ export default createStore({
     SET_SOCKET_CHAT(state, socketChat) {
       state.socketChat = socketChat;
     },
+    SET_GAMESOCKET(state, gameSocket) {
+      state.gameSocket = gameSocket;
+    }
   },
 
   actions: {
@@ -43,6 +47,9 @@ export default createStore({
     setsocketChat({ commit }, socketChat) {
       commit('SET_SOCKET_CHAT', socketChat);
     },
+    setGameSocket({ commit }, gameSocket) {
+      commit('SET_GAMESOCKET', gameSocket);
+    }
   },
 
   getters: {
@@ -51,5 +58,6 @@ export default createStore({
     accessToken: state => state.accessToken,
     socketDm: state => state.socketDm,
     socketChat: state => state.socketChat,
+    gameSocket: state => state.gameSocket
   }
 });

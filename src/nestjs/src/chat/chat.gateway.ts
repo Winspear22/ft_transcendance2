@@ -2,8 +2,8 @@ import {
   MessageBody,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer, ConnectedSocket } from '@nestjs/webSockets';
-import { Socket, Server } from 'Socket.io';
+  WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
+import { Socket, Server } from 'socket.io';
 import * as colors from '../colors';
 import { ChatService } from './chat.service';
 import { CreateMessageDto } from './dto/message.dto';

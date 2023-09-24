@@ -6,7 +6,7 @@
     </div>
 </template>
 
-<script>
+<script> 
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 
