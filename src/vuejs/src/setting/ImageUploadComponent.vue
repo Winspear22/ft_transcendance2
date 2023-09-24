@@ -1,7 +1,8 @@
 <template>
   <div>
-    <input type="file" @change="onFileChange">
-    <button @click="uploadImage" v-if="selectedFile">Envoyer l'image</button>
+    <label class="file-input-label" for="fileInput">Choisir le fichier</label>
+    <input id="fileInput" type="file" @change="onFileChange" style="display: none;">
+    <button class="upload-btn" @click="uploadImage" v-if="selectedFile">Envoyer l'image</button>
     <popupValidate v-if="showValidationPopup" />
   </div>
 </template>
@@ -44,3 +45,36 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.file-input-label {
+    display: inline-block;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent; /* Aucune couleur de fond */
+    color: #2fe8ee; /* Couleur de texte bleue */
+    cursor: pointer; /* Changement du curseur au survol */
+    font-size: 16px;
+    transition: color 0.3s; /* Transition douce pour le changement de couleur */
+}
+
+.file-input-label:hover {
+    color: #000000; /* Changement de la couleur à noir lorsque la souris passe dessus */
+}
+
+.upload-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: transparent;
+    color: #2fe8ee;
+    cursor: pointer;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+.upload-btn:hover {
+    color: #000000;
+}
+</style>

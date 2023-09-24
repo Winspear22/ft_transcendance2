@@ -39,7 +39,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleDisconnect(@ConnectedSocket() socket: Socket) {
     const user = await this.gameService.getUserFromSocket(socket);
     // Gérez la déconnexion d'un joueur
-    console.log('Disconnection detected: ', user.username);
+   // console.log('Disconnection detected: ', user.username);
     // Si déco ig
     if (inGame.get(socket.id) != undefined)
     {

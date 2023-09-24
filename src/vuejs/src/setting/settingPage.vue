@@ -7,8 +7,8 @@
       <p>{{ userInformation.email }}</p> 
     </div>
     <buttonQrcode :userInfo="userInformation"></buttonQrcode>
-    <buttonLogout></buttonLogout>
     <router-link :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
+    <buttonLogout></buttonLogout>
   </div>
 </template>
 

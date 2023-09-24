@@ -1,8 +1,8 @@
 <template>
     <div class= "modification-container">
-      <changeEmail></changeEmail>
-      <changeUsername></changeUsername>
       <ImageUploadComponent></ImageUploadComponent>
+      <changeUsername></changeUsername>
+      <changeEmail></changeEmail>
     </div>
 </template>
 
