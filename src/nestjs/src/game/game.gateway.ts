@@ -270,7 +270,20 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('matchHistory')
   async sendMatchHistory(@ConnectedSocket() socket: Socket) {
     const user = await this.gameService.getUserFromSocket(socket);
-    const matchHistory = user.matchHistory;
-    this.server.to(socket.id).emit('matchHistory', matchHistory);
+    if (user != undefined)
+    {
+      const matchHistory = user.matchHistory;
+      this.server.to(socket.id).emit('matchHistory', matchHistory);
+    }
+  }
+
+  @SubscribeMessage('onlineUsers')
+  async sendOnlineUsers(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
+    const onlineUsers = await this.usersRepository.find({
+      where: {
+        user_status: "Online",
+      }
+    });
+    this.server.to(socket.id).emit('onlineUsers', onlineUsers);
   }
 }
