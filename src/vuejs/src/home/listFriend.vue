@@ -1,5 +1,5 @@
 <template>
-    <div class="list-container">
+    <div class="list-container-friend">
 
         <h2 v-if="friends && friends.length">Liste d'amis</h2>
         <ul v-if="friends && friends.length">
@@ -39,7 +39,7 @@ export default {
 </script>
 
 <style>
-.list-container {
+.list-container-friend {
     width: 50%; 
     border: 1px solid #2fe8ee;
     overflow: auto;
@@ -54,7 +54,7 @@ export default {
     color: #2fe8ee;
 }
 
-.list-container img {
+.list-container-friend img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -64,7 +64,7 @@ export default {
     color: #2fe8ee;
 }
 
-.list-container li {
+.list-container-friend li {
     display: flex;
     align-items: center;
     margin-bottom: 10px;
@@ -72,12 +72,12 @@ export default {
     color: #2fe8ee;
 }
 
-.list-container h2 {
+.list-container-friend h2 {
     text-align: center; 
     color: #2fe8ee;
 }
 
-.home-container {
+.home-container-friend {
     display: flex; 
     justify-content: space-between; 
 }
