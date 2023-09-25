@@ -13,6 +13,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { MatchHistoryEntity } from './match-history.entity';
 import { Repository } from 'typeorm';
 import { SocketConnectOpts } from 'net';
+import { subscribe } from 'diagnostics_channel';
+import { refCount } from 'rxjs';
+import { match } from 'assert';
 
 let ref_user: Map<number, UserEntity> = new Map(); // A retirer
 let ref_client : Map<string, Socket> = new Map();
@@ -21,7 +24,7 @@ let gameMap: Map<number, game> = new Map();
 let inGame: Map<string, number> = new Map();
 
 let idx_games = 0;
-
+ 
 @WebSocketGateway({cors: true, namespace: 'game'})
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
@@ -35,40 +38,41 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server: Server;
  
-  @SubscribeMessage('disconnect') 
+  @SubscribeMessage('disconnect')
   async handleDisconnect(@ConnectedSocket() socket: Socket) {
-    const user = await this.gameService.getUserFromSocket(socket);
-    // Gérez la déconnexion d'un joueur
-   // console.log('Disconnection detected: ', user.username);
+    // console.log("Disconnection detected: ", socket.data);
     // Si déco ig
     if (inGame.get(socket.id) != undefined)
     {
       let gameI = gameMap.get(inGame.get(socket.id));
       inGame.delete(socket.id);
       gameI.status = "deco";
-      if (user.username == gameI.player1.username)
+      if (socket.data.user.username == gameI.player1.username)
         gameI.player1.deco = 1;
-      if (user.username == gameI.player2.username)
+      if (socket.data.user.username == gameI.player2.username)
         gameI.player2.deco = 1;
     }
   }
 
-  @SubscribeMessage('connection')
+  @SubscribeMessage('connection')   
   async handleConnection(@ConnectedSocket() socket: Socket) {
     // Gérez la connexion d'un joueur
+    // console.log("CONNECTION ", socket.handshake.query.Cookie);
+    // console.log("REF_USER", ref_user);
     const user = await this.gameService.getUserFromSocket(socket);
     if (user != undefined)
-    {
+    { 
       ref_user.set(user.id, user);
       ref_client.set(user.username, socket);
+      // console.log("REF_CLIENT", ref_client);
       console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
       console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + socket.id + colors.RESET);
       console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + socket.id + colors.RESET);
       const gameHistory = await this.matchHistoryRepository.find({
         relations: {
           user: true,
-        }
-        }); 
+        } 
+        });
         for (let value of gameHistory.values()){
           if (user.username == value.user.username)
           {
@@ -76,12 +80,30 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           }
         }
         this.gameService.createMatchHistory(user);
-      }
-      else
+      } 
+      else 
       {
         console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + socket.id + colors.RED + " could not connect." + colors.RESET);
         return this.handleDisconnect(socket);
       }
+  } 
+
+  @SubscribeMessage('updateUser') 
+  async updateUserInSocket(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
+    const user = await this.usersRepository.find({
+      where: {
+        username: name,
+      }
+    });
+    if (user != undefined)
+    {
+      ref_user.delete(socket.data.user.id);
+      ref_client.delete(socket.data.user.username);
+      ref_user.set(user[0].id, user[0]);
+      ref_client.set(user[0].username, socket);
+      socket.data.user = user[0];
+      // console.log("UPDATE USER", ref_user);
+    }
   }
 
   startGame(game: game, server: Server): void {
@@ -90,18 +112,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('searchGame')
   async search(@ConnectedSocket() socket: Socket) {
-    const user = await this.gameService.getUserFromSocket(socket);
     for (let value of gameMap.values()) {
-      if ((value.player1.username == user.username || value.player2.username == user.username) && value.status == "playing")
+      if ((value.player1.username == socket.data.user.username || value.player2.username == socket.data.user.username) && value.status == "playing")
         return;
     }
     if (waitingGames.length >= 1)
     { 
-      if (user.username == gameMap.get(waitingGames[0]).player1.username)
+      if (socket.data.user.username == gameMap.get(waitingGames[0]).player1.username)
         return;
       let idx = waitingGames.shift();
       let gameI = gameMap.get(idx);
-      gameI.player2.username = user.username;
+      gameI.player2.username = socket.data.user.username;
       gameI.player2.idClient = socket.id;
       gameI.status = "playing";
       this.server.to(gameI.player1.idClient).emit('theGame', {idx, gameI}); //Envoyer la game aux 2 clients
@@ -114,7 +135,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     {
       let idx = idx_games += 1;
       let gameI = new game();
-      gameI.player1.username = user.username;
+      gameI.player1.username = socket.data.user.username;
       gameI.player1.idClient = socket.id;
       gameI.status = "waiting";
       gameMap.set(idx, gameI);
@@ -141,14 +162,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket, 
     @MessageBody() name: string
     ){
-      const user = await this.gameService.getUserFromSocket(socket);
-      if (name == user.username)
+      if (name == socket.data.user.username)
         return;
       for (let value of gameMap.values()) {
-        if (value.player1.username == user.username && value.player2.username == name && value.status == "waiting")
+        if (value.player1.username == socket.data.user.username && value.player2.username == name && value.status == "waiting")
         {
           //Deja invité
-          this.server.to(ref_client.get(name).id).emit("invitPlayRequestSuccess", "Invitation to play from " + user.username);
+          this.server.to(ref_client.get(name).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
           this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
           return;
         }
@@ -158,12 +178,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           let idx = idx_games += 1;
           let gameI = new game();
           gameI.id = idx;
-          gameI.player1.username = user.username;
+          gameI.player1.username = socket.data.user.username;
           gameI.player2.username = name;
           gameI.player1.idClient = socket.id;
           gameI.status = "waiting";
           gameMap.set(idx, gameI);
-          this.server.to(ref_client.get(name).id).emit("invitPlayRequestSuccess", "Invitation to play from " + user.username);
+          this.server.to(ref_client.get(name).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
           this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
           return;
           }
@@ -173,9 +193,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   
   @SubscribeMessage('acceptInvitToPlayRequest')
   async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
-    const user = await this.gameService.getUserFromSocket(socket);
+   
     for (let value of gameMap.values()) {
-      if (value.player2.username == user.username && value.status == "waiting"){
+      if (value.player2.username == socket.data.user.username && value.status == "waiting"){
         if (inGame.get(value.player1.idClient) != undefined)
           return;
         let idx = value.id;
@@ -194,9 +214,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('declineInvitToPlayRequest')
   async declineGameInvitation(@ConnectedSocket() socket: Socket) {
-    const user = await this.gameService.getUserFromSocket(socket);
+   
     for (let value of gameMap.values()) {
-      if (value.player2.username == user.username && value.status == "waiting"){
+      if (value.player2.username == socket.data.user.username && value.status == "waiting"){
         let idx = value.id;
         gameMap.delete(idx);
       }
@@ -206,44 +226,45 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('gameEnd')
   async endMatch(@ConnectedSocket() socket: Socket, @MessageBody() idx: number) {
     // A tester et ajouter les Many One To One Many Many One
-    const user = await this.gameService.getUserFromSocket(socket);
+   
     const gameI = gameMap.get(inGame.get(socket.id));
     if (gameI && gameI.player1.idClient == socket.id)
     {
-      this.gameService.createMatch(gameI);
+      this.gameService.createMatch(gameI, ref_client);
       let idP2 = gameI.player2.idClient;
       gameMap.delete(inGame.get(socket.id));
       inGame.delete(socket.id);
       inGame.delete(idP2);
     }
-    const matchHistory = user.matchHistory;
+    const matchHistory = socket.data.user.matchHistory;
     this.server.to(socket.id).emit('matchHistory', matchHistory);
+    // this.sendMatchHistory(socket);
+    // console.log(socket.id, " send ", matchHistory);
   }
 
-  @SubscribeMessage('press')
+  @SubscribeMessage('press') 
   async handlePress(@ConnectedSocket() socket: Socket, @MessageBody() data: any) {
 
-
     const gameI = gameMap.get(data.idx); 
-      if ( socket.id == gameI.player1.idClient)
+      if (gameI && socket.id == gameI.player1.idClient)
       {
         // w key
-        if (data.key == 90) {
+        if (data.key == 90 || data.key == 87 || data.key == 38) {
           gameI.player1.move = 1;
         }
         // a key
-        else if (data.key == 83) {
+        else if (data.key == 83 || data.key == 40) {
           gameI.player1.move = -1;
         }
       }
-      else if (socket.id == gameMap.get(data.idx).player2.idClient)
+      else if (gameI && socket.id == gameI.player2.idClient)
       {
         // w key
-        if (data.key == 90) {
+        if (data.key == 90 || data.key == 87 || data.key == 38) {
           gameI.player2.move = 1;
         }
         // a key
-        else if (data.key == 83) {
+        else if (data.key == 83 || data.key == 40) {
           gameI.player2.move = -1;
         }
     }
@@ -253,15 +274,15 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async handleRelease(@ConnectedSocket() socket: Socket, @MessageBody() data: any) {
     
     const gameI = gameMap.get(data.idx);
-      if ( socket.id == gameMap.get(data.idx).player1.idClient)
+      if (gameI && socket.id == gameI.player1.idClient)
       {
-        if (data.key == 90 || data.key == 83) {
+        if (data.key == 90 || data.key == 83 || data.key == 87 || data.key == 38 || data.key == 40) {
             gameI.player1.move = 0;
         }
       }
-      else if (socket.id == gameMap.get(data.idx).player2.idClient)
+      else if (gameI && socket.id == gameI.player2.idClient)
       {
-        if (data.key == 90 || data.key == 83) {
+        if (data.key == 90 || data.key == 83 || data.key == 87 || data.key == 38 || data.key == 40) {
           gameI.player2.move = 0;
         }
       }
@@ -269,16 +290,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('matchHistory')
   async sendMatchHistory(@ConnectedSocket() socket: Socket) {
-    const user = await this.gameService.getUserFromSocket(socket);
-    if (user != undefined)
-    {
-      const matchHistory = user.matchHistory;
+    
+    // if (user != undefined)
+    // {
+      const matchHistory = socket.data.user.matchHistory;
       this.server.to(socket.id).emit('matchHistory', matchHistory);
-    }
+    // }
   }
 
+  // Ne pas renvoyer celui qui fait la demande ni ses amis
   @SubscribeMessage('onlineUsers')
-  async sendOnlineUsers(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
+  async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
     let onlineUsers = await this.usersRepository.find({
       relations: {
         friends: true,
@@ -287,6 +309,23 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         user_status: "Online",
       }
     });
-    this.server.to(socket.id).emit('onlineUsers', onlineUsers);
+    if (onlineUsers != undefined)
+      this.server.to(socket.id).emit('onlineUsers', onlineUsers);
   }
+
+  @SubscribeMessage('friendProfile')
+  async sendFriendProfile(@ConnectedSocket() socket: Socket, @MessageBody() name: string)
+  {
+    const friend = await this.usersRepository.find({
+      relations: {
+        friends: true,
+      },
+      where: {
+        username: name,
+      }
+    });
+    if (friend != undefined)
+      this.server.to(socket.id).emit('friendProfile', friend);
+  }
+
 }

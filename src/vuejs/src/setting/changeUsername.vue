@@ -8,7 +8,8 @@
 
   <script>
   import axios from 'axios';
-  import popupValidate from './popupValidate.vue'; 
+  import popupValidate from './popupValidate.vue';
+  import store from '@/store';
 
   export default {
     name: 'ChangeUsername',
@@ -27,6 +28,7 @@
           const response = await axios.post('http://localhost:3000/user/change/username', { username: this.newUsername }, { withCredentials: true });
           if (response.status === 201) {
             this.showValidationPopup = true;
+            store.getters.gameSocket.emit('updateUser', this.newUsername);
           }
         } catch (error) {
           console.error("Erreur lors du changement de nom d'utilisateur:", error);

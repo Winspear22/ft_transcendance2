@@ -40,8 +40,8 @@ export default {
     canvas.width = 850;
     canvas.height = 585;
 
-    this.canvasWidth = canvas.width;
-    this.canvasHeight = canvas.height;
+    // this.canvasWidth = canvas.width;
+    // this.canvasHeight = canvas.height;
 
     const self = this;
     await store.getters.gameSocket.on('countdown', data => {
@@ -68,31 +68,34 @@ export default {
         ctx.fillRect(0, 0, canvas.width, this.grid);
         ctx.fillRect(0, canvas.height - this.grid, canvas.width, canvas.height);
     });
-    
     document.addEventListener('keydown', function(e) {
       // e;
       let key = e.which;
       let idx = self.maGame.idx;
       
-      console.log("idx ", key, idx);
+      // console.log("idx ", key, idx);
       if (key !== undefined && idx !== undefined)
       {
         store.getters.gameSocket.emit('press', { key, idx} );
       }
     });
-
+    
     // listen to keyboard events to stop the paddle if key is released
     document.addEventListener('keyup', function(e) {
       // e;
       let key = e.which;
       let idx = self.maGame.idx;
       
-      console.log("idx ", key, idx);
+      // console.log("idx ", key, idx);
       if (key !== undefined && idx !== undefined)
       {
         store.getters.gameSocket.emit('release', { key, idx } );
       }
     });
+    // await store.getters.gameSocket.on('finish', () => {
+    //   window.removeEventListener('keydown', function(e){e;});
+    //   window.removeEventListener('keyup', function(e){e;});
+    // });
   },
   methods: {
 

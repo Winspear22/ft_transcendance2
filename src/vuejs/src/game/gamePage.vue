@@ -16,13 +16,15 @@
       <img src="@/assets/maps/tennis.png" @click="mapTennis" alt="une map" class="maps"/>
       <button @click="hideMaps">fermer</button>
     </div>
-    <span>Touche z pour monter, s pour descendre.</span>
+    <span>Touche z, w ou fléche haut pour monter, s ou fléche bas pour descendre.</span>
   </div>
 </template>
 
 <script>
 import CanvasComponent from "./gameComponent/canvasComponent.vue";
 import store from "@/store";
+
+//Empeche le user de leave la page en recherche d'adversaire !
 
 export default {
 components: {

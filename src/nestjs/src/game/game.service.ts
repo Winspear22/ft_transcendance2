@@ -26,6 +26,7 @@ export class GameService {
     ) {}
 
     async createMatchHistory(user: UserEntity) {
+        console.log("PAS BON");
         const matchHistory = this.matchHistoryRepository.create({
             total_parties: 0,
             total_victoire: 0,
@@ -38,7 +39,7 @@ export class GameService {
         await this.usersRepository.save(user);
     }
 
-    async createMatch(game: game) {
+    async createMatch(game: game, refs_client: Map<string, Socket>) {
         const match = this.matchRepository.create({
             player1: game.player1.username,
             player2: game.player2.username,
@@ -50,8 +51,10 @@ export class GameService {
         let matchHistoryArray = await this.matchHistoryRepository.find({
             relations: { 
               user: true,
+            //   matches: true,
             }
           });
+          console.log("MATCH HISTORY ARRAY LOAD DANS CREATE MATCH avant save", matchHistoryArray);
           for (let matchHistory of matchHistoryArray.values()){
                 if (game.player1.username == matchHistory.user.username || game.player2.username == matchHistory.user.username)
                 {
@@ -64,7 +67,17 @@ export class GameService {
                     matchHistory.winrate = Math.round(matchHistory.winrate);
                     matchHistory.matches.push(match);
                     await this.matchHistoryRepository.save(matchHistory);
-
+                    console.log("MATCH HISTORY LOAD DANS CREATE MATCH aprés save", matchHistory);
+                    if (game.player1.username == matchHistory.user.username)
+                    {
+                        refs_client.get(game.player1.username).data.user.matchHistory = matchHistory;
+                        console.log("DATA.USER SOCKETP1 ", refs_client.get(game.player1.username).data.user);
+                    }
+                    if (game.player2.username == matchHistory.user.username)
+                    {
+                        refs_client.get(game.player2.username).data.user.matchHistory = matchHistory;
+                        console.log("DATA.USER SOCKETP2 ", refs_client.get(game.player2.username).data.user);
+                    }
                 }
             } 
             // console.log("matchHistoryArray ",matchHistoryArray);
@@ -86,8 +99,10 @@ export class GameService {
         }
    
         const userData = this.gameAuthService.extractAccessTokenFromCookie(accessTokenCookie);
-        if (!userData)
+        if (!userData){
+            console.log("extractAccessTokenFromCookie");
             return undefined;
+        }
         const { username, refreshToken, accessToken } = userData;
     
         /*if (await this.gameAuthService.isTokenBlacklisted(accessToken)) {
@@ -108,6 +123,7 @@ export class GameService {
     
         const payload = await this.gameAuthService.verifyToken(accessToken, process.env.ACCESS_TOKEN);
         if (!payload) {
+            console.log("verifyToken");
             return undefined;
         }
 
