@@ -35,11 +35,11 @@ export default {
     };
   },
   setup() {
-    onMounted(() => {
+    // onMounted(() => {
       // store.getters.gameSocket.on('goToGame', () => {
                 // router.push('/game');
             // })
-    }) 
+    // }) 
   },
   methods: {
     handleUserInfo(userInfo) {
