@@ -37,13 +37,9 @@ export default {
       // const online_users = ref([]);
 
       onMounted(() => {
-        gameSocket.emit('onlineUsers');
         gameSocket.emit('matchHistory');
         gameSocket.on('matchHistory', (matchHistory) => {
           userMatchHistory.value = matchHistory;
-        });
-        gameSocket.on('onlineUsers', (onlineUsers) => {
-          console.log(onlineUsers)
         });
         gameSocket.on('goToGame', () => {
                 router.push('/game');

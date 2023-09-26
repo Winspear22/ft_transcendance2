@@ -6,8 +6,8 @@
     <ReceivingFriend />
     <SeeDmRoom />
     <testChat/>
-    <invitToPlay />
-    <receivingInvitToPlay />
+    <!-- <invitToPlay /> -->
+    <!-- <receivingInvitToPlay /> -->
   </div>
 </template>
 
@@ -17,8 +17,8 @@ import FriendRequests from './friendRequests';
 import ReceivingFriend from './receivingFriend';
 import SeeDmRoom from './seeDmRoom';
 import testChat from './testChat';
-import invitToPlay from './invitToPlay.vue';
-import receivingInvitToPlay from './receivingInvitToPlay.vue';
+// import invitToPlay from './invitToPlay.vue';
+// import receivingInvitToPlay from './receivingInvitToPlay.vue';
 
 export default {
   name: 'ChatContainer',
@@ -28,8 +28,8 @@ export default {
     ReceivingFriend,
     SeeDmRoom,
     testChat,
-    invitToPlay,
-    receivingInvitToPlay
+    // invitToPlay,
+    // receivingInvitToPlay
   }
 };
 </script>

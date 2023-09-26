@@ -23,7 +23,7 @@ export default {
 
         function requestOnlineUsers() {
             if(store.state.gameSocket) {
-                store.state.gameSocket.emit('onlineUsers', 'VotreNomSiRequis'); 
+                store.state.gameSocket.emit('onlineUsers', 'VotreNomSiRequis');
             }
         }
 
@@ -33,7 +33,6 @@ export default {
             if(store.state.gameSocket) {
                 store.state.gameSocket.on('onlineUsers', (users) => {
                     onlineUsers.value = users;
-                    console.log(onlineUsers.value);
                 });
             }
         });

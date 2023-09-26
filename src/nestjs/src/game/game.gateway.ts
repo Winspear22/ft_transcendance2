@@ -11,7 +11,7 @@ import { gameI } from './game';
 import { machine } from 'os';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MatchHistoryEntity } from './match-history.entity';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { SocketConnectOpts } from 'net';
 import { subscribe } from 'diagnostics_channel';
 import { refCount } from 'rxjs';
@@ -318,14 +318,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // }
   }
 
-  // Ne pas renvoyer celui qui fait la demande ni ses amis
   @SubscribeMessage('onlineUsers')
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
     let onlineUsers = await this.usersRepository.find({
       relations: {
-        friends: true,
+        friends: false,
       },
       where: {
+        username: Not(socket.data.user.username),
         user_status: "Online",
       }
     });

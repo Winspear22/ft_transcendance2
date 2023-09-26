@@ -18,9 +18,9 @@ import infoUser from './infoUser.vue';
 import displayPP from './DisplayPP.vue'; 
 import buttonLogout from './buttonLogout';
 import buttonQrcode from './buttonQrcode.vue';
-import router from '@/router';
-import store from '@/store';
-import { onMounted } from 'vue';
+// import router from '@/router';
+// import store from '@/store';
+// import { onMounted } from 'vue';
 
 export default {
   components: {
@@ -36,9 +36,9 @@ export default {
   },
   setup() {
     onMounted(() => {
-      store.getters.gameSocket.on('goToGame', () => {
-                router.push('/game');
-            })
+      // store.getters.gameSocket.on('goToGame', () => {
+                // router.push('/game');
+            // })
     }) 
   },
   methods: {
