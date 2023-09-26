@@ -39,7 +39,7 @@ export class GameService {
         await this.usersRepository.save(user);
     }
 
-    async createMatch(game: game, refs_client: Map<string, Socket>) {
+    async createMatch(game: game, refs_client: Map<number, Socket>) {
         const match = this.matchRepository.create({
             player1: game.player1.username,
             player2: game.player2.username,
@@ -56,27 +56,37 @@ export class GameService {
           });
           console.log("MATCH HISTORY ARRAY LOAD DANS CREATE MATCH avant save", matchHistoryArray);
           for (let matchHistory of matchHistoryArray.values()){
-                if (game.player1.username == matchHistory.user.username || game.player2.username == matchHistory.user.username)
+                if (game.player1.idUser == matchHistory.user.id || game.player2.idUser == matchHistory.user.id)
                 {
                     matchHistory.total_parties += 1;
-                    if (game.winner == matchHistory.user.username)
-                        matchHistory.total_victoire += 1;
-                    else
-                        matchHistory.total_défaite += 1;
+                    if (game.player1.idUser == matchHistory.user.id)
+                    {
+                        if (game.player1.winner == true)
+                            matchHistory.total_victoire += 1;
+                        else
+                            matchHistory.total_défaite += 1;
+                    }
+                    if (game.player2.idUser == matchHistory.user.id)
+                    {
+                        if (game.player2.winner == true)
+                            matchHistory.total_victoire += 1;
+                        else
+                            matchHistory.total_défaite += 1;
+                    }
                     matchHistory.winrate = (matchHistory.total_victoire / matchHistory.total_parties) * 100;
                     matchHistory.winrate = Math.round(matchHistory.winrate);
                     matchHistory.matches.push(match);
                     await this.matchHistoryRepository.save(matchHistory);
                     console.log("MATCH HISTORY LOAD DANS CREATE MATCH aprés save", matchHistory);
-                    if (game.player1.username == matchHistory.user.username)
+                    if (game.player1.idUser == matchHistory.user.id)
                     {
-                        refs_client.get(game.player1.username).data.user.matchHistory = matchHistory;
-                        console.log("DATA.USER SOCKETP1 ", refs_client.get(game.player1.username).data.user);
+                        refs_client.get(game.player1.idUser).data.user.matchHistory = matchHistory;
+                        console.log("DATA.USER SOCKETP1 ", refs_client.get(game.player1.idUser).data.user);
                     }
-                    if (game.player2.username == matchHistory.user.username)
+                    if (game.player2.idUser == matchHistory.user.id)
                     {
-                        refs_client.get(game.player2.username).data.user.matchHistory = matchHistory;
-                        console.log("DATA.USER SOCKETP2 ", refs_client.get(game.player2.username).data.user);
+                        refs_client.get(game.player2.idUser).data.user.matchHistory = matchHistory;
+                        console.log("DATA.USER SOCKETP2 ", refs_client.get(game.player2.idUser).data.user);
                     }
                 }
             } 

@@ -13,7 +13,7 @@ function collides(obj1, obj2) {
           obj1.y + obj1.height > obj2.y;
   }
 
-async function gameI(game: game, server: Server) {
+async function gameI(game: game, server: Server) { 
     let ball = game.ball;
     let p1 = game.player1;
     let p2 = game.player2;
@@ -23,13 +23,13 @@ async function gameI(game: game, server: Server) {
     const MAXPADDLEY = CANVASHEIGHT - GRID - (GRID * 5);
     const PADDLESPEED = 6;
 
-    for (let i = 5; i >= 0; i--) {
-        await sleep(1000);
-        server.to(p1.idClient).emit('countdown', i);
-        server.to(p2.idClient).emit('countdown', i);
-      }
+    // for (let i = 5; i >= 0; i--) {
+    //     await sleep(1000);
+    //     server.to(p1.idClient).emit('countdown', i);
+    //     server.to(p2.idClient).emit('countdown', i);
+    //   }
 
-    while (p1.points < 5 && p2.points < 5)
+    while (p1.points < 4 && p2.points < 4) 
     {
         await sleep(10);
 
@@ -124,12 +124,14 @@ async function gameI(game: game, server: Server) {
             server.to(game.player2.idClient).emit('finish');
             game.winner = game.player2.username;
             game.loser = game.player1.username;
+            game.player2.winner = true;
         }
         if (game.player2.deco == 1)
         {
             server.to(game.player1.idClient).emit('finish');
             game.winner = game.player1.username
             game.loser = game.player2.username;
+            game.player1.winner = true;
         }
         game.status = "finish";
     }
@@ -142,12 +144,14 @@ async function gameI(game: game, server: Server) {
         if (game.player1.points > game.player2.points)
         {
             game.winner = game.player1.username;
-            game.loser = game.player2.username; 
+            game.loser = game.player2.username;
+            game.player1.winner = true;
         }
         else
         {
             game.winner = game.player2.username;
             game.loser = game.player1.username;
+            game.player2.winner = true;
         }
     }
 }

@@ -10,7 +10,6 @@ export default {
     },
     computed: {
         backgroundGame() {
-            console.log()
             if (this.mapUrl === "retro.png")
                 {console.log(this.mapUrl);return require('@/assets/maps/retro.png');}
             if (this.mapUrl === "beach.png")

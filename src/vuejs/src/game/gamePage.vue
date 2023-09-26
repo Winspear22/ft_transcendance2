@@ -24,8 +24,6 @@
 import CanvasComponent from "./gameComponent/canvasComponent.vue";
 import store from "@/store";
 
-//Empeche le user de leave la page en recherche d'adversaire !
-
 export default {
 components: {
   CanvasComponent,
@@ -40,6 +38,7 @@ data() {
     printMap: false,
     w_idx: null,
     ready: false,
+    isInMatchMaking: false,
     isGameButtonDisabled: false,
     isCancelButtonDisabled: true,
   }
@@ -50,6 +49,7 @@ async mounted() {
   await this.infosGame();
   store.getters.gameSocket.on('finish', () => {
     this.ready = false;
+    this.isInMatchMaking = false;
     this.isGameButtonDisabled = false;
     this.isCancelButtonDisabled = true;
     store.getters.gameSocket.emit('gameEnd', this.laGame.idx);
@@ -87,12 +87,14 @@ methods: {
   startSearch() {
     this.isGameButtonDisabled = true;
     this.isCancelButtonDisabled = false;
-    console.log(this.laGame.url_map);
+    // console.log(this.laGame.url_map);
+    this.isInMatchMaking = true;
     store.getters.gameSocket.emit('searchGame');
   },
   stopSearch() {
     this.isGameButtonDisabled = false;
     this.isCancelButtonDisabled = true;
+    this.isInMatchMaking = false;
     store.getters.gameSocket.emit('stopSearchGame', this.w_idx);
   },
   async infosGame() {
@@ -110,14 +112,14 @@ methods: {
 },
 beforeRouteLeave(to, from, next) {
   // Effectuez votre vérification de condition ici
-  if (!this.ready) {
+  if (!this.ready && !this.isInMatchMaking) {
     // Si la condition est vraie, autorisez la navigation
     next();
   } else {
     // Si la condition est fausse, empêchez la navigation
     setTimeout(() => {
     next(false);
-    alert("Vous ne pouvez pas quitter cette page en pleine partie.");
+    alert("Vous ne pouvez pas quitter cette page maintenant.");
   }, 0); 
   }
 },

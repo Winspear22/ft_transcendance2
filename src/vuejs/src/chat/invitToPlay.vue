@@ -9,6 +9,7 @@
 <script>
 import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
+import router from '@/router';
 
 export default {
     name: 'invitToPlay',
@@ -24,6 +25,9 @@ export default {
                     popupMessage.value = message;
                 }
             });
+            socket.on('goToGame', () => {
+                router.push('/game');
+            })
 
             socket.on('invitPlayRequestError', message => {
                 popupMessage.value = message;

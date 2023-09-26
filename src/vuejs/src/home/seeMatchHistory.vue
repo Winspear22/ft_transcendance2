@@ -25,7 +25,7 @@
 <script>
 import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
-// import { useRouter } from 'vue-router';
+import router from '@/router';
 
 export default {
     name: 'printMatchHistory',
@@ -45,6 +45,9 @@ export default {
         gameSocket.on('onlineUsers', (onlineUsers) => {
           console.log(onlineUsers)
         });
+        gameSocket.on('goToGame', () => {
+                router.push('/game');
+            })
       });
 
       return {

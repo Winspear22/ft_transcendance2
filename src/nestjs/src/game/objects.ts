@@ -11,6 +11,7 @@ class lPaddle {
     username: string;
     idClient: string;
     client: Socket;
+    idUser: number;
     x: number;
     y: number;
     width: number;
@@ -19,11 +20,13 @@ class lPaddle {
     move: number;
     points: number;
     deco: number;
+    winner: boolean;
 
     constructor() {
         this.username = "";
         this.idClient = "";
         this.client = null;
+        this.idUser = -1;
         this.x = GRID * 2;
         this.y = CANVASHEIGHT / 2 - PADDLEHEIGHT / 2;
         this.width = GRID;
@@ -32,6 +35,7 @@ class lPaddle {
         this.move = 0;
         this.points = 0;
         this.deco = 0;
+        this.winner = false;
     }
 }
 
@@ -39,6 +43,7 @@ class rPaddle {
     username: string;
     idClient: string;
     client: Socket;
+    idUser: number;
     x: number;
     y: number;
     width: number;
@@ -47,11 +52,13 @@ class rPaddle {
     move: number;
     points: number;
     deco: number;
+    winner: boolean;
 
     constructor() {
         this.username = "";
         this.idClient = "";
         this.client = null;
+        this.idUser = -1;
         this.x = CANVASWIDTH - GRID * 3;
         this.y = CANVASHEIGHT / 2 - PADDLEHEIGHT / 2;
         this.width = GRID;
@@ -60,6 +67,7 @@ class rPaddle {
         this.move = 0;
         this.points = 0;
         this.deco = 0;
+        this.winner = false;
     }
 }
 
