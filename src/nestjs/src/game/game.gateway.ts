@@ -51,7 +51,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (socket.data.user.id == gameI.player2.idUser)
         gameI.player2.deco = 1;
     }
-    console.log("Disconnection detected: ", socket.data.user.id);
+    console.log("Disconnection detected: ", socket.id);
   }
 
   @SubscribeMessage('connection')   
