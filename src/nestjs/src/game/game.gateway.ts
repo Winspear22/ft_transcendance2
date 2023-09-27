@@ -53,13 +53,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     console.log("Disconnection detected: ", socket.id);
   }
-
+ 
   @SubscribeMessage('connection')   
   async handleConnection(@ConnectedSocket() socket: Socket) {
     // Gérez la connexion d'un joueur
     // console.log("CONNECTION ", socket.handshake.query.Cookie);
     // console.log("REF_USER", ref_user);
-    const user = await this.gameService.getUserFromSocket(socket);
+    const user = await this.gameService.getUserFromSocket(socket); 
     if (user != undefined)
     { 
       ref_user.set(user.id, user);
@@ -220,7 +220,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       else
         this.server.to(socket.id).emit('invitPlayRequestError', "Error. Could not invit " + name);
     }
-  
+
   @SubscribeMessage('acceptInvitToPlayRequest')
   async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
    
@@ -328,17 +328,19 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('onlineUsers')
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
-    let onlineUsers = await this.usersRepository.find({
-      relations: {
-        friends: false,
-      },
-      where: {
-        username: Not(socket.data.user.username),
-        user_status: "Online",
-      }
-    });
-    if (onlineUsers != undefined)
-      this.server.to(socket.id).emit('onlineUsers', onlineUsers);
+    if (socket.data.user) {
+      let onlineUsers = await this.usersRepository.find({
+        relations: {
+          friends: false,
+        },
+        where: {
+          username: Not(socket.data.user.username),
+          user_status: "Online",
+        }
+      });
+      if (onlineUsers != undefined)
+        this.server.to(socket.id).emit('onlineUsers', onlineUsers);
+    }
   }
 
   @SubscribeMessage('friendProfile')
