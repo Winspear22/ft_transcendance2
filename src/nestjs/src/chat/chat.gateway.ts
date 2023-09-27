@@ -16,6 +16,7 @@ import { RoomBanGuard } from './guard/chat-guard.guard';
 import { UserEntity } from 'src/user/user.entity';
 import { MessageEntity } from './entities/message.entity';
 import { UserService } from 'src/user/user.service';
+import * as bcrypt from 'bcryptjs';
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
 export class ChatGateway 
@@ -199,28 +200,27 @@ export class ChatGateway
     }
 
     // Vérifier si l'utilisateur est le propriétaire de la salle
-    if ((await room).owner === userId) {
-        if (password) {
-            (await room).password = password; // Si un mot de passe est fourni, il sera soit ajouté (s'il n'y en avait pas) soit modifié
-        } 
-        else 
-        {
-          (await room).password = null; // Si aucun mot de passe n'est fourni, le mot de passe actuel sera supprimé
-          
-        
-        }
-        await this.roomRepository.save((await room));
-        this.server.to(client.id).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
-        this.server.in(channelName).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
-        return ;
+    if ((await room).owner === userId) 
+    {
+      if (password) {
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        (await room).password = hashedPassword; // Stockez le mot de passe hashé, pas le mot de passe en clair    
+      }
+      else
+        (await room).password = null; // Si aucun mot de passe n'est fourni, le mot de passe actuel sera supprimé
+      await this.roomRepository.save((await room));
+      this.server.to(client.id).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
+      this.server.in(channelName).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
+      this.emitAvailableRooms(client);
+      this.emitRooms(client);
+      return ;
     }  else {
         this.server.to(client.id).emit('changeRoomPassword', "Error. Password of the room " + channelName + " not modified.");
 
         return ;
     }
   }
-
-
 
 
   /**
