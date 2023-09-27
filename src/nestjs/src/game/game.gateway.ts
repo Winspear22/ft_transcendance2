@@ -53,7 +53,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     console.log("Disconnection detected: ", socket.id);
   }
- 
+  
   @SubscribeMessage('connection')   
   async handleConnection(@ConnectedSocket() socket: Socket) {
     // Gérez la connexion d'un joueur
@@ -96,19 +96,21 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('updateUser') 
   async updateUserInSocket(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
-    const user = await this.usersRepository.find({
-      where: {
-        username: name,
+    if (socket.data.user) {
+      const user = await this.usersRepository.find({
+        where: {
+          username: name,
+        }
+      });
+      if (user != undefined)
+      { 
+        ref_user.delete(socket.data.user.id);
+        ref_client.delete(socket.data.user.username);
+        ref_user.set(user[0].id, user[0]);
+        ref_client.set(user[0].id, socket);
+        socket.data.user = user[0];
+        // console.log("UPDATE USER", ref_user);
       }
-    });
-    if (user != undefined)
-    { 
-      ref_user.delete(socket.data.user.id);
-      ref_client.delete(socket.data.user.username);
-      ref_user.set(user[0].id, user[0]);
-      ref_client.set(user[0].id, socket);
-      socket.data.user = user[0];
-      // console.log("UPDATE USER", ref_user);
     }
   }
 
@@ -118,52 +120,56 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('searchGame')
   async search(@ConnectedSocket() socket: Socket) {
-    for (let value of gameMap.values()) {
-      if ((value.player1.username == socket.data.user.username || value.player2.username == socket.data.user.username) && value.status == "playing")
-        return;
+    if (socket.data.user) {
+      for (let value of gameMap.values()) {
+        if ((value.player1.username == socket.data.user.username || value.player2.username == socket.data.user.username) && value.status == "playing")
+          return;
+      }
+      if (waitingGames.length >= 1)
+      {
+        if (socket.data.user.username == gameMap.get(waitingGames[0]).player1.username)
+          return;
+        let idx = waitingGames.shift();
+        let gameI = gameMap.get(idx);
+        gameI.player2.username = socket.data.user.username;
+        gameI.player2.idClient = socket.id;
+        gameI.player2.idUser = socket.data.user.id;
+        gameI.status = "playing";
+        this.server.to(gameI.player1.idClient).emit('goToGame'); //Envoyer la game aux 2 clients
+        this.server.to(gameI.player2.idClient).emit('goToGame');
+        this.server.to(gameI.player1.idClient).emit('theGame', {idx, gameI}); //Envoyer la game aux 2 clients
+        this.server.to(gameI.player2.idClient).emit('theGame', {idx, gameI});
+        this.startGame(gameMap.get(idx), this.server);
+        inGame.set(gameI.player1.idClient, idx);
+        inGame.set(gameI.player2.idClient, idx);
+      }
+      else 
+      {
+        let idx = idx_games += 1;
+        let gameI = new game();
+        gameI.player1.username = socket.data.user.username;
+        gameI.player1.idClient = socket.id;
+        gameI.player1.idUser = socket.data.user.id;
+        gameI.status = "waiting";
+        gameMap.set(idx, gameI);
+        waitingGames.push(idx);
+        this.server.to(socket.id).emit('w_idx', idx);
+      }
     }
-    if (waitingGames.length >= 1)
-    {
-      if (socket.data.user.username == gameMap.get(waitingGames[0]).player1.username)
-        return;
-      let idx = waitingGames.shift();
-      let gameI = gameMap.get(idx);
-      gameI.player2.username = socket.data.user.username;
-      gameI.player2.idClient = socket.id;
-      gameI.player2.idUser = socket.data.user.id;
-      gameI.status = "playing";
-      this.server.to(gameI.player1.idClient).emit('goToGame'); //Envoyer la game aux 2 clients
-      this.server.to(gameI.player2.idClient).emit('goToGame');
-      this.server.to(gameI.player1.idClient).emit('theGame', {idx, gameI}); //Envoyer la game aux 2 clients
-      this.server.to(gameI.player2.idClient).emit('theGame', {idx, gameI});
-      this.startGame(gameMap.get(idx), this.server);
-      inGame.set(gameI.player1.idClient, idx);
-      inGame.set(gameI.player2.idClient, idx);
-    }
-    else 
-    {
-      let idx = idx_games += 1;
-      let gameI = new game();
-      gameI.player1.username = socket.data.user.username;
-      gameI.player1.idClient = socket.id;
-      gameI.player1.idUser = socket.data.user.id;
-      gameI.status = "waiting";
-      gameMap.set(idx, gameI);
-      waitingGames.push(idx);
-      this.server.to(socket.id).emit('w_idx', idx);
-    } 
   } 
 
   @SubscribeMessage('stopSearchGame')
   async stopSearch(@ConnectedSocket() socket: Socket, @MessageBody() w_idx: number)
   {
-    let idx = waitingGames.indexOf(w_idx);
-    if (idx != -1) 
-      waitingGames.splice(idx, 1);
-    if (w_idx) 
-    {
-      if (gameMap.get(w_idx))
-        gameMap.delete(w_idx);
+    if (socket.data.user) {
+      let idx = waitingGames.indexOf(w_idx);
+      if (idx != -1) 
+        waitingGames.splice(idx, 1);
+      if (w_idx) 
+      {
+        if (gameMap.get(w_idx))
+          gameMap.delete(w_idx);
+      }
     }
   }
 
@@ -173,145 +179,152 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() socket: Socket, 
     @MessageBody() name: string
     ){
-      if (name == socket.data.user.username)
-        return;
-      const guest = await this.usersRepository.find({
-        where: {
-          username: name,
-        }
-      });
-      if (guest != undefined) {
-        // Offline
-        if (guest[0].user_status == "Offline")
-        {
-          for(let value of gameMap.values()) {
-            if(value.player2.username == guest[0].username && value.status == "waiting") {
-              gameMap.delete(value.id);
+      if (socket.data.user) {
+        if (name == socket.data.user.username)
+          return;
+        const guest = await this.usersRepository.find({
+          where: {
+            username: name,
+          }
+        });
+        if (guest != undefined) {
+          // Offline
+          if (guest[0].user_status == "Offline")
+          {
+            for(let value of gameMap.values()) {
+              if(value.player2.username == guest[0].username && value.status == "waiting") {
+                gameMap.delete(value.id);
+              }
+            }
+            this.server.to(socket.id).emit('invitPlayRequestError', name + " is offline.");
+            return;
+          }
+          //Deja invité
+          for (let value of gameMap.values()) {
+            if (value.player1.idUser == socket.data.user.id && value.player2.username == name && value.status == "waiting")
+            {
+              this.server.to(ref_client.get(guest[0].id).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
+              this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
+              return;
             }
           }
-          this.server.to(socket.id).emit('invitPlayRequestError', name + " is offline.");
-          return;
-        }
-        //Deja invité
-        for (let value of gameMap.values()) {
-          if (value.player1.idUser == socket.data.user.id && value.player2.username == name && value.status == "waiting")
-          {
+          // Création de la partie
+          if (guest[0].user_status == "Online") {
+            let idx = idx_games += 1;
+            let gameI = new game();
+            gameI.id = idx;
+            gameI.player1.username = socket.data.user.username;
+            gameI.player2.username = name;
+            gameI.player1.idClient = socket.id;
+            gameI.player1.idUser = socket.data.user.id;
+            gameI.status = "waiting";
+            gameMap.set(idx, gameI);
             this.server.to(ref_client.get(guest[0].id).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
             this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
             return;
           }
         }
-        // Création de la partie
-        if (guest[0].user_status == "Online") {
-          let idx = idx_games += 1;
-          let gameI = new game();
-          gameI.id = idx;
-          gameI.player1.username = socket.data.user.username;
-          gameI.player2.username = name;
-          gameI.player1.idClient = socket.id;
-          gameI.player1.idUser = socket.data.user.id;
-          gameI.status = "waiting";
-          gameMap.set(idx, gameI);
-          this.server.to(ref_client.get(guest[0].id).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
-          this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
-          return;
-        }
+        else
+          this.server.to(socket.id).emit('invitPlayRequestError', "Error. Could not invit " + name);
       }
-      else
-        this.server.to(socket.id).emit('invitPlayRequestError', "Error. Could not invit " + name);
     }
 
   @SubscribeMessage('acceptInvitToPlayRequest')
   async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
-   
-    for (let value of gameMap.values()) {
-      if (value.player2.username == socket.data.user.username && value.status == "waiting"){
-        if (inGame.get(value.player1.idClient) != undefined)
-          return;
-        let idx = value.id;
-        value.player2.idClient = socket.id;
-        value.player2.idUser = socket.data.user.id;
-        value.status = "playing";
-        this.server.to(value.player1.idClient).emit('goToGame');
-        this.server.to(value.player2.idClient).emit('goToGame');
-        this.server.to(value.player1.idClient).emit('theGame', {idx, value}); //Envoyer la game aux 2 clients
-        this.server.to(value.player2.idClient).emit('theGame', {idx, value});
-        this.startGame(gameMap.get(idx), this.server);
-        inGame.set(value.player1.idClient, idx);
-        inGame.set(value.player2.idClient, idx);
+    if (socket.data.user) {
+      for (let value of gameMap.values()) {
+        if (value.player2.username == socket.data.user.username && value.status == "waiting"){
+          if (inGame.get(value.player1.idClient) != undefined)
+            return;
+          let idx = value.id;
+          value.player2.idClient = socket.id;
+          value.player2.idUser = socket.data.user.id;
+          value.status = "playing";
+          this.server.to(value.player1.idClient).emit('goToGame');
+          this.server.to(value.player2.idClient).emit('goToGame');
+          this.server.to(value.player1.idClient).emit('theGame', {idx, value}); //Envoyer la game aux 2 clients
+          this.server.to(value.player2.idClient).emit('theGame', {idx, value});
+          this.startGame(gameMap.get(idx), this.server);
+          inGame.set(value.player1.idClient, idx);
+          inGame.set(value.player2.idClient, idx);
+        }
       }
     }
   }
 
   @SubscribeMessage('declineInvitToPlayRequest')
   async declineGameInvitation(@ConnectedSocket() socket: Socket) {
-   
-    for (let value of gameMap.values()) {
-      if (value.player2.username == socket.data.user.username && value.status == "waiting"){
-        let idx = value.id;
-        gameMap.delete(idx);
+    if (socket.data.user) {
+      for (let value of gameMap.values()) {
+        if (value.player2.username == socket.data.user.username && value.status == "waiting"){
+          let idx = value.id;
+          gameMap.delete(idx);
+        }
       }
     }
   }
 
   @SubscribeMessage('gameEnd')
   async endMatch(@ConnectedSocket() socket: Socket, @MessageBody() idx: number) {
-    // A tester et ajouter les Many One To One Many Many One
-    const gameI = gameMap.get(inGame.get(socket.id));
-    if(gameI && (gameI.player1.idClient == socket.id || gameI.player1.deco == 1))
-    {
-      this.gameService.createMatch(gameI, ref_client);
-      let idP2 = gameI.player2.idClient;
-      gameMap.delete(inGame.get(socket.id));
-      inGame.delete(socket.id);
-      inGame.delete(idP2);
+    if (socket.data.user) {
+      const gameI = gameMap.get(inGame.get(socket.id));
+      if(gameI && (gameI.player1.idClient == socket.id || gameI.player1.deco == 1))
+      {
+        this.gameService.createMatch(gameI, ref_client);
+        let idP2 = gameI.player2.idClient;
+        gameMap.delete(inGame.get(socket.id));
+        inGame.delete(socket.id);
+        inGame.delete(idP2);
+      }
+      const matchHistory = socket.data.user.matchHistory;
+      this.server.to(socket.id).emit('matchHistory', matchHistory);
     }
-    const matchHistory = socket.data.user.matchHistory;
-    this.server.to(socket.id).emit('matchHistory', matchHistory);
   }
 
   @SubscribeMessage('press') 
   async handlePress(@ConnectedSocket() socket: Socket, @MessageBody() data: any) {
-
-    const gameI = gameMap.get(data.idx); 
-      if (gameI && socket.id == gameI.player1.idClient)
-      {
-        // w key
-        if (data.key == 90 || data.key == 87 || data.key == 38) {
-          gameI.player1.move = 1;
+    if (socket.data.user) {
+      const gameI = gameMap.get(data.idx); 
+        if (gameI && socket.id == gameI.player1.idClient)
+        {
+          // w key
+          if (data.key == 90 || data.key == 87 || data.key == 38) {
+            gameI.player1.move = 1;
+          }
+          // a key
+          else if (data.key == 83 || data.key == 40) {
+            gameI.player1.move = -1;
+          }
         }
-        // a key
-        else if (data.key == 83 || data.key == 40) {
-          gameI.player1.move = -1;
-        }
+        else if (gameI && socket.id == gameI.player2.idClient)
+        {
+          // w key
+          if (data.key == 90 || data.key == 87 || data.key == 38) {
+            gameI.player2.move = 1;
+          }
+          // a key
+          else if (data.key == 83 || data.key == 40) {
+            gameI.player2.move = -1;
+          }
       }
-      else if (gameI && socket.id == gameI.player2.idClient)
-      {
-        // w key
-        if (data.key == 90 || data.key == 87 || data.key == 38) {
-          gameI.player2.move = 1;
-        }
-        // a key
-        else if (data.key == 83 || data.key == 40) {
-          gameI.player2.move = -1;
-        }
     }
   }
 
   @SubscribeMessage('release')
   async handleRelease(@ConnectedSocket() socket: Socket, @MessageBody() data: any) {
-    
-    const gameI = gameMap.get(data.idx);
-      if (gameI && socket.id == gameI.player1.idClient)
-      {
-        if (data.key == 90 || data.key == 83 || data.key == 87 || data.key == 38 || data.key == 40) {
-            gameI.player1.move = 0;
+    if (socket.data.user) {
+      const gameI = gameMap.get(data.idx);
+        if (gameI && socket.id == gameI.player1.idClient)
+        {
+          if (data.key == 90 || data.key == 83 || data.key == 87 || data.key == 38 || data.key == 40) {
+              gameI.player1.move = 0;
+          }
         }
-      }
-      else if (gameI && socket.id == gameI.player2.idClient)
-      {
-        if (data.key == 90 || data.key == 83 || data.key == 87 || data.key == 38 || data.key == 40) {
-          gameI.player2.move = 0;
+        else if (gameI && socket.id == gameI.player2.idClient)
+        {
+          if (data.key == 90 || data.key == 83 || data.key == 87 || data.key == 38 || data.key == 40) {
+            gameI.player2.move = 0;
+          }
         }
       }
   }
@@ -319,16 +332,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('matchHistory')
   async sendMatchHistory(@ConnectedSocket() socket: Socket) {
     
-    // if (user != undefined)
-    // {
+    if (socket.data.user)
+    {
       const matchHistory = socket.data.user.matchHistory;
       this.server.to(socket.id).emit('matchHistory', matchHistory);
-    // }
+    }
   }
 
-  @SubscribeMessage('onlineUsers')
+  @SubscribeMessage('onlineUsers') 
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
-    if (socket.data.user) {
+    if (socket.data.user) { 
       let onlineUsers = await this.usersRepository.find({
         relations: {
           friends: false,
