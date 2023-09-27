@@ -3,10 +3,9 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
-import { Socket, Server } from 'socket.io';
 import * as colors from '../colors';
+import { Socket, Server } from 'socket.io';
 import { ChatService } from './chat.service';
-import { CreateMessageDto } from './dto/message.dto';
 import { RoomService } from './room.service';
 import { RoomEntity } from './entities/room.entity';
 import { Body, UseGuards } from '@nestjs/common';
@@ -16,10 +15,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RoomBanGuard } from './guard/chat-guard.guard';
 import { UserEntity } from 'src/user/user.entity';
 import { MessageEntity } from './entities/message.entity';
-import { FriendMessage } from 'src/user/entities/friendmessage.entity';
-import { Friend } from 'src/user/entities/friend.entity';
-import { FriendChat } from 'src/user/entities/friendchat.entity';
-
+import { UserService } from 'src/user/user.service';
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
 export class ChatGateway 
@@ -27,18 +23,15 @@ export class ChatGateway
   constructor(
     private readonly chatService: ChatService,
     private readonly roomService: RoomService,
+    private readonly usersService: UserService,
     @InjectRepository(RoomEntity)
     private roomRepository: Repository<RoomEntity>,
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
     @InjectRepository(MessageEntity)
     private messagesRepository: Repository<MessageEntity>,
-    @InjectRepository(Friend)
-    private friendsRepository: Repository<Friend>,
-    @InjectRepository(FriendChat)
-    private friendChatsRepository: Repository<FriendChat>,
-    @InjectRepository(FriendMessage)
-    private friendMessageRepository: Repository<FriendMessage>,
+
+    
     ) {}
   
   // Map pour stocker les références entre l'ID utilisateur et l'ID de Socket
@@ -46,6 +39,10 @@ export class ChatGateway
 
   // Map pour stocker les références entre l'objet Socket et l'ID de Socket
   private ref_Socket = new Map<Socket, string>()
+
+  private ref_socket_userid = new Map<Socket, number>()
+  
+  private ref_room_userSocket = new Map<Socket, number>()
 
   // Instance du serveur WebSocket
   @WebSocketServer()
@@ -72,6 +69,8 @@ export class ChatGateway
     console.log(colors.BRIGHT + colors.GREEN, "Utilisateur : " +  colors.WHITE + user.username + colors .GREEN +" vient de se connecter." + colors.RESET);
     this.ref_client.set(user.id, client.id);
     this.ref_Socket.set(client, client.id);
+    this.ref_socket_userid.set(client, user.id);
+    return true;
   }
 
   // Gère la déconnexion d'un utilisateur du serveur WebSocket.
@@ -86,14 +85,6 @@ export class ChatGateway
           break;
       }
     }
-  }
-
-  // Renvoie une liste des rooms disponibles à l'utilisateur.
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('emitAvailableRooms')
-  async emitAvailableRooms(@ConnectedSocket() client: Socket) {
-    const rooms = await this.roomService.getRooms(client);
-    return await this.server.to(client.id).emit('emitAvailableRooms', rooms);
   }
 
   // Récupère et renvoie à l'utilisateur la liste des rooms auxquels il appartient.
@@ -123,6 +114,28 @@ export class ChatGateway
 
     // Envoi des rooms à l'utilisateur
     return await this.server.to(client.id).emit('emitRooms', rooms);
+  }
+
+  @UseGuards(ChatGuard)
+  //@SubscribeMessage('getAvailableRoomsForAllUsers')
+  @SubscribeMessage('emitAvailableRooms')
+  async emitAvailableRooms(@ConnectedSocket() client: Socket) {
+      const allUsers = await this.usersRepository.find();
+
+      for (const user of allUsers) {
+          //if (user.id != client.data.user.id) {
+              // Trouver le Socket pour cet utilisateur
+              const userSocket = [...this.ref_socket_userid.entries()]
+                  .find(([socket, userId]) => userId === user.id)?.[0];
+
+              if (userSocket) {
+                  const availableRooms = await this.roomService.getRooms(userSocket);
+                  console.log("USERNAME OF SOCKET === ", userSocket.data.user.username);
+                  this.server.to(userSocket.id).emit('emitAvailableRooms', availableRooms);
+                  //this.server.emit('emitAvailableRooms', availableRooms);
+              }
+         // }
+      }
   }
 
 
@@ -158,11 +171,57 @@ export class ChatGateway
       // Notification aux clients du résultat de la création
       if (result.success) {
         this.server.emit('createRoom', "Channel created : " + data.channelName );
+        this.emitAvailableRooms(client);
+        this.emitRooms(client);
       } else {
         this.server.emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
       }
       return result;
   }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('changeRoomPassword')
+  async changeRoomPassword(@MessageBody() data: {
+    channelName: string,
+    password?: string
+  }, @ConnectedSocket() client: Socket) 
+  {
+    const { channelName, password } = data;
+    const user = client.data.user;
+    const userId = user.id;
+
+    // Récupérer la salle avec le nom fourni
+    const room = this.roomService.getRoomByName(channelName)
+
+    // S'assurer que la salle existe
+    if (!room) {
+        return { success: false, error: 'Channel does not exist' };
+    }
+
+    // Vérifier si l'utilisateur est le propriétaire de la salle
+    if ((await room).owner === userId) {
+        if (password) {
+            (await room).password = password; // Si un mot de passe est fourni, il sera soit ajouté (s'il n'y en avait pas) soit modifié
+        } 
+        else 
+        {
+          (await room).password = null; // Si aucun mot de passe n'est fourni, le mot de passe actuel sera supprimé
+          
+        
+        }
+        await this.roomRepository.save((await room));
+        this.server.to(client.id).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
+        this.server.in(channelName).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
+        return ;
+    }  else {
+        this.server.to(client.id).emit('changeRoomPassword', "Error. Password of the room " + channelName + " not modified.");
+
+        return ;
+    }
+  }
+
+
+
 
   /**
    * Permet à un utilisateur de quitter une salle de chat.
@@ -185,6 +244,13 @@ export class ChatGateway
         this.server.to(client.id).emit('quitRoom', "You have left the room " + data.channelName);
         this.server.to(data.channelName).emit('quitRoom', client.data.user.username + " has left the room " + data.channelName);
         client.leave(data.channelName);
+        this.emitAvailableRooms(client);
+        this.emitRooms(client);
+      }
+      const room = await this.roomService.getRoomByName(data.channelName);
+      if (!room)
+      {
+
       }
       return result;
   }
@@ -210,6 +276,8 @@ export class ChatGateway
         this.server.to(client.id).emit('joinRoom', "Room joined : " + data.channelName);
         this.server.to(data.channelName).emit('joinRoom', client.data.user.username + " just joined the room " + data.channelName);
         client.join(data.channelName);
+        this.emitAvailableRooms(client);
+        this.emitRooms(client);
         return (result);
       }
       else
@@ -219,6 +287,169 @@ export class ChatGateway
         return (result);
       }
   }
+
+  @UseGuards(ChatGuard, RoomBanGuard)
+  @SubscribeMessage('inviteRoom')
+  async inviteRoom(@MessageBody() data: { channelName: string, invitedUsernames: string }, @ConnectedSocket() client: Socket) {
+    const inviter = client.data.user;
+
+    // Recherche de la salle par son nom
+    const room = await this.roomService.getRoomByName(data.channelName);
+
+    if (!room) {
+        this.server.to(client.id).emit("inviteRoom", "Error, room does not exist.");
+        return ;
+    }
+
+    if (!room.isPrivate) {
+        this.server.to(client.id).emit("inviteRoom", "Error, room is not private.");
+        return ;
+    }
+
+    // Vérifiez si l'utilisateur est le propriétaire ou un administrateur de la salle
+    if (room.owner !== inviter.id && !room.admins.includes(inviter.id)) {
+
+        this.server.to(client.id).emit("inviteRoom", "Error, you do not have the permission to invite people.");
+        return ;
+    }
+
+    // Trouvez les utilisateurs invités par leur nom d'utilisateur
+    const invitedUser = await this.usersService.findUserByUsername(data.invitedUsernames);
+
+    // Vérifiez si l'utilisateur est déjà dans la room
+    if (room.users.includes(invitedUser.id)) {
+
+        this.server.to(client.id).emit("inviteRoom", "Error, the user is already in the room.");
+        return ;
+    }
+
+    // Vérifiez si une invitation a déjà été envoyée à l'utilisateur
+    if (room.pendingIds.includes(invitedUser.id)) 
+    {
+        this.server.to(client.id).emit("inviteRoom", "Error, an invitation has already been sent to the user.");
+        return ;
+    }
+
+    // Ajoutez les IDs des utilisateurs invités à la liste pendingIds de la salle
+    room.pendingIds.push(invitedUser.id);
+
+    await this.roomRepository.save(room);
+    const invitedSocket = this.roomService.getSocketFromUserId(invitedUser.id, this.ref_client, this.ref_Socket);
+
+    // Envoie une notification aux utilisateurs invités
+    if (invitedSocket) {
+        this.server.to(invitedSocket.id).emit('inviteRoom', "You have been invited by " + inviter.username + " to join the private room " + room.roomName);
+        this.server.to(client.id).emit('inviteRoom', "Invitation sent to " + invitedUser.username + " to join private room " + room.roomName);
+      }
+
+    return { success: true, message: 'Invitations sent successfully' };
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('cancelRoomInvitation')
+  async cancelRoomInvitation(@MessageBody() data: { channelName: string, invitedUsernames: string }, @ConnectedSocket() client: Socket) 
+  {
+    const inviter = client.data.user;
+
+    // Recherche de la salle par son nom
+    const room = await this.roomService.getRoomByName(data.channelName);
+
+    if (!room) {
+        return this.server.to(client.id).emit("cancelRoomInvitation", "Error, room does not exist.");
+    }
+
+    // Vérifiez si l'utilisateur est le propriétaire ou un administrateur de la salle
+    if (room.owner !== inviter.id && !room.admins.includes(inviter.id)) {
+        return this.server.to(client.id).emit("cancelRoomInvitation", "Error, you do not have the permission to cancel the invitation.");
+    }
+
+    // Trouvez les utilisateurs invités par leur nom d'utilisateur
+    const invitedUser = await this.usersService.findUserByUsername(data.invitedUsernames);
+
+    // Vérifiez si une invitation a été envoyée à l'utilisateur
+    if (!room.pendingIds.includes(invitedUser.id)) {
+        return this.server.to(client.id).emit("cancelRoomInvitation", "Error, there's no pending invitation for this user.");
+    }
+
+    // Supprimez les IDs des utilisateurs invités de la liste pendingIds de la salle
+    room.pendingIds = room.pendingIds.filter(id => id !== invitedUser.id);
+
+    await this.roomRepository.save(room);
+
+    // Envoie une notification aux utilisateurs invités
+    const socketId = this.ref_client.get(invitedUser.id);
+    if (socketId) {
+        this.server.to(socketId).emit('cancelRoomInvitation', { channelName: room.roomName, inviter: inviter.username });
+    }
+
+    return { success: true, message: 'Invitation cancelled successfully' };
+}
+
+
+
+  // Pour accepter l'invitation
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('acceptRoomInvitation')
+  async acceptRoomInvitation(@MessageBody() data: { channelName: string, password?: string, inviterUsername: string }, @ConnectedSocket() client: Socket) {
+      const user = client.data.user;
+      const inviter = await this.usersService.findUserByUsername(data.inviterUsername);
+      const room = await this.roomService.getRoomByName(data.channelName);
+
+      if (!room) {
+        this.server.to(client.id).emit("acceptRoomInvitation", "Error, room does not exist.");
+        return ;
+      }
+
+      if (!room.pendingIds.includes(user.id)) {
+          this.server.to(client.id).emit("acceptRoomInvitation", "Error, no pending invitation for this room.");
+          return ;
+      }
+
+      // Supprimer l'utilisateur de la liste pendingIds et l'ajouter à la liste users
+      room.pendingIds = room.pendingIds.filter(id => id !== user.id);
+      const inviterSocket = this.roomService.getSocketFromUserId(inviter.id, this.ref_client, this.ref_Socket);
+
+      room.users.push(user.id);
+      
+      await this.roomRepository.save(room);
+      client.join(data.channelName);
+
+      const updatedRoom = await this.roomService.getRoomByName(room.roomName);
+      console.log(updatedRoom.users); // Vérifiez si l'ID utilisateur est là
+
+      this.server.to(inviterSocket.id).emit("acceptRoomInvitation", `Your invitation to join the room ${room.roomName} has been accepted by ${user.username}.`);
+      this.server.to(client.id).emit("acceptRoomInvitation", `You have joined the room ${room.roomName} successfully.`);
+      this.emitAvailableRooms(client);
+      this.emitRooms(client);
+      return true;
+  }
+
+  // Pour refuser l'invitation
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('declineRoomInvitation')
+  async declineRoomInvitation(@MessageBody() data: { channelName: string, inviterUsernqme: string }, @ConnectedSocket() client: Socket) {
+      const user = client.data.user;
+      const inviter = await this.usersService.findUserByUsername(data.inviterUsernqme);
+      const room = await this.roomService.getRoomByName(data.channelName);
+
+      if (!room) {
+          return this.server.to(client.id).emit("declineRoomInvitation", "Error, room does not exist.");
+      }
+
+      if (!room.pendingIds.includes(user.id)) {
+          return this.server.to(client.id).emit("declineRoomInvitation", "Error, no pending invitation for this room.");
+      }
+
+      // Supprimer l'utilisateur de la liste pendingIds
+      room.pendingIds = room.pendingIds.filter(id => id !== user.id);
+
+      await this.roomRepository.save(room);
+      const inviterSocketId = this.ref_client.get(inviter.id);
+      const inviterSocket = [...this.ref_Socket.keys()].find(socket => this.ref_Socket.get(socket) === inviterSocketId);
+      this.server.to(inviterSocket.id).emit("declineRoomInvitation", `${user.username} chose not to join your room.`);
+      return this.server.to(client.id).emit("declineRoomInvitation", `You have declined the invitation for room ${room.roomName}.`);
+  }
+
 
   /**
    * Permet à un administrateur de bannir un utilisateur d'une salle de chat.

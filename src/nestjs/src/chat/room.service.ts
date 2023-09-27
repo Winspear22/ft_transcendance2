@@ -84,23 +84,17 @@ export class RoomService
     
         console.log("l'utilisateur n'etait pas dans la room");
         console.log("passwords : ", password, " room password : ", room.password);
-        /*if (room.password && room.password !== '') {
+        if (room.password && room.password !== '') {
           if (!bcrypt.compareSync(password, room.password)) {
             console.log("je suis ici");
             return { success: false, error: 'Invalid password' };
           }
-        }*/
-        if (room.password && room.password !== '')
-        {
-            if (room.password != password)
-                return { success: false, error: 'Invalid password' };
         }
         console.log("password passe");
         const userInRoom = room.users.find(id => id === user.id);
         if (userInRoom) {
           return { success: true };
         }
-    
         room.users.push(user.id);
         await this.roomRepository.save(room);
         return { success: true };
@@ -119,8 +113,10 @@ export class RoomService
         console.log("JE SUIS DANS QUITROOM SERVICE");
         if (user.id === room.owner) {
             // Supprimez tous les messages du canal et ensuite le canal lui-même
-            await this.messagesRepository.delete({ id: room.id });
-            await this.roomRepository.delete({ id: room.id });
+          //  await this.messagesRepository.delete({ id: room.id });
+          await this.messagesRepository.delete({ channelId: room.id });
+  
+          await this.roomRepository.delete({ id: room.id });
             return { success: true };
         } else {
             room.users = room.users.filter(id => id !== user.id);
@@ -148,55 +144,76 @@ export class RoomService
         return { success: true, yourChannels: channelNames };
       }
     
+
       async getRooms(@ConnectedSocket() client: Socket) {
-        
-        const user = client.data.user;    
+        const user = client.data.user;
+    
+        // Trouvez toutes les salles qui ne sont pas privées.
         const channels = await this.roomRepository.find({
           where: {
             isPrivate: false,
           }
         });
     
-        const retChannels = channels.map(channel => ({
-          channelName: channel.roomName,
-          users: channel.users.length,
-          owner: channel.owner,
-          hasPassword: !!channel.password,
+        // Filtrer les salles auxquelles l'utilisateur appartient déjà.
+        // Aussi, exclure les salles privées auxquelles l'utilisateur n'appartient pas.
+        const filteredChannels = channels.filter(channel => 
+            !channel.users.includes(user.id) || 
+            (channel.isPrivate && channel.users.includes(user.id))
+        );
+    
+        const retChannels = filteredChannels.map(channel => ({
+            channelName: channel.roomName,
+            users: channel.users.length,
+            owner: channel.owner,
+            hasPassword: !!channel.password,
         }));
     
         return { success: true, channels: retChannels };
-      }
+    }
     
-      async getRoomMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
-        const { roomName } = body;
     
-        const user = client.data.user;        
-        // Votre logique d'authentification avec des jetons ici...
-    
-        const room = await this.roomRepository.findOne({
-          where: { roomName },
-          relations: ['messages']
-        });
-    
-        if (!room) {
-          return { success: false, error: 'Room not found' };
-        }
+  async getRoomMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
+    const { roomName } = body;
 
-        const retMessages = await Promise.all(room.messages.map(async (message) => {
-        const sender = await this.usersRepository.findOne({ where: { id: message.senderId } });
-        return {
-            senderId: message.senderId,
-            text: message.text,
-            time: message.createdAt,
-            username: sender.username,
-            avatar: sender.profile_picture,
-          };
-        }));
+    const user = client.data.user;        
+    // Votre logique d'authentification avec des jetons ici...
+
+    const room = await this.roomRepository.findOne({
+      where: { roomName },
+      relations: ['messages']
+    });
+
+    if (!room) {
+      return { success: false, error: 'Room not found' };
+    }
     
-        return { success: true, chat: { room: roomName, messages: retMessages } };
-      }
+    const retMessages = await Promise.all(room.messages.map(async (message) => {
+    const sender = await this.usersRepository.findOne({ where: { id: message.senderId } });
+    return {
+        senderId: message.senderId,
+        text: message.text,
+        time: message.createdAt,
+        username: sender.username,
+        avatar: sender.profile_picture,
+      };
+    }));
+
+    return { success: true, chat: { room: roomName, messages: retMessages } };
+  }
     
-    //--------------------------------------------------------------------------------------//
+  getSocketFromUserId(
+      userId: number,
+      ref_client: Map<number, string>, 
+      ref_Socket: Map<Socket, string>
+  ): Socket | undefined {
+      const socketId = ref_client.get(userId);
+      if (!socketId) return undefined;
+  
+      return [...ref_Socket.keys()].find(socket => ref_Socket.get(socket) === socketId);
+  }
+    
+  //--------------------------------------------------------------------------------------//
 
   //--------------------------------------------------------------------------------------//
   //-----------------------------POUVOIRS DES OWNERS/ADMINS-------------------------------//
@@ -431,13 +448,4 @@ async unmuteUserRoom(body: {
 
     return { success: true };
   }
-
-
-
-//--------------------------------------------------------------------------------------//
-
-
-
-
-
 }

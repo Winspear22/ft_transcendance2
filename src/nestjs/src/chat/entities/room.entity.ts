@@ -49,6 +49,11 @@ export class RoomEntity {
   @Column()
   isPrivate: boolean;
 
-  @OneToMany(() => MessageEntity, (message) => message.room)
+  //@OneToMany(() => MessageEntity, (message) => message.room)
+  //messages: MessageEntity[];
+  @OneToMany(() => MessageEntity, (message) => message.room, {
+    cascade: ['remove']
+  })
   messages: MessageEntity[];
+  
 }

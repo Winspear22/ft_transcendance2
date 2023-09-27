@@ -47,7 +47,6 @@ export class ChatService {
 
         //const accessTokenCookie = client.handshake.headers.cookie;
         console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
-        console.log("JE SUIS ICIIIIIIIIIIIIIIII", client.handshake.query);
         if (!accessTokenCookie) 
         {
             console.log('Access Token Cookie is missing!!!');

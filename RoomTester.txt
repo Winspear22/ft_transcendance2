@@ -67,3 +67,14 @@ PARLER
 {
     
 }
+INVITER
+
+{
+  "channelName": "privateRoom",
+  "invitedUsernames": "naben-za"
+}
+
+ACCEPTER
+{
+  "channelName": "privateRoom"
+}
