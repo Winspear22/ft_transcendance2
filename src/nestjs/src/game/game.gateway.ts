@@ -175,10 +175,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
 
   @SubscribeMessage('invitPlayRequest')
-  async gameInvitation(
-    @ConnectedSocket() socket: Socket, 
-    @MessageBody() name: string
-    ){
+  async gameInvitation(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
       if (socket.data.user) {
         if (name == socket.data.user.username)
           return;
@@ -229,8 +226,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
-  @SubscribeMessage('acceptInvitToPlayRequest')
-  async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
+  
+    @SubscribeMessage('acceptInvitToPlayRequest')
+  
+    async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) {
       for (let value of gameMap.values()) {
         if (value.player2.username == socket.data.user.username && value.status == "waiting"){
@@ -359,16 +358,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('friendProfile')
   async sendFriendProfile(@ConnectedSocket() socket: Socket, @MessageBody() name: string)
   {
-    const friend = await this.usersRepository.find({
-      relations: {
-        friends: true,
-      },
-      where: {
-        username: name,
-      }
-    });
-    if (friend != undefined)
-      this.server.to(socket.id).emit('friendProfile', friend);
+    if (socket.data.user) {
+      const friend = await this.usersRepository.find({
+        relations: {
+          friends: true,
+        },
+        where: {
+          username: name,
+        }
+      });
+      if (friend != undefined)
+        this.server.to(socket.id).emit('friendProfile', friend);
+    }
   }
-
 }
