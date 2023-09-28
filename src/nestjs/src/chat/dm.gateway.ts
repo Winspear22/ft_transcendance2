@@ -54,7 +54,8 @@ export class DMGateway
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
-    console.log("Je suis ici !!");
+
+
     const user = await this.chatService.getUserFromSocket(client);
     if (user == undefined)
     {
@@ -65,14 +66,21 @@ export class DMGateway
     this.emitDMs(client);
     // Renvoie tous les Friends que l'utilisateur a.
     this.emitFriends(client);
-    console.log(colors.BRIGHT + colors.GREEN, "User : " +  colors.WHITE + user.username + colors .GREEN +" just connected." + colors.RESET);
+    console.log(colors.BRIGHT + colors.CYAN, "User : " +  colors.WHITE + user.username + colors .CYAN +" just connected." + colors.RESET);
     // Ajoute les sockets dans deux maps différentes : c'est juste pour m'aider à répertorier les users
     this.emitFriendRequests(client);
     this.ref_client.set(user.id, client.id);
     this.ref_socket.set(client, client.id);
+    console.log("-------------------------------------------------");
+    console.log("----------------CONNEXION AU DM------------------");
+    console.log("-------------------------------------------------");
+    console.log(colors.BRIGHT + colors.CYAN + "Je suis l'utilisateur " + colors.WHITE + user.username + colors.CYAN + " avec la socket.id : " + colors.WHITE + client.id);
 
-    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
-    console.log(colors.BRIGHT + colors.GREEN, "User id: " +  colors.WHITE + user.id + colors .GREEN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
+    console.log(client.listenerCount('emitDM'));
+
+
+    //console.log(colors.BRIGHT + colors.CYAN, "User id: " +  colors.WHITE + user.id + colors .CYAN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
+    //console.log(colors.BRIGHT + colors.CYAN, "User id: " +  colors.WHITE + user.id + colors .CYAN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
     return true;
   }
 
@@ -83,11 +91,13 @@ export class DMGateway
   handleDisconnect(@ConnectedSocket() client: Socket)
   {
     //La socket de l'utilisateur est déconnecté du serveur 
+    client.removeAllListeners();
+
     client.disconnect();
     //On retire l'id de la socket de la map.
     for (let [socket, id] of this.ref_socket.entries()) {
       if (socket === client) {
-          console.log(colors.GREEN, "La Socket " + colors.WHITE + socket.id + colors.GREEN + " a ete supprimee de la mao !")
+          console.log(colors.CYAN, "La Socket " + colors.WHITE + socket.id + colors.CYAN + " a ete supprimee de la mao !")
           this.ref_socket.delete(socket);
           break;
       }
@@ -353,7 +363,7 @@ export class DMGateway
       const receiverSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === receiverSocketId);
       // Si tout a bien été récupéré
       if (chat && senderSocket && receiverSocket) {
-        console.log(colors.BRIGHT + colors.GREEN + "JE SUIS DANS ACCEPTFRIEND" + colors.RESET);
+        console.log(colors.BRIGHT + colors.CYAN + "JE SUIS DANS ACCEPTFRIEND" + colors.RESET);
         //On join la conversatio
         this.emitFriends(client);
         this.emitFriends(receiverSocket);

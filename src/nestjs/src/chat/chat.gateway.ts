@@ -59,14 +59,20 @@ export class ChatGateway
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
-    const user = await this.chatService.getUserFromSocket(client);
+        const user = await this.chatService.getUserFromSocket(client);
+
     if (!user) {
       console.log(colors.BRIGHT + colors.RED, "Erreur. Socket id : " + colors.WHITE + client.id + colors.RED + " n'a pas pu se connecter." + colors.RESET);
       return this.handleDisconnect(client);
     }
+    console.log("-------------------------------------------------");
+    console.log("---------------CONNEXION AU CHAT-----------------");
+    console.log("-------------------------------------------------");
+    console.log(colors.BRIGHT + colors.YELLOW + "Je suis l'utilisateur " + colors.WHITE + user.username + colors.YELLOW + " avec la socket.id : " + colors.WHITE + client.id);
+
     this.emitRooms(client);
     this.emitAvailableRooms(client);
-    console.log(colors.BRIGHT + colors.GREEN, "Utilisateur : " +  colors.WHITE + user.username + colors .GREEN +" vient de se connecter." + colors.RESET);
+    //console.log(colors.BRIGHT + colors.YELLOW, "Utilisateur : " +  colors.WHITE + user.username + colors .YELLOW +" vient de se connecter." + colors.RESET);
     this.ref_client.set(user.id, client.id);
     this.ref_Socket.set(client, client.id);
     this.ref_socket_userid.set(client, user.id);
@@ -77,10 +83,11 @@ export class ChatGateway
   // Supprime également l'utilisateur des maps.
   handleDisconnect(client: Socket)
   {
+    console.log("je suis déco : ", client.data.user.username);
     client.disconnect();
     for (let [Socket, id] of this.ref_Socket.entries()) {
       if (Socket === client) {
-          console.log(colors.GREEN, "La Socket " + colors.WHITE + Socket.id + colors.GREEN + " a été supprimée de la map !");
+          console.log(colors.YELLOW, "La Socket " + colors.WHITE + Socket.id + colors.YELLOW + " a été supprimée de la map !");
           this.ref_Socket.delete(Socket);
           break;
       }
@@ -123,18 +130,12 @@ export class ChatGateway
       const allUsers = await this.usersRepository.find();
 
       for (const user of allUsers) {
-          //if (user.id != client.data.user.id) {
-              // Trouver le Socket pour cet utilisateur
-              const userSocket = [...this.ref_socket_userid.entries()]
-                  .find(([socket, userId]) => userId === user.id)?.[0];
-
-              if (userSocket) {
-                  const availableRooms = await this.roomService.getRooms(userSocket);
-                  console.log("USERNAME OF SOCKET === ", userSocket.data.user.username);
-                  this.server.to(userSocket.id).emit('emitAvailableRooms', availableRooms);
-                  //this.server.emit('emitAvailableRooms', availableRooms);
-              }
-         // }
+        const userSocket = [...this.ref_socket_userid.entries()]
+            .find(([socket, userId]) => userId === user.id)?.[0];
+        if (userSocket) {
+          const availableRooms = await this.roomService.getRooms(userSocket);
+          this.server.to(userSocket.id).emit('emitAvailableRooms', availableRooms);
+        }
       }
   }
 
@@ -412,12 +413,11 @@ export class ChatGateway
       await this.roomRepository.save(room);
       client.join(data.channelName);
 
-      const updatedRoom = await this.roomService.getRoomByName(room.roomName);
-      console.log(updatedRoom.users); // Vérifiez si l'ID utilisateur est là
 
       this.server.to(inviterSocket.id).emit("acceptRoomInvitation", `Your invitation to join the room ${room.roomName} has been accepted by ${user.username}.`);
       this.server.to(client.id).emit("acceptRoomInvitation", `You have joined the room ${room.roomName} successfully.`);
       this.emitAvailableRooms(client);
+
       this.emitRooms(client);
       return true;
   }

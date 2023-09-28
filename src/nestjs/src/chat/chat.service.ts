@@ -9,9 +9,7 @@ import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors'
 import { ChatAuthService } from './chat-auth.service';
 import { UserService } from 'src/user/user.service';
-import { RoomService } from './room.service';
-import { RoomEntity } from './entities/room.entity';
-import * as bcrypt from 'bcryptjs';
+import { ChatGateway } from './chat.gateway';
 
 @Injectable()
 export class ChatService {
@@ -21,11 +19,7 @@ export class ChatService {
         private messageRepository: Repository<MessageEntity>,
         private chatAuthService: ChatAuthService,
         private userService: UserService,
-        private roomService: RoomService,
-        @InjectRepository(RoomEntity)
-        private roomRepository: Repository<RoomEntity>,
-        @InjectRepository(UserEntity)
-        private usersRepository: Repository<UserEntity>,
+        //private chatGateway: ChatGateway,
     ) {}
 
     async createMessage(data: CreateMessageDto): Promise<MessageEntity> 
@@ -50,6 +44,8 @@ export class ChatService {
         if (!accessTokenCookie) 
         {
             console.log('Access Token Cookie is missing!!!');
+            //this.chatGateway.handleDisconnect(client);
+
             return undefined;
         }
     
@@ -59,7 +55,9 @@ export class ChatService {
 
         const userData = this.chatAuthService.extractAccessTokenFromCookie(accessTokenCookie);
             if (!userData)
+            {   //this.chatGateway.handleDisconnect(client);
                 return undefined;
+            }
         const { username, refreshToken, accessToken } = userData;
     
         /*if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
@@ -69,17 +67,23 @@ export class ChatService {
    
         const decodedPayload = this.chatAuthService.decodeAccessToken(accessToken);
         if (!decodedPayload) {
+            //this.chatGateway.handleDisconnect(client);
+
             console.log('Token is invalid or malformed.');
             return undefined;
         }
     
         if (this.chatAuthService.hasTokenExpired(decodedPayload.exp)) {
+            //this.chatGateway.handleDisconnect(client);
+
             console.log('Token has expired.');
             return undefined;
         }
     
         const payload = await this.chatAuthService.verifyToken(accessToken, process.env.ACCESS_TOKEN);
         if (!payload) {
+            //this.chatGateway.handleDisconnect(client);
+
             return undefined;
         }
 
@@ -90,7 +94,10 @@ export class ChatService {
         if (user)
             return (user);
         else
+        {
+            //this.chatGateway.handleDisconnect(client);
             return undefined;
+        }
     }
 
 }
