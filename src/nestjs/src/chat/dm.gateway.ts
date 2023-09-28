@@ -116,7 +116,6 @@ export class DMGateway
         .leftJoinAndSelect('friendChat.users', 'allUsers')  // Sélectionne tous les utilisateurs du chat
         .leftJoinAndSelect('friendChat.messages', 'message')
         .getMany();
-    console.log("POPOPOPOPOPOPOPOPOPOPOPOPOPOPO", friendChats);
     friendChats.forEach(friendChat => {
         client.join(friendChat.room);
     });
@@ -153,7 +152,6 @@ export class DMGateway
               friendDetails.push(friendDetail);
           }
       }
-      console.log("Friend list : ", friendDetails);
       return await this.server.to(client.id).emit('emitFriends', friendDetails);
     }
 // OK FRONT
@@ -251,6 +249,8 @@ export class DMGateway
     const receiverSocketId = this.ref_client.get(receiver.id);
 
     if (receiverSocketId !== undefined) {
+      console.log("JE SUIS ICI DANS EMUT");
+      //this.server.in(savedMessage.chat.room).emit('sendDM', savedMessage);
       this.server.to(receiverSocketId).emit("sendDM", savedMessage);
       this.server.to(client.id).emit("sendDM", savedMessage);
     }

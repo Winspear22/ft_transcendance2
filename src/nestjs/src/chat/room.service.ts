@@ -6,7 +6,7 @@ import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from 'src/user/user.service';
-import { ConnectedSocket, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
 import { MessageEntity } from './entities/message.entity';
 
@@ -100,30 +100,29 @@ export class RoomService
         return { success: true };
     }
 
-    async quitRoom(body: { 
-        channelName: string; }, 
-        @ConnectedSocket() client: Socket) {
-        const { channelName } = body;
-        
-        const user = client.data.user;
-        const room = await this.getRoomByName(channelName);
-        if (!room) {
-            return { success: false, error: 'Channel not found' };
-        }
-        console.log("JE SUIS DANS QUITROOM SERVICE");
-        if (user.id === room.owner) {
-            // Supprimez tous les messages du canal et ensuite le canal lui-même
-          //  await this.messagesRepository.delete({ id: room.id });
-          await this.messagesRepository.delete({ channelId: room.id });
-  
-          await this.roomRepository.delete({ id: room.id });
-            return { success: true };
-        } else {
-            room.users = room.users.filter(id => id !== user.id);
-            await this.roomRepository.save(room);
-            return { success: true };
-        }
+async quitRoom(body: { 
+    channelName: string; }, 
+    @ConnectedSocket() client: Socket) {
+    const { channelName } = body;
+    
+    const user = client.data.user;
+    const room = await this.getRoomByName(channelName);
+    if (!room) {
+        return { success: false, error: 'Channel not found' };
     }
+    if (user.id === room.owner) {
+        // Supprimez tous les messages du canal et ensuite le canal lui-même
+      //  await this.messagesRepository.delete({ id: room.id });
+      await this.messagesRepository.delete({ channelId: room.id });
+
+      await this.roomRepository.delete({ id: room.id });
+        return { success: true };
+    } else {
+        room.users = room.users.filter(id => id !== user.id);
+        await this.roomRepository.save(room);
+        return { success: true };
+    }
+}
     
 
     //--------------------------------------------------------------------------------------//
@@ -212,6 +211,31 @@ export class RoomService
   
       return [...ref_Socket.keys()].find(socket => ref_Socket.get(socket) === socketId);
   }
+
+  async GetSocketsInRoom(@MessageBody() data: { channelName: string },
+  ref_client: Map<number, string>, 
+  ref_Socket: Map<Socket, string>): Promise<Socket[]> {
+    // Récupérer l'entité de la room en utilisant l'ID de la room.
+    const room = await this.getRoomByName(data.channelName);
+
+    if (!room) {
+        console.error(`Room with ID ${data.channelName} not found.`);
+        return [];
+    }
+
+    // Récupérer tous les sockets des utilisateurs présents dans la room.
+    const sockets: Socket[] = [];
+    for (const userId of room.users) {
+        const socket = this.getSocketFromUserId(userId, ref_client, ref_Socket);
+        if (socket) {
+            sockets.push(socket);
+        }
+    }
+
+    return sockets;
+}
+
+
     
   //--------------------------------------------------------------------------------------//
 

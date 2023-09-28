@@ -43,7 +43,6 @@ export class ChatGateway
 
   private ref_socket_userid = new Map<Socket, number>()
   
-  private ref_room_userSocket = new Map<Socket, number>()
 
   // Instance du serveur WebSocket
   @WebSocketServer()
@@ -235,22 +234,21 @@ export class ChatGateway
   async quitRoom(@MessageBody() data: { 
     channelName: string }, @ConnectedSocket() client: Socket) {
       // Utilise le service roomService pour quitter la salle
+      const usersInRoom = await this.roomService.GetSocketsInRoom(data, this.ref_client, this.ref_Socket);
       const result = await this.roomService.quitRoom(data, client);
-
+      
       // Notifications sur le succès de l'opération
       if (result.success) 
       {
-        console.log("Je suis dans quitRoom");
         this.server.to(client.id).emit('quitRoom', "You have left the room " + data.channelName);
         this.server.to(data.channelName).emit('quitRoom', client.data.user.username + " has left the room " + data.channelName);
         client.leave(data.channelName);
         this.emitAvailableRooms(client);
-        this.emitRooms(client);
-      }
-      const room = await this.roomService.getRoomByName(data.channelName);
-      if (!room)
-      {
-
+        const room = await this.roomService.getRoomByName(data.channelName);
+        if (room == undefined)
+          usersInRoom.forEach(socket => { this.emitRooms(socket) });
+        else
+          this.emitRooms(client);
       }
       return result;
   }
