@@ -3,7 +3,7 @@
         <ul v-if="onlineUsers && onlineUsers.length">
             <h2>Personnes en ligne :</h2>
             <li v-for="user in onlineUsers" :key="user.id">
-                <router-link :to="`/profile/${user.username}`">{{ user.username }}</router-link>
+                <router-link :to="`/online-profile/${user.username}`">{{ user.username }}</router-link>
             </li>
         </ul>
         <div v-if="!onlineUsers.length" class="no-users-message">Personne n'est connecté pour le moment.</div>

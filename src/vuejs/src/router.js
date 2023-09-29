@@ -6,7 +6,8 @@ import Chat from './chat/chatPage.vue';
 import Login from './login/loginPage.vue';
 import Setting from './setting/settingPage.vue';
 import ProfileModification from './setting/ProfileModification.vue';
-import ProfileFriend from './home/profileFriend.vue'; // Assurez-vous d'ajuster le chemin si nécessaire
+import FriendProfile from './home/profileFriend.vue'; 
+import OnlineProfile from './home/profileOnline.vue'; 
 
 const routes = [
   {
@@ -63,15 +64,25 @@ const routes = [
     }
   },
   {
-    path: '/profile/:username',
-    name: 'Profile',
-    component: ProfileFriend,
+    path: '/friend-profile/:username',
+    name: 'FriendProfile',
+    component: FriendProfile,
     meta: {
-        title: 'Profile',
+        title: 'Friend Profile',
         requiresAuth: true
     },
     props: route => ({ username: route.params.username })
   },
+  {
+    path: '/online-profile/:username',
+    name: 'OnlineProfile',
+    component: OnlineProfile,
+    meta: {
+        title: 'Online User Profile',
+        requiresAuth: true
+    },
+    props: route => ({ username: route.params.username })
+  }
 ]
 
 const router = createRouter({

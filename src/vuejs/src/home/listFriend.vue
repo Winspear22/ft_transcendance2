@@ -5,7 +5,7 @@
         <ul v-if="friends && friends.length">
             <li v-for="friend in friends" :key="friend.id">
                 <img :src="friend.profile_picture" alt="Profile Picture" />
-                <router-link :to="`/profile/${friend.username}`">{{ friend.username }}</router-link>
+                <router-link :to="`/friend-profile/${friend.username}`">{{ friend.username }}</router-link>
             </li>
         </ul>
         <div v-if="!friends.length">Pas encore d'ami.</div>
