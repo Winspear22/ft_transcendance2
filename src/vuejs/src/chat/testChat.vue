@@ -1,7 +1,5 @@
 <template>
     <div class="rooms-container">
-        <h1>Chat Rooms</h1>
-        
         <AvailableRooms />
         <RoomsComp />
         <CreateChatRoom />
