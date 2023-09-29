@@ -341,7 +341,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('onlineUsers') 
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) { 
-      let onlineUsers = await this.usersRepository.find({
+      let me = await this.usersRepository.find({
+        relations: {
+          friends: true,
+        },
+        where: {
+          username: socket.data.user.username,
+        }
+      });
+      
+      let allOnlineUsers = await this.usersRepository.find({
         relations: {
           friends: false,
         },
@@ -350,8 +359,27 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           user_status: "Online",
         }
       });
-      if (onlineUsers != undefined)
-        this.server.to(socket.id).emit('onlineUsers', onlineUsers);
+      let onlineUsersWithoutFriends: UserEntity [] = new Array();
+      let i = 0;
+      let j = me[0].friends.length;
+      if (j == 0) {
+        this.server.to(socket.id).emit('onlineUsers', allOnlineUsers);
+        return;
+      }
+      
+      for (let value1 of allOnlineUsers.values()) {
+        i = 0;
+        for (let value2 of me[0].friends.values()) {
+          i++;
+          if (value1.id == value2.friendId)
+            break;
+          if (j != 0 && i == j) {
+            onlineUsersWithoutFriends.push(value1);
+          }
+        }
+      }
+      if (onlineUsersWithoutFriends.length)
+        this.server.to(socket.id).emit('onlineUsers', onlineUsersWithoutFriends);
     }
   }
 
