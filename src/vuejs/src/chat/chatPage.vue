@@ -1,11 +1,18 @@
 <template>
   <div class="chatContainer">
-    <h1>C H A T</h1>
+    <!-- Links to Chat and DM sub-pages -->
+    <nav>
+      <router-link to="/chat" class="chat-link">Chat</router-link>
+      <span class="separator">|</span>
+      <router-link to="/chat/dm" class="dm-link">DM</router-link>
+    </nav>
+
+    <!-- Render the child route component -->
+    <router-view />
+
     <AddFriend />
     <FriendRequests />
     <ReceivingFriend />
-    <SeeDmRoom />
-    <testChat/>
     <invitToPlay />
     <receivingInvitToPlay />
   </div>
@@ -15,8 +22,6 @@
 import AddFriend from './addFriend';
 import FriendRequests from './friendRequests';
 import ReceivingFriend from './receivingFriend';
-import SeeDmRoom from './seeDmRoom';
-import testChat from './testChat';
 import invitToPlay from './invitToPlay.vue';
 import receivingInvitToPlay from './receivingInvitToPlay.vue';
 
@@ -26,8 +31,6 @@ export default {
     AddFriend,
     FriendRequests,
     ReceivingFriend,
-    SeeDmRoom,
-    testChat,
     invitToPlay,
     receivingInvitToPlay
   }

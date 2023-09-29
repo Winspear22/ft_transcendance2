@@ -3,6 +3,8 @@ import store from './store';
 import Home from './home/homePage.vue';
 import Game from './game/gamePage.vue';
 import Chat from './chat/chatPage.vue';
+import SeeDmRoom from './chat/seeDmRoom';
+import TestChat from './chat/testChat';
 import Login from './login/loginPage.vue';
 import Setting from './setting/settingPage.vue';
 import ProfileModification from './setting/ProfileModification.vue';
@@ -38,12 +40,27 @@ const routes = [
   },
   {
     path: '/chat',
-    name: 'Chat',
     component: Chat,
-    meta: {
-      title: 'Chat',
-      requiresAuth: true
-    }
+    children: [
+      {
+        path: '', // route par défaut pour /chat
+        name: 'ChatPage',
+        component: TestChat,
+        meta: {
+          title: 'Chat',
+          requiresAuth: true
+        }
+      },
+      {
+        path: 'dm',
+        name: 'DmPage',
+        component: SeeDmRoom,
+        meta: {
+          title: 'DM',
+          requiresAuth: true
+        }
+      }
+    ]
   },
   {
     path: '/setting',
