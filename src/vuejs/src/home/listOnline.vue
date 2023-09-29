@@ -1,13 +1,12 @@
 <template>
     <div class="list-container">
-        <h2>Personnes en ligne :</h2>
         <ul v-if="onlineUsers && onlineUsers.length">
-    <li v-for="user in onlineUsers" :key="user.id">
-        <router-link :to="`/profile/${user.username}`">{{ user.username }}</router-link>
-    </li>
-</ul>
-
-        <div v-if="!onlineUsers.length">Personne n'est connecté pour le moment.</div>
+            <h2>Personnes en ligne :</h2>
+            <li v-for="user in onlineUsers" :key="user.id">
+                <router-link :to="`/profile/${user.username}`">{{ user.username }}</router-link>
+            </li>
+        </ul>
+        <div v-if="!onlineUsers.length" class="no-users-message">Personne n'est connecté pour le moment.</div>
     </div>
 </template>
 
@@ -23,7 +22,7 @@ export default {
 
         function requestOnlineUsers() {
             if(store.state.gameSocket) {
-                store.state.gameSocket.emit('onlineUsers', 'VotreNomSiRequis');
+                store.state.gameSocket.emit('onlineUsers');
             }
         }
 
@@ -87,5 +86,23 @@ export default {
     display: flex; 
     justify-content: space-between; 
 }
+.list-container .no-users-message {
+    color: #2459d5;
+    text-align: center;
+}
+.list-container a {
+    color: #2459d5; /* La couleur bleu foncé que vous utilisez */
+    text-decoration: none; /* Pour supprimer le soulignement du lien */
+}
+
+.list-container li a:hover {
+    color: black !important; /* La couleur reste la même au survol */
+}
+
+.list-container a:visited {
+    color: #2459d5; /* La couleur reste la même après avoir été visité */
+}
+
+
 </style>
 

@@ -81,4 +81,16 @@ export default {
     display: flex; 
     justify-content: space-between; 
 }
+.list-container-friend a {
+    color: #2fe8ee; /* La couleur bleu foncé que vous utilisez */
+    text-decoration: none; /* Pour supprimer le soulignement du lien */
+}
+
+.list-container-friend li a:hover {
+    color: black !important;
+}
+
+.list-container-friend a:visited {
+    color: #2fe8ee; /* La couleur reste la même après avoir été visité */
+}
 </style>
