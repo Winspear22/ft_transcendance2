@@ -13,26 +13,19 @@
 </template>
 
 <script>
+import { getChatUserName } from './dmName';
+
 export default {
   props: {
     chat: Object,
     userInfo: Object,
   },
   computed: {
-    chatName() {
-      if (this.chat?.users.length > 0) {
-        if (this.userInfo && this.chat.users[0].username !== this.userInfo.username) {
-          return this.chat.users[0].username;
-        } else if (this.chat.users.length > 1) {
-          return this.chat.users[1].username;
-        }
-      }
-      return "Unknown";
-    },
+    chatName() { return getChatUserName(this.chat, this.userInfo); },
   },
   methods: {
     getSenderName(senderId) {
-      // Chercher le nom de l'expéditeur en fonction de senderId
+      if (!this.chat || !this.chat.users) return "Unknown";
       const sender = this.chat.users.find(user => user.id === senderId);
       return sender ? sender.username : "Unknown";
     }

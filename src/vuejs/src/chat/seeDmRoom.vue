@@ -29,13 +29,10 @@ import SeeConv from './seeConv.vue';
 import SendDm from './sendDm.vue';
 import InfoUser from '../setting/infoUser';
 import { useRouter } from 'vue-router';
+import { getChatUserName } from './dmName';
 
 export default {
-  components: {
-    SeeConv,
-    SendDm,
-    InfoUser
-  },
+  components: { SeeConv, SendDm, InfoUser },
   setup() {
     const store = useStore();
     const socketDm = store.getters.socketDm;
@@ -46,77 +43,62 @@ export default {
 
     const appendNewMessage = (message) => {
       const chat = chats.value.find(c => c.room === message.chat.room);
-      if (chat) {
-        if (!chat.messages) {
-          chat.messages = [];
-        }
-        chat.messages.push(message);
-      } else {
+      if (!chat) {
         chats.value.push(message);
+        return;
+      }
+
+      if (!chat.messages.some(m => m.id === message.id)) {
+        chat.messages.push(message);
       }
     };
 
     const blockDM = (chat) => {
-      const usernameToBlock = getChatName(chat);
+      const usernameToBlock = getChatUserName(chat, userInfo.value);
       if (usernameToBlock !== "Unknown") {
         socketDm.emit('blockDM', { receiverUsername: usernameToBlock });
         router.push({ name: 'Login' });
       }
     };
 
-    const updateChats = (data) => {
-      chats.value = data;
-    }
-
-    const initializesocketDmListeners = () => {
-      socketDm.on('emitDM', (data) => {
-        updateChats(data);
-      });
-      socketDm.on('sendDM', (message) => {
-        appendNewMessage(message);
-      });
-    }
-
-    const cleanupsocketDmListeners = () => {
-      socketDm.off('emitDM', updateChats);
-      socketDm.off('sendDM', appendNewMessage);
-    }
-
     onMounted(() => {
-      initializesocketDmListeners();
+      socketDm.on('emitDM', data => chats.value = data);
+      socketDm.on('sendDM', appendNewMessage);
       socketDm.emit('emitDM');
     });
 
     onBeforeUnmount(() => {
-      cleanupsocketDmListeners();
+      socketDm.off('emitDM', data => chats.value = data);
+      socketDm.off('sendDM', appendNewMessage);
     });
-
-    const handleUserInfo = (user) => {
-      userInfo.value = user;
-    }
-
-    const switchTab = (index) => {
-      activeTabIndex.value = index;
-    }
-
-    const getChatName = (chat) => {
-      if (chat && chat.users && !chat.users.length) return "Unknown";
-      const otherUser = chat.users.find(u => !userInfo.value || u.username !== userInfo.value.username);
-      return otherUser ? otherUser.username : "Unknown";
-    }
 
     return {
       chats,
       userInfo,
-      handleUserInfo,
+      handleUserInfo: user => userInfo.value = user,
       activeTabIndex,
-      switchTab,
-      getChatName,
+      switchTab: index => activeTabIndex.value = index,
+      getChatName: chat => getChatUserName(chat, userInfo.value),
       blockDM
     }
   }
 };
 </script>
+
+<style>
+.tabs > div {
+  cursor: pointer;
+  padding: 10px;
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.tabs > div.active {
+  font-weight: bold;
+  border-bottom: 2px solid blue;
+}
+</style>
+
 
 <style>
 .tabs > div {

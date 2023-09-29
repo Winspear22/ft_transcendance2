@@ -16,6 +16,8 @@
             <p>Total Défaites: {{ friendProfile.matchHistory.total_défaite }}</p>
             <p>Winrate: {{ friendProfile.matchHistory.winrate }}%</p>
         </div>
+        <!-- Ajouter comme ami -->
+        <AddFromProfileButton :profileUsername="friendProfile.username || username" />
     </div>
 </template>
 
@@ -23,7 +25,7 @@
 <script>
 import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
-
+import AddFromProfileButton from './addFriend.vue';
 
 export default {
     props: {
@@ -31,6 +33,9 @@ export default {
             type: String,
             required: true
         }
+    },
+    components: {
+        AddFromProfileButton
     },
     setup(props) {
         const store = useStore();

@@ -33,7 +33,6 @@ export default {
                 message: message.value.trim(),
                 receiverUsername: props.chat.users.find(u => u.username !== props.userInfo.username).username
             };
-            console.log("je sis dans le front");
             socketDm.emit('sendDM', payload);
             message.value = ""; // Reset the input after sending the message
         }

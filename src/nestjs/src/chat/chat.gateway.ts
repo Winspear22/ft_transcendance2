@@ -83,7 +83,6 @@ export class ChatGateway
   // Supprime également l'utilisateur des maps.
   handleDisconnect(client: Socket)
   {
-    console.log("je suis déco : ", client.data.user.username);
     client.disconnect();
     for (let [Socket, id] of this.ref_Socket.entries()) {
       if (Socket === client) {
