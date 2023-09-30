@@ -368,7 +368,10 @@ export class DMGateway
         this.emitFriends(client);
         this.emitFriends(receiverSocket);
         senderSocket.join(chat.chat.room);
+
         receiverSocket.join(chat.chat.room);
+        this.emitDMs(client);
+        this.emitDMs(receiverSocket);
         //on emit que la conversation a été join
         this.server.to(client.id).emit("acceptFriendRequest", "You have joined the room :", chat.chat.room );
         this.server.to(receiverSocketId).emit("acceptFriendRequest", "You have joined the room :", chat.chat.room);
@@ -475,6 +478,8 @@ async RemoveFriend(
     this.server.to(receiverSocketId).emit("removeFriend", "You have been unfriended by " + sender.username);
     this.emitFriends(client);
     this.emitFriends(receiverSocket);
+    this.emitDMs(client);
+    this.emitDMs(receiverSocket);
   }
   else {
     this.server.to(client.id).emit("removeFriend", "Error in the friend removal process.");
@@ -534,6 +539,8 @@ async RemoveFriend(
       this.server.to(receiverSocketId).emit("blockDM", "You have been blocked and unfriended by " + sender.username);
       this.emitFriends(client);
       this.emitFriends(receiverSocket);
+      this.emitDMs(client);
+      this.emitDMs(receiverSocket);
     }
     else
     {
