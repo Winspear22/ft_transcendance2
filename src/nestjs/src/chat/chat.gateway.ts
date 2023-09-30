@@ -55,7 +55,7 @@ export class ChatGateway
   // Gère la connexion d'un utilisateur au serveur WebSocket.
   // Authentifie l'utilisateur et stocke ses informations dans les maps.
   // Envoie également à l'utilisateur la liste des rooms et des rooms disponibles.
-  @UseGuards(ChatGuard)
+  //@UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
@@ -83,7 +83,7 @@ export class ChatGateway
   // Supprime également l'utilisateur des maps.
   handleDisconnect(client: Socket)
   {
-    console.log("je suis déco : ", client.data.user.username);
+    //console.log("je suis déco : ", client.data.user.username);
     client.disconnect();
     for (let [Socket, id] of this.ref_Socket.entries()) {
       if (Socket === client) {

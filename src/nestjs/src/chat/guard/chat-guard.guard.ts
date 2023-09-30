@@ -23,7 +23,7 @@ export class ChatGuard implements CanActivate {
     {
       const client = context.switchToWs().getClient();
       const accessTokenCookie = client.handshake.query.Cookie;
-      console.log("JE SUIS ICI DANS LE GUARD");
+      //console.log("JE SUIS ICI DANS LE GUARD");
       if (!accessTokenCookie) {
           console.log('Access Token Cookie is missing.');
           return false;
@@ -54,6 +54,7 @@ export class ChatGuard implements CanActivate {
         return false;
     }
     /*JE TROUVE L'UTILISATEUR ASSOCIE AU TOKEN*/
+    console.log("username in cookie == ", username);
     const user = await this.userService.findUserByUsername(username);
     if (user)
         console.log("User connected MIDDLEWARE CHATGUARD: ", user.username);

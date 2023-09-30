@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { MessageEntity } from './message.entity';
+import { IsString, IsInt } from 'class-validator';
 
 @Entity('rooms')
 export class RoomEntity {
@@ -21,6 +22,15 @@ export class RoomEntity {
 
   @Column('int', { array: true })
   users: number[];
+
+//  @Column('simple-array', { nullable: true })
+  //userDTOs: UserDTO[];
+//  @Column('json', { default: '', nullable: true })
+//userDTOs: UserDTO[] = [];
+@Column('json', { nullable: true, default: '[]' })
+userDTOs: UserDTO[];
+
+  
 
   @Column('int', { array: true })
   admins: number[];
@@ -56,4 +66,13 @@ export class RoomEntity {
   })
   messages: MessageEntity[];
   
+}
+
+
+export class UserDTO {
+  @IsString()
+  username: string;
+
+  @IsInt()
+  id: number;
 }

@@ -368,7 +368,6 @@ export class DMGateway
         this.emitFriends(client);
         this.emitFriends(receiverSocket);
         senderSocket.join(chat.chat.room);
-
         receiverSocket.join(chat.chat.room);
         this.emitDMs(client);
         this.emitDMs(receiverSocket);
