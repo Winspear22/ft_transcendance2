@@ -3,6 +3,7 @@
     <input v-model="newUsername" placeholder="Entrez votre nouveau nom d'utilisateur">
     <button @click="updateUsername">Valider</button>
     <popupValidate v-if="showValidationPopup" />
+    <init-socket v-if="shouldInitSocket"></init-socket>
   </div>
 </template>
 
@@ -10,16 +11,19 @@
   import axios from 'axios';
   import popupValidate from './popupValidate.vue';
   import store from '@/store';
+  import initSocket from '../login/initSocket';
 
   export default {
     name: 'ChangeUsername',
     components: {
       popupValidate,
+        initSocket,
     },
     data() {
       return {
         newUsername: '',
-        showValidationPopup: false
+        showValidationPopup: false,
+        shouldInitSocket: false,
       };
     },
     methods: {
@@ -29,6 +33,16 @@
           if (response.status === 201) {
             this.showValidationPopup = true;
             store.getters.gameSocket.emit('updateUser', this.newUsername);
+
+            try {
+              const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
+              if (response.data.success) {
+                await store.dispatch('setToken', response.data.cookie);
+                this.shouldInitSocket = true;
+              }
+            } catch (error) {
+              console.error('Erreur lors de la récupération des informations utilisateur:', error);
+            }
           }
         } catch (error) {
           console.error("Erreur lors du changement de nom d'utilisateur:", error);

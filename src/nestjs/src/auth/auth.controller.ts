@@ -133,8 +133,9 @@ export class AuthController {
   async getUserInfo(@Req() req: ExpressRequest, @Res() res: Response) {
       try {
           const user = req.user as UserEntity;
+          const cookie = req.cookies['PongAccessAndRefreshCookie'];
           
-          return res.status(HttpStatus.OK).json({ success: true, user });
+          return res.status(HttpStatus.OK).json({ success: true, user, cookie });
       } catch (error) {
           console.error(error);
           return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Error retrieving user info' });

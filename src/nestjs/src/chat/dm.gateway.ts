@@ -219,11 +219,13 @@ export class DMGateway
   @SubscribeMessage('sendDM')
   async handleDMs(
   @ConnectedSocket() client: Socket,
-  @MessageBody() body: { room: string, senderUsername: string, message: string, receiverUsername: string }
+  @MessageBody() body: { room: string, senderUsername: string, message: string, receiverId: number }
   ): Promise<void> 
   {
     const sender = await this.chatService.getUserFromSocket(client);
-    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    console.log("body.receiverId", body.receiverId);
+    console.log("ref_client " ,this.ref_client);
+    const receiver = await this.usersRepository.findOne({ where: { id: body.receiverId } });
     // Je verifie l'existence de l'un ou l'autre des utilisateur 
     if (!sender || !receiver) {
       return;
