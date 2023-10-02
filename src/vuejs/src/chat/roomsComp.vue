@@ -69,7 +69,6 @@ export default {
 
     if (this.socketChat) {
       this.socketChat.on('emitRooms', (rooms) => {
-        console.log("Mes rooms dispo:", rooms);
         this.rooms = rooms;
       });
 

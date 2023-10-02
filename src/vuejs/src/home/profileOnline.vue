@@ -45,11 +45,9 @@ export default {
         onMounted(() => {
             if (gameSocket) {
                 gameSocket.emit('friendProfile', props.username);
-                console.log("J'ai envoye ma demande au back.");
 
                 gameSocket.on('friendProfile', (profile) => {
                     friendProfile.value = profile[0];
-                    console.log(friendProfile.value);
                 });
             }
         });

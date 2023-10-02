@@ -26,7 +26,6 @@ export default {
         if (message.startsWith('Invitation to play from')) {
           hasGameInvitRequest.value = true;
           requestMessage.value = message;
-          console.log("value du send request", message);
           senderUsername.value = message.split(' ')[4];
         }
       });

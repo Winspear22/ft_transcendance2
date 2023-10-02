@@ -134,6 +134,7 @@ export class ChatGateway
         if (userSocket) {
           const availableRooms = await this.roomService.getRooms(userSocket);
           this.server.to(userSocket.id).emit('emitAvailableRooms', availableRooms);
+          console.log("JE SUIS DANS EMIT AVAILABLE ROOM");
         }
       }
   }
@@ -697,7 +698,7 @@ export class ChatGateway
   @MessageBody() body: { channelName: string,
   senderUsername: string,
   message: string }): Promise<void> {
-    console.log("SEND MESSAGE", body.channelName, body.senderUsername, body.message);
+    console.log("SEND MESSAGE", body.channelName, body.senderUsername, body.message)
     const sender = await this.chatService.getUserFromSocket(client);
     //const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
     const room = await this.roomService.getRoomByName(body.channelName);

@@ -56,7 +56,6 @@ export default {
             if (this.hasPassword) {
                 const salt = await bcrypt.genSalt(10);
                 hashedPassword = await bcrypt.hash(this.password, salt);
-                console.log("MDP CRYPTE", hashedPassword);
             }
 
             const data = {

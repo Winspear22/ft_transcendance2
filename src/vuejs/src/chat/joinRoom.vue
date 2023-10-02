@@ -26,9 +26,6 @@
         return this.$store.getters.socketChat;
       }
     },
-    created() {
-  console.log("Room received:", this.room);
-},
   
     methods: {
       attemptJoin() {
