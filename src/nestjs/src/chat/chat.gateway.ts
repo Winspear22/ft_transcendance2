@@ -119,6 +119,7 @@ export class ChatGateway
     });
 
     // Envoi des rooms à l'utilisateur
+    console.log("Émission des rooms pour le client : ", client.id);
     return await this.server.to(client.id).emit('emitRooms', rooms);
   }
 
@@ -720,7 +721,7 @@ export class ChatGateway
     message.channelId = room.id;
 
     const savedMessage = await this.messagesRepository.save(message);
-    console.log(`Message envoyé à ${savedMessage.room.roomName}`);
+    console.log("Traitement du message du client :", client.id);
 
     // Émettez le message aux clients
     this.server.to(savedMessage.room.roomName).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture});
