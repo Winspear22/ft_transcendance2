@@ -26,6 +26,5 @@ export default {
 /* You can style your container here */
 .rooms-container {
     padding: 20px;
-    border: 1px solid #e0e0e0;
 }
 </style>

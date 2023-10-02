@@ -1,38 +1,28 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { MessageEntity } from './entities/message.entity';
-import { CreateMessageDto } from './dto/message.dto';
+import { In, Repository } from 'typeorm';
 import { ConnectedSocket } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors'
 import { ChatAuthService } from './chat-auth.service';
-import { UserService } from 'src/user/user.service';
-import { ChatGateway } from './chat.gateway';
+//import { UserService } from 'src/user/user.service';
+import { RoomEntity } from './entities/room.entity';
 
 @Injectable()
 export class ChatService {
 
     constructor(
-        @InjectRepository(MessageEntity)
-        private messageRepository: Repository<MessageEntity>,
+        @InjectRepository(RoomEntity)
+        private roomRepository: Repository<RoomEntity>,
+        @InjectRepository(UserEntity)
+        private usersRepository: Repository<UserEntity>,
         private chatAuthService: ChatAuthService,
-        private userService: UserService,
-        //private chatGateway: ChatGateway,
+        //private userService: UserService,
     ) {}
 
-    async createMessage(data: CreateMessageDto): Promise<MessageEntity> 
-    {
-        console.log("Data to be inserted:", data);
-        const message = await this.messageRepository.create(data);
-        await this.messageRepository.save(message);
-        return message;
-    }
-
-    async getAllMessages(): Promise<MessageEntity[]> 
-    {
-        return await this.messageRepository.find();
+    async findUserByUsername(username: string): Promise<UserEntity> {
+      return await this.usersRepository.findOneBy({ username });
     }
 
     async getUserFromSocket(@ConnectedSocket() client: Socket): Promise<UserEntity | undefined>
@@ -88,7 +78,7 @@ export class ChatService {
         }
 
    
-        const user = await this.userService.findUserByUsername(username);
+        const user = await this.findUserByUsername(username);
         client.data.user = user;
     
         if (user)
@@ -98,6 +88,5 @@ export class ChatService {
             //this.chatGateway.handleDisconnect(client);
             return undefined;
         }
-    }
-
+    }   
 }

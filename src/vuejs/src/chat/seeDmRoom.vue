@@ -1,8 +1,9 @@
 <template>
-  <div>
+  <div class="dm-container">
     <info-user @userInfoFetched="handleUserInfo"></info-user>
-    
-    <div class="tabs">
+
+    <!-- List of chats -->
+    <div class="chats-list">
       <div v-for="(chat, index) in chats" 
            :key="chat.id" 
            @click="switchTab(index)" 
@@ -12,15 +13,22 @@
       </div>
     </div>
 
-    <see-conv v-if="chats[activeTabIndex]" 
-              :chat="chats[activeTabIndex]" 
-              :user-info="userInfo"></see-conv>
+    <!-- Vertical separator -->
+    <div class="vertical-separator"></div>
 
-    <send-dm v-if="chats[activeTabIndex]" 
-             :chat="chats[activeTabIndex]" 
-             :user-info="userInfo"></send-dm>
+    <!-- Selected chat -->
+    <div class="selected-chat">
+      <see-conv v-if="chats[activeTabIndex]" 
+                :chat="chats[activeTabIndex]" 
+                :user-info="userInfo"></see-conv>
+
+      <send-dm v-if="chats[activeTabIndex]" 
+               :chat="chats[activeTabIndex]" 
+               :user-info="userInfo"></send-dm>
+    </div>
   </div>
 </template>
+
 
 <script>
 import { ref, onMounted, onBeforeUnmount } from 'vue';
@@ -85,31 +93,28 @@ export default {
 };
 </script>
 
-<style>
-.tabs > div {
-  cursor: pointer;
-  padding: 10px;
-  display: inline-block;
-  margin-right: 10px;
+<style scooped>
+.dm-container {
+  display: flex;
 }
 
-.tabs > div.active {
-  font-weight: bold;
-  border-bottom: 2px solid blue;
-}
-</style>
-
-
-<style>
-.tabs > div {
-  cursor: pointer;
-  padding: 10px;
-  display: inline-block;
-  margin-right: 10px;
+.chats-list {
+  width: 250px;
+  overflow-y: auto;
+  border-right: 1px solid #ddd;
 }
 
-.tabs > div.active {
-  font-weight: bold;
-  border-bottom: 2px solid blue;
+.vertical-separator {
+  width: 1px;
+  background-color: #ddd;
+  height: 100%;
 }
+
+.selected-chat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
 </style>

@@ -7,30 +7,13 @@ import { UsersRepository } from './user.repository';
 import { PassportModule, PassportStrategy } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from 'src/auth/strategies/jwt.strategy';
-
-/*@Module({
-  imports: [
-    TypeOrmModule.forFeature([UserEntity, UsersRepository, BlacklistedToken]),  // Ajoutez BlacklistedTokenEntity ici
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: 'superSecret2021',
-      signOptions: {
-        expiresIn: 86400,
-      },
-    }),
-  ],
-  controllers: [UserController],
-  providers: [UserService, JwtStrategy],
-  exports: [UserService, JwtStrategy, PassportModule, JwtModule, TypeOrmModule.forFeature([UserEntity, UsersRepository])],
-
-})
-export class UserModule {}*/
-
 import { MulterModule } from '@nestjs/platform-express';
+import { RoomsRepository } from 'src/chat/entities/room.repository';
+import { RoomEntity } from 'src/chat/entities/room.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, UsersRepository]),  // Ajoutez BlacklistedTokenEntity ici
+    TypeOrmModule.forFeature([UserEntity, UsersRepository, RoomsRepository, RoomEntity]),  // Ajoutez BlacklistedTokenEntity ici
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: 'superSecret2021',

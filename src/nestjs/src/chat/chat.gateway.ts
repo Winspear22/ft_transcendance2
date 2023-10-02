@@ -55,7 +55,7 @@ export class ChatGateway
   // Gère la connexion d'un utilisateur au serveur WebSocket.
   // Authentifie l'utilisateur et stocke ses informations dans les maps.
   // Envoie également à l'utilisateur la liste des rooms et des rooms disponibles.
-  @UseGuards(ChatGuard)
+  //@UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {

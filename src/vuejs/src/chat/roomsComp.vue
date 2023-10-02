@@ -1,31 +1,48 @@
 <template>
   <div>
-    <h2>My Rooms</h2>
-    <ul>
-      <li v-for="(room, index) in rooms" :key="room.id">
-        <QuitRoom :room="room" :index="index" />
+    <h2 v-if="rooms.length > 0">Chats disponibles</h2>
+    <ul class="rooms-list">
+      <li v-for="room in rooms" :key="room.id">
+        <button @click="selectRoom(room)">
+          {{ room.roomName }}
+        </button>
       </li>
     </ul>
+
+    <div v-if="selectedRoom" class="chat-window">
+      <h3>{{ selectedRoom.roomName }}</h3>
+      <ul>
+        <li v-for="message in selectedRoom.messages" :key="message.id">
+          {{ findUserNameById(message.sender, selectedRoom.userDTOs) }}: {{ message.content }}
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
-import QuitRoom from './quitRoom.vue'; 
-
 export default {
-  components: {
-    QuitRoom
-  },
-  
   data() {
     return {
       rooms: [],
+      selectedRoom: null,
     };
   },
 
   computed: {
     socketChat() {
       return this.$store.getters.socketChat;
+    }
+  },
+
+  methods: {
+    selectRoom(room) {
+      this.selectedRoom = room;
+    },
+
+    findUserNameById(userId, users) {
+      const user = users.find(u => u.id === userId);
+      return user ? user.username : 'Unknown User';
     }
   },
 

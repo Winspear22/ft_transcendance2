@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './user.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { authenticator } from 'otplib';
 import { Response } from 'express';
 import * as colors from '../colors';
@@ -15,6 +15,7 @@ import { IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { UpdateEmailDto, UpdateUserDto } from './dto/updateuser.dto';
 import { ImageDto } from './dto/profile_picture.dto';
 import * as path from 'path'; // Assurez-vous que le module 'path' est importé
+import { RoomEntity } from 'src/chat/entities/room.entity';
 
 export class AuthDto {
   @IsString()
@@ -42,6 +43,8 @@ export class UserService {
     @InjectRepository(UserEntity)
     private usersRepository: Repository<UserEntity>,
     private jwtService: JwtService,
+    @InjectRepository(RoomEntity)
+    private roomRepository: Repository<RoomEntity>
   ) {}
 
   async createUser(userDet: any): Promise<UserEntity> {
@@ -425,6 +428,25 @@ export class UserService {
 
   }
 
+  async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
+    const rooms = await this.roomRepository.find({ 
+      where: {
+        users: In([userId])  // Trouver des rooms où l'utilisateur est présent
+      }
+    });
+    console.log("Je suis dans le changemznt de DTO");
+
+    rooms.forEach(room => {
+      const userDTOToUpdate = room.userDTOs.find(dto => dto.id === userId);
+      if (userDTOToUpdate) {
+        console.log(userDTOToUpdate);
+        userDTOToUpdate.username = newUsername; // Mettez à jour l'username
+      }
+    });
+
+    await this.roomRepository.save(rooms); // Sauvegardez les rooms modifiés
+  }
+
   async UpdateUserUsernameSettings(user: UserEntity,
   @Res({passthrough: true}) res: Response,
   newData: UpdateUserDto): Promise<void>
@@ -442,6 +464,8 @@ export class UserService {
       const saltRounds = 12;
       const salt = await bcrypt.genSalt(saltRounds);
       const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
+      console.log("Je suis dans change name : ", user.id, username);
+      await this.updateUserDTOUsername(user.id, username);
       this.FindAndUpdateUser((await user).username, { MyHashedRefreshToken: hashedRefreshToken });
       this.CreateNewAccessCookie(
       {
@@ -452,6 +476,7 @@ export class UserService {
       },
       res,
       );
+
     }
     catch (error)
     {

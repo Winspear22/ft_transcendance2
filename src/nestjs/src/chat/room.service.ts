@@ -5,11 +5,11 @@ import { RoomEntity } from './entities/room.entity';
 import { UserEntity } from 'src/user/user.entity';
 import * as colors from '../colors';
 import * as bcrypt from 'bcryptjs';
-import { UserService } from 'src/user/user.service';
 import { ConnectedSocket, MessageBody } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
 import { MessageEntity } from './entities/message.entity';
-
+import { UserDTO } from './entities/room.entity';
+import { In } from 'typeorm';
 
 @Injectable()
 export class RoomService 
@@ -21,7 +21,6 @@ export class RoomService
         private usersRepository: Repository<UserEntity>,
         @InjectRepository(MessageEntity)
         private messagesRepository: Repository<MessageEntity>,
-        private userService: UserService
         
     ) {}
 
@@ -48,6 +47,7 @@ export class RoomService
             return { success: false, error: 'Channel already exists' };
         }
         const user = client.data.user;
+        const userdto = { username: user.username, id: user.id };
         const userId = user.id;
         const newRoom: Partial<RoomEntity> = {
             roomName: channelName,
@@ -56,6 +56,7 @@ export class RoomService
             owner: userId,
             roomMode: isPrivate ? 'private' : 'public',
             users: [userId], // initialiser avec l'ID de l'utilisateur propriétaire
+            userDTOs: [userdto],
             admins: [userId], // initialiser avec l'ID de l'utilisateur propriétaire
             bannedIds: [],
             mutedIds: [],
@@ -96,34 +97,111 @@ export class RoomService
           return { success: true };
         }
         room.users.push(user.id);
+        const userDTO = { username: user.username, id: user.id };
+        room.userDTOs.push(userDTO);
+        console.log(room.userDTOs);
         await this.roomRepository.save(room);
         return { success: true };
     }
+    /*async joinRoom(body: { 
+        channelName: string, 
+        password?: string; }, 
+        @ConnectedSocket() client: Socket) 
+      {
+          const { password } = body;
+      
+          const user: UserDTO = {
+              username: client.data.user.username, // ou une autre logique pour obtenir le nom d'utilisateur
+              id: client.data.user.id,
+          };
+          const room = await this.getRoomByName(body.channelName);
+          if (!room) {
+              return { success: false, error: 'Channel not found' };
+          }
+      
+          if (room.bannedIds.includes(user.id)) {
+            return { success: false, error: 'You are banned from this channel' };
+          }
+      
+          if (room.password && room.password !== '') {
+            if (!bcrypt.compareSync(password, room.password)) {
+              return { success: false, error: 'Invalid password' };
+            }
+          }
+      
+          // Vérifier si l'utilisateur est déjà dans la salle
+          //const userInRoom = room.userDTOs.find(u => u.id === user.id);
+        const userInRoom = room.users.find(id => id === user.id);
 
-async quitRoom(body: { 
-    channelName: string; }, 
-    @ConnectedSocket() client: Socket) {
+          if (userInRoom) {
+            return { success: true };
+          }
+      
+          // Ajout de l'id de l'utilisateur à 'users'
+          room.users.push(user.id);
+          // Ajout de UserDTO à 'userDTOs'
+          room.userDTOs.push(user);
+          console.log(room.userDTOs);
+      
+          await this.roomRepository.save(room);
+          return { success: true };
+      }*/
+      
+      
+
+//async quitRoom(body: { 
+//    channelName: string; }, 
+//    @ConnectedSocket() client: Socket) {
+//    const { channelName } = body;
+//    
+//    const user = client.data.user;
+//    const room = await this.getRoomByName(channelName);
+//    if (!room) {
+//        return { success: false, error: 'Channel not found' };
+//    }
+//    if (user.id === room.owner) {
+//        // Supprimez tous les messages du canal et ensuite le canal lui-même
+//      //  await this.messagesRepository.delete({ id: room.id });
+//      await this.messagesRepository.delete({ channelId: room.id });
+//
+//      await this.roomRepository.delete({ id: room.id });
+//        return { success: true };
+//    } else {
+//        room.users = room.users.filter(id => id !== user.id);
+//
+//        await this.roomRepository.save(room);
+//        return { success: true };
+//    }
+//}
+
+  async quitRoom(body: { 
+  channelName: string; }, 
+  @ConnectedSocket() client: Socket) 
+  {
     const { channelName } = body;
-    
+
     const user = client.data.user;
     const room = await this.getRoomByName(channelName);
     if (!room) {
         return { success: false, error: 'Channel not found' };
     }
-    if (user.id === room.owner) {
-        // Supprimez tous les messages du canal et ensuite le canal lui-même
-      //  await this.messagesRepository.delete({ id: room.id });
-      await this.messagesRepository.delete({ channelId: room.id });
 
-      await this.roomRepository.delete({ id: room.id });
+    if (user.id === room.owner) {
+        // Si l'utilisateur est le propriétaire de la salle, supprimez tous les messages du canal 
+        // et ensuite le canal lui-même
+        await this.messagesRepository.delete({ channelId: room.id });
+        await this.roomRepository.delete({ id: room.id });
         return { success: true };
     } else {
+        // Si l'utilisateur n'est pas le propriétaire, retirez-le des listes 'users' et 'userDTOs'
         room.users = room.users.filter(id => id !== user.id);
+        room.userDTOs = room.userDTOs.filter(userDTO => userDTO.id !== user.id);
+
         await this.roomRepository.save(room);
         return { success: true };
     }
-}
-    
+  }
+
 
     //--------------------------------------------------------------------------------------//
     //-------------------------------------ROOM GETTERS-------------------------------------//
@@ -472,4 +550,21 @@ async unmuteUserRoom(body: {
 
     return { success: true };
   }
+
+  /*async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
+    const rooms = await this.roomRepository.find({ 
+      where: {
+        users: In([userId])  // Trouver des rooms où l'utilisateur est présent
+      }
+    });
+
+    rooms.forEach(room => {
+      const userDTOToUpdate = room.userDTOs.find(dto => dto.id === userId);
+      if (userDTOToUpdate) {
+        userDTOToUpdate.username = newUsername; // Mettez à jour l'username
+      }
+    });
+
+    await this.roomRepository.save(rooms); // Sauvegardez les rooms modifiés
+  } */
 }
