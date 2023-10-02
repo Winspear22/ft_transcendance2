@@ -54,7 +54,6 @@ export default {
     if (this.socketChat) {
       this.socketChat.on('emitAvailableRooms', (rooms) => {
         this.availableRooms = rooms.channels;  
-        console.log("LISTE DES ROOM", this.availableRooms);
       });
     } else {
       console.error("Socket Chat non initialisé!");

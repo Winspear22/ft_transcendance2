@@ -31,11 +31,12 @@ import SendChat from './sendChat.vue';
 
 export default {
   components: { SendChat },
-
+  
   data() {
     return {
       rooms: [],
       selectedRoom: null,
+      processedMessageIds: [] // Ajouté
     };
   },
 
@@ -56,6 +57,12 @@ export default {
     },
 
     handleNewMessage(newMessage, senderDetails) {
+      // Vérifiez si le message a déjà été traité
+      if (this.processedMessageIds.includes(newMessage.id)) return;
+
+      // Ajoutez l'ID du message au tableau des messages traités
+      this.processedMessageIds.push(newMessage.id);
+
       const room = this.rooms.find(r => r.roomName === newMessage.room.roomName);
       if (room) {
         newMessage.senderUsername = senderDetails.senderUsername;

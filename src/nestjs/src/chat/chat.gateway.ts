@@ -720,6 +720,7 @@ export class ChatGateway
     message.channelId = room.id;
 
     const savedMessage = await this.messagesRepository.save(message);
+    console.log(`Message envoyé à ${savedMessage.room.roomName}`);
 
     // Émettez le message aux clients
     this.server.to(savedMessage.room.roomName).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture});
