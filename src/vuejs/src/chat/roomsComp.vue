@@ -26,6 +26,7 @@
 </template>
 
 
+
 <script>
 import SendChat from './sendChat.vue';
 
@@ -37,8 +38,7 @@ export default {
       rooms: [],
       selectedRoom: null,
       processedMessageIds: [],
-      isAttached: false,    // Drapeau pour l'attachement des écouteurs
-      isDetached: false     // Drapeau pour le détachement des écouteurs
+      isAttached: false,
     };
   },
 
@@ -49,12 +49,10 @@ export default {
   },
 
   methods: {
-    // UI Handlers
     selectRoom(room) {
       this.selectedRoom = room;
     },
-    
-    // Message and User Utilities
+
     getSenderName(message) {
       const user = this.selectedRoom.userDTOs.find(u => u.id === message.senderId);
       return user ? user.username : 'Unknown User';
@@ -64,42 +62,37 @@ export default {
       return !this.processedMessageIds.includes(messageId);
     },
 
-    // Socket Listeners
     attachSocketListeners() {
-      if (this.isAttached || this.isDetached) {
-        console.log("Les écouteurs de socket sont déjà attachés ou le composant vient d'être créé.");
+      if (this.isAttached) {
+        console.log("Les écouteurs de socket sont déjà attachés.");
         return;
       }
       console.log("Attachement des écouteurs de socket.");
       this.socketChat.on('emitRooms', this.updateRooms);
       this.socketChat.on('sendMessage', this.addMessageToRoom);
       this.isAttached = true;
-      this.isDetached = false;
     },
-    
+
     detachSocketListeners() {
-      if (!this.isDetached || !this.isAttached) {
-        console.log("Les écouteurs de socket sont déjà détachés ou n'ont jamais été attachés.");
+      if (!this.isAttached) {
+        console.log("Les écouteurs de socket n'ont jamais été attachés.");
         return;
       }
       console.log("Détachement des écouteurs de socket.");
       this.socketChat.off('emitRooms', this.updateRooms);
       this.socketChat.off('sendMessage', this.addMessageToRoom);
+      this.processedMessageIds = []; // Réinitialiser les IDs de messages traités
       this.isAttached = false;
-      this.isDetached = true;
     },
-    
-    // Socket Handlers
+
     updateRooms(rooms) {
-      console.log("Mise à jour des rooms avec les nouvelles données:", rooms);
       this.rooms = rooms;
-      console.log("Visualication des msg enregistre", rooms);
+      console.log("Rooms updated with new data:", rooms);
     },
-    
+
     addMessageToRoom(newMessage, senderDetails) {
-      console.log("Réception d'un nouveau message:", newMessage);
       if (!this.isNewMessage(newMessage.id)) return;
-      
+
       this.processedMessageIds.push(newMessage.id);
       const room = this.rooms.find(r => r.roomName === newMessage.room.roomName);
       if (room) {
@@ -110,21 +103,31 @@ export default {
   },
 
   created() {
-    console.log("Composant créé. Mise en place des écouteurs de socket si nécessaire.");
     if (!this.socketChat) {
-      console.error("Socket Chat non initialized!");
+      console.error("Socket Chat not initialized!");
       return;
     }
     this.socketChat.emit('Connection');
-    if (!this.isAttached) {
-      this.attachSocketListeners();
-    }
+    this.attachSocketListeners();
   },
-  
+
   beforeDestroy() {
-    if (!this.isDetached) {
-      this.detachSocketListeners();
-    }
+    this.detachSocketListeners();
+  },
+
+  // Si vous utilisez Vue Router
+  beforeRouteLeave(to, from, next) {
+    this.detachSocketListeners();
+    next();
+  },
+
+  // Si votre composant est à l'intérieur d'un <keep-alive>
+  activated() {
+    this.attachSocketListeners();
+  },
+
+  deactivated() {
+    this.detachSocketListeners();
   }
 };
 </script>
