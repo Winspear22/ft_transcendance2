@@ -6,9 +6,6 @@
         <span>{{ getSenderName(message.senderId) }}: {{ message.text }}</span>
       </div>
     </div>
-    <div v-else>
-      <p>No messages yet. Start a conversation!</p>
-    </div>
   </div>
 </template>
 

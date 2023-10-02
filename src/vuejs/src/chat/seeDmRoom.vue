@@ -5,11 +5,11 @@
     <!-- List of chats -->
     <div class="chats-list">
       <div v-for="(chat, index) in chats" 
-           :key="chat.id" 
-           @click="switchTab(index)" 
-           :class="{ active: activeTabIndex === index }">
-        {{ getChatName(chat) }}
-        <button @click.stop="blockDM(chat)">Block DM</button>
+          :key="chat.id" 
+          @click="switchTab(index)" 
+          :class="{ active: activeTabIndex === index }">
+        <span class="chat-name">{{ getChatName(chat) }}</span>
+        <block-dm-button :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
       </div>
     </div>
 
@@ -38,9 +38,10 @@ import SendDm from './sendDm.vue';
 import InfoUser from '../setting/infoUser';
 import { useRouter } from 'vue-router';
 import { getChatUserName } from './dmName';
+import BlockDmButton from './blockDm';
 
 export default {
-  components: { SeeConv, SendDm, InfoUser },
+  components: { SeeConv, SendDm, InfoUser, BlockDmButton },
   setup() {
     const store = useStore();
     const socketDm = store.getters.socketDm;
@@ -101,12 +102,12 @@ export default {
 .chats-list {
   width: 250px;
   overflow-y: auto;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid #2fe8ee;
 }
 
 .vertical-separator {
   width: 1px;
-  background-color: #ddd;
+  background-color: #2fe8ee;
   height: 100%;
 }
 
@@ -115,6 +116,15 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+}
+.chat-name {
+  color: #2fe8ee;  /* couleur de base pour le nom des conversations */
+  cursor: pointer;  /* change le curseur pour indiquer que l'utilisateur peut cliquer */
+  transition: color 0.3s;  /* ajoute une transition pour un changement de couleur doux */
+}
+
+.chat-name:hover {
+  color: black;  /* couleur au survol pour le nom des conversations */
 }
 
 </style>
