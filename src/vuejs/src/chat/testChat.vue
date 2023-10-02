@@ -1,5 +1,6 @@
 <template>
     <div class="rooms-container">
+        <invitRoom />
         <AvailableRooms />
         <RoomsComp />
         <CreateChatRoom />
@@ -10,6 +11,7 @@
 import AvailableRooms from './availableRooms.vue';
 import RoomsComp from './roomsComp.vue';
 import CreateChatRoom from './createChatRoom.vue';
+import invitRoom from './invitRoom.vue';
 
 export default {
   name: "RoomsContainer",
@@ -18,12 +20,12 @@ export default {
     AvailableRooms,
     CreateChatRoom,
     RoomsComp,
+    invitRoom,
   }
 };
 </script>
 
 <style scoped>
-/* You can style your container here */
 .rooms-container {
     padding: 20px;
 }
