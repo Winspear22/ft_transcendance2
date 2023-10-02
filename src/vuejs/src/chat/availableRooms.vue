@@ -1,7 +1,9 @@
 <template>
   <div>
-    <h2>Public Rooms</h2>
-    <div class="tabs">
+    <!-- Afficher seulement s'il y a des salles disponibles -->
+    <h2 v-if="availableRooms.length > 0">Salles publiques :</h2>
+    
+    <div class="tabs" v-if="availableRooms.length > 0">
       <JoinRoom 
         v-for="(room, index) in availableRooms" 
         :key="index" 
@@ -12,6 +14,7 @@
     </div>
   </div>
 </template>
+
 
 <script>
 import JoinRoom from "./joinRoom.vue";

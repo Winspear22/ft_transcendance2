@@ -10,6 +10,7 @@
           :class="{ active: activeTabIndex === index }">
         <span class="chat-name">{{ getChatName(chat) }}</span>
         <block-dm-button :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
+
       </div>
     </div>
 
