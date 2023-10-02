@@ -35,7 +35,7 @@ export default {
                 room: props.chat.room, 
                 senderUsername: props.userInfo.username,
                 message: message.value.trim(),
-                receiverUsername: props.chat.users.find(u => u.id !== props.userInfo.id).id
+                receiverId: props.chat.users.find(u => u.id !== props.userInfo.id).id
             };
             socketDm.emit('sendDM', payload);
             message.value = ""; // Reset the input after sending the message
