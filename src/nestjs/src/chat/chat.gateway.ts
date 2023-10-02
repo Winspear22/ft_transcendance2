@@ -188,6 +188,7 @@ export class ChatGateway
     password?: string
   }, @ConnectedSocket() client: Socket) 
   {
+    console.log("tentative changement de mdp");
     const { channelName, password } = data;
     const user = client.data.user;
     const userId = user.id;
@@ -215,9 +216,11 @@ export class ChatGateway
       this.server.in(channelName).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
       this.emitAvailableRooms(client);
       this.emitRooms(client);
+      console.log("CHANGEMENT DE MDP REUSSIS");
       return ;
     }  else {
         this.server.to(client.id).emit('changeRoomPassword', "Error. Password of the room " + channelName + " not modified.");
+        console.log("ECHEC CHANGEMENT DE MDP ");
 
         return ;
     }

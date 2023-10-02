@@ -6,6 +6,7 @@
            @click="selectRoom(room)" 
            :class="{ active: selectedRoom === room }">
         <span class="chat-name">{{ room.roomName }}</span>
+        <see-setting :channel-name="room.roomName"></see-setting>
       </div>
     </div>
     
@@ -29,9 +30,11 @@
 
 <script>
 import SendChat from './sendChat.vue';
+import SeeSetting from './seeSetting.vue';
+
 
 export default {
-  components: { SendChat },
+  components: { SendChat, SeeSetting },
 
   data() {
     return {
