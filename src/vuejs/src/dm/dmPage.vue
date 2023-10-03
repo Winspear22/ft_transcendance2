@@ -6,6 +6,7 @@
         <friendRequests/>
         <invitToPlay/>
         <receivingInvitToPlay/>
+        <seeDmRoom/>
     </div>
 </template>
 
@@ -15,8 +16,9 @@ import receivingFriend from '../utilsChatDm/receivingFriend';
 import friendRequests from '../utilsChatDm/friendRequests';
 import invitToPlay from '../utilsChatDm/invitToPlay';
 import receivingInvitToPlay from '../utilsChatDm/receivingInvitToPlay';
+import seeDmRoom from './seeDmRoom';
 
 export default {
-    components: { addFriend, receivingFriend, invitToPlay, friendRequests, receivingInvitToPlay },
+    components: { addFriend, receivingFriend, invitToPlay, friendRequests, receivingInvitToPlay, seeDmRoom },
 };
 </script>
