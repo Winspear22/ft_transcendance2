@@ -10,6 +10,7 @@
         <li><button @click="openKickUser">Kick un utilisateur</button></li>
         <li><button @click="openMuteUser">Mute un utilisateur</button></li>
         <li><button @click="openUnmuteUser">Demute un utilisateur</button></li>
+        <li><button @click="openSeeUser">Voir les utilisateurs</button></li>
       </ul>
       <ChangePassword v-if="showChangePasswordModal" :visible="showChangePasswordModal" :channel-name="channelName" @close="showChangePasswordModal = false" />
       <QuitRoom v-if="showQuitRoomModal" :channel-name="channelName" @close="showQuitRoomModal = false" />
@@ -19,6 +20,7 @@
       <KickUserModal v-if="showKickUserModal" :channel-name="channelName" @close="showKickUserModal = false" />
       <MuteUserModal v-if="showMuteUserModal" :channel-name="channelName" @close="showMuteUserModal = false" />
       <UnmuteUserModal v-if="showUnmuteUserModal" :channel-name="channelName" @close="showUnmuteUserModal = false" />
+      <SeeUserModal v-if="showSeeUserModal" :usersDTO="userDTOs" @close="showSeeUserModal = false" />
     </div>
   </template>
   
@@ -32,11 +34,12 @@
   import KickUserModal from './kickUser.vue';
   import MuteUserModal from './muteUser.vue';
   import UnmuteUserModal from './unmuteUser.vue';
+  import SeeUserModal from './seeUser.vue';
   
   
   export default {
-    props: ['channelName'],
-    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal, UnbanUserModal, KickUserModal, MuteUserModal, UnmuteUserModal },
+    props: ['channelName', 'userDTOs'],
+    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal, UnbanUserModal, KickUserModal, MuteUserModal, UnmuteUserModal, SeeUserModal },
     data() {
       return {
         showMenu: false,
@@ -48,6 +51,7 @@
         showKickUserModal: false,
         showMuteUserModal: false,
         showUnmuteUserModal: false,
+        showSeeUserModal: false,
       };
     },
     methods: {
@@ -74,6 +78,9 @@
       },
       openUnmuteUser() {
         this.showUnmuteUserModal = true;
+      },
+      openSeeUser() {
+        this.showSeeUserModal = true;
       },
     }
   }

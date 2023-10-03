@@ -56,7 +56,6 @@ export default {
       }
 
       this.socketChat.on('quitRoom', message => {
-        console.log("quit room message =", message);
         alert(message);
         this.$emit('close');
         this.router.push('/home');

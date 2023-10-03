@@ -6,7 +6,7 @@
              @click="selectRoom(room)"
              :class="{ active: selectedRoom === room }">
           <span class="chat-name">{{ room.roomName }}</span>
-          <see-setting :channel-name="room.roomName"></see-setting>
+          <see-setting :channel-name="room.roomName" :userDTOs="room.userDTOs"></see-setting>
         </div>
       </div>
   
