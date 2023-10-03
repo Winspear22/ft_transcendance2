@@ -493,6 +493,7 @@ export class ChatGateway
       await this.roomRepository.save(room);
       const inviterSocketId = this.ref_client.get(inviter.id);
       const inviterSocket = [...this.ref_Socket.keys()].find(socket => this.ref_Socket.get(socket) === inviterSocketId);
+      this.emitRoomInvitation(client);
       this.server.to(inviterSocket.id).emit("declineRoomInvitation", `${user.username} chose not to join your room.`);
       return this.server.to(client.id).emit("declineRoomInvitation", `You have declined the invitation for room ${room.roomName}.`);
   }
