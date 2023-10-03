@@ -15,11 +15,7 @@
           <span class="separator">|</span>
           <router-link to="/game" class="nav-link game-link">Game</router-link>
         </nav>
-        <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
-        </router-view>
+        <router-view/>
     </div>
   </div>
   </template>

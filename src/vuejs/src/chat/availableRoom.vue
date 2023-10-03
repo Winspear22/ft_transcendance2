@@ -8,39 +8,41 @@
           :key="index"
         >
           {{ room.channelName }}
+          <joinRoom :room="room" />
         </div>
       </div>
     </div>
 </template>
   
 <script>
+import { mapGetters } from 'vuex';
+import joinRoom from './joinRoom';
+
 export default {
+  components: { joinRoom },
   data() {
     return {
       availableRooms: [],
     };
   },
   computed: {
-    socketChat() {
-      return this.$store.getters.socketChat;  // Assurez-vous que cette logique récupère le bon objet socket.
-    }
+    ...mapGetters(['socketChat'])
   },
   methods: {
     fetchAvailableRooms() {
-      console.log("je suis dans fetchAvailableRoom");
-      this.socketChat.emit('emitAvailableRooms');  // Envoie l'événement pour obtenir les salles disponibles
-      this.socketChat.on('emitAvailableRooms', (rooms) => {  // Attend la réponse du serveur
-        console.log("Rooms received:", rooms);
-        this.availableRooms = rooms;
-      });
+      this.socketChat.emit('emitAvailableRooms');  
+      this.socketChat.on('emitAvailableRooms', (response) => {
+        if (response.success && response.channels) {
+            this.availableRooms = response.channels;
+        }
+     });
     }
   },
   mounted() {
     if (!this.socketChat) {
-       console.error("Socket connection is not established");
-       return;
+      console.error("Socket connection is not established");
+      return;
     }
-    console.log("Component mounted");
     this.fetchAvailableRooms();
   },
   beforeDestroy() {
