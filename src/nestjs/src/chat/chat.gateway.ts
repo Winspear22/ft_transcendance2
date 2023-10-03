@@ -69,19 +69,19 @@ export class ChatGateway
     console.log("---------------CONNEXION AU CHAT-----------------");
     console.log("-------------------------------------------------");
     console.log(colors.BRIGHT + colors.YELLOW + "Je suis l'utilisateur " + colors.WHITE + user.username + colors.YELLOW + " avec la socket.id : " + colors.WHITE + client.id);
-
-    this.emitRooms(client);
-    this.emitAvailableRooms(client);
-    //console.log(colors.BRIGHT + colors.YELLOW, "Utilisateur : " +  colors.WHITE + user.username + colors .YELLOW +" vient de se connecter." + colors.RESET);
+    
     this.ref_client.set(user.id, client.id);
     this.ref_Socket.set(client, client.id);
     this.ref_socket_userid.set(client, user.id);
+    this.emitRooms(client);
+    this.emitAvailableRooms(client);
+    //console.log(colors.BRIGHT + colors.YELLOW, "Utilisateur : " +  colors.WHITE + user.username + colors .YELLOW +" vient de se connecter." + colors.RESET);
     return true;
   }
 
   // Gère la déconnexion d'un utilisateur du serveur WebSocket.
   // Supprime également l'utilisateur des maps.
-  handleDisconnect(client: Socket)
+  /*handleDisconnect(client: Socket)
   {
     client.disconnect();
     for (let [Socket, id] of this.ref_Socket.entries()) {
@@ -90,6 +90,35 @@ export class ChatGateway
           this.ref_Socket.delete(Socket);
           break;
       }
+    }
+  }*/
+
+  handleDisconnect(client: Socket) {
+    client.disconnect();
+
+    // Suppression de ref_Socket
+    for (let [Socket, id] of this.ref_Socket.entries()) {
+      if (Socket === client) {
+          console.log(colors.YELLOW, "La Socket " + colors.WHITE + Socket.id + colors.YELLOW + " a été supprimée de la map ref_Socket !");
+          this.ref_Socket.delete(Socket);
+          break;
+      }
+    }
+
+    // Suppression de ref_socket_userid
+    const userId = this.ref_socket_userid.get(client);
+    if (userId !== undefined) {
+        console.log(colors.YELLOW, "La Socket " + colors.WHITE + client.id + colors.YELLOW + " a été supprimée de la map ref_socket_userid !");
+        this.ref_socket_userid.delete(client);
+    }
+
+    // Suppression de ref_client
+    if (userId) {
+        const clientId = this.ref_client.get(userId);
+        if (clientId && clientId === client.id) {
+            console.log(colors.YELLOW, "La Socket " + colors.WHITE + client.id + colors.YELLOW + " a été supprimée de la map ref_client !");
+            this.ref_client.delete(userId);
+        }
     }
   }
 

@@ -88,7 +88,7 @@ export class DMGateway
   // Phase de deconnexion : a chaque fois qu'un utilisateur va se déconnecter, il va passer par là
   // Sa socket sera déconnectée par client.disconnect()
 
-  handleDisconnect(@ConnectedSocket() client: Socket)
+  /*handleDisconnect(@ConnectedSocket() client: Socket)
   {
     //La socket de l'utilisateur est déconnecté du serveur 
     client.removeAllListeners();
@@ -103,7 +103,33 @@ export class DMGateway
       }
     }
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
+  }*/
+
+  async handleDisconnect(@ConnectedSocket() client: Socket)
+  {
+    client.removeAllListeners();
+
+    client.disconnect();
+
+    // Suppression de ref_socket
+    for (let [socket, id] of this.ref_socket.entries()) {
+        if (socket === client) {
+            console.log(colors.CYAN, "La Socket " + colors.WHITE + socket.id + colors.CYAN + " a ete supprimee de la map ref_socket!")
+            this.ref_socket.delete(socket);
+            break;
+        }
+    }
+
+    // Suppression de ref_client en utilisant l'ID de l'utilisateur
+    const user = await this.chatService.getUserFromSocket(client);
+    if (user) {
+        this.ref_client.delete(user.id);
+        console.log(colors.CYAN, "L'utilisateur avec l'ID " + colors.WHITE + user.id + colors.CYAN + " a été supprimé de la map ref_client!")
+    }
+
+    console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
+
 
 
   // Phase de renvoi des DMrooms 
@@ -195,11 +221,6 @@ export class DMGateway
     // Renvoyez ces détails à l'utilisateur
     return this.server.to(client.id).emit('emitFriendRequests', friendRequestUsers);
   }
-
-
-
-  
-
 
   //--------------------------------------------------------------------------------------//
   //------------------------------------GESTION DES DMS-----------------------------------//

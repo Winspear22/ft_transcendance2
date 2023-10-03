@@ -2,12 +2,12 @@
   <div>
     <!-- Afficher seulement s'il y a des salles disponibles -->
     <h2 v-if="availableRooms.length > 0">Salles publiques :</h2>
-    
+
     <div class="tabs" v-if="availableRooms.length > 0">
-      <JoinRoom 
+      <JoinRoom
         v-for="(room, index) in availableRooms" 
-        :key="index" 
-        :room="room" 
+        :key="index"
+        :room="room"
         :isActive="isActiveRoom(index)"
         :index="index"
         @select="switchRoom" />
