@@ -127,6 +127,7 @@ export class ChatGateway
   //@SubscribeMessage('getAvailableRoomsForAllUsers')
   @SubscribeMessage('emitAvailableRooms')
   async emitAvailableRooms(@ConnectedSocket() client: Socket) {
+      console.log("Test envoie des rooms");
       const allUsers = await this.usersRepository.find();
 
       for (const user of allUsers) {

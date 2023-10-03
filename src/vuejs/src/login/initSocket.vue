@@ -46,7 +46,9 @@ export default {
     });
 
     this.setsocketDm(socketDm);
+    console.log("SOCKET DM", socketDm);
     this.setsocketChat(socketChat);
+    console.log("SOCKET CHAT", socketChat);
     this.setGameSocket(gameSocket);
 
     socketDm.on('Connection', () => {});

@@ -11,6 +11,8 @@
           <span class="separator">|</span>
           <router-link to="/chat" class="nav-link chat-link">Chat</router-link>
           <span class="separator">|</span>
+          <router-link to="/dm" class="nav-link dm-link">Dm</router-link>
+          <span class="separator">|</span>
           <router-link to="/game" class="nav-link game-link">Game</router-link>
         </nav>
         <router-view v-slot="{ Component }">

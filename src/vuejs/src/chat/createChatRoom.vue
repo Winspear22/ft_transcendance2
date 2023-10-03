@@ -6,7 +6,7 @@
         <!-- Pop-up de création de salle -->
         <div v-if="showModal" class="modal">
             <div class="modal-content">
-                <span class="close-btn" @click="showModal = false">&times;</span>
+                <button class="close-btn" @click="closeModal">&times;</button>
                 <h2>Créer une nouvelle salle</h2>
                 <input v-model="channelName" placeholder="Channel Name" />
                 <input type="checkbox" v-model="isPrivate" /> Chambre privée
@@ -25,6 +25,9 @@
 
 <script>
 import bcrypt from 'bcryptjs';
+
+const CHANNEL_CREATED_PREFIX = "Channel created";
+const ERROR_CHANNEL_PREFIX = "Error. Channel";
 
 export default {
     data() {
@@ -45,19 +48,27 @@ export default {
         }
     },
     methods: {
+        closeModal() {
+            this.showModal = false;
+        },
+        async hashPassword(password) {
+            const salt = await bcrypt.genSalt(10);
+            return await bcrypt.hash(password, salt);
+        },
         async createRoom() {
-            if(!this.channelName || (this.hasPassword && !this.password)) {
+            if (!this.isFormValid()) {
                 alert('Veuillez remplir tous les champs nécessaires.');
                 return;
             }
 
-            // Hashage du mot de passe avec bcrypt
-            let hashedPassword = null;
-            if (this.hasPassword) {
-                const salt = await bcrypt.genSalt(10);
-                hashedPassword = await bcrypt.hash(this.password, salt);
-            }
-
+            const hashedPassword = this.hasPassword ? await this.hashPassword(this.password) : null;
+            this.emitRoomCreation(hashedPassword);
+            this.resetForm();
+        },
+        isFormValid() {
+            return this.channelName && (!this.hasPassword || (this.hasPassword && this.password));
+        },
+        emitRoomCreation(hashedPassword) {
             const data = {
                 channelName: this.channelName,
                 hasPassword: this.hasPassword,
@@ -66,28 +77,31 @@ export default {
             };
 
             const currentChannelName = this.channelName;
-
             this.socketChat.emit('createRoom', data);
 
+            this.socketChat.once('createRoom', (message) => {
+                if (message.startsWith(CHANNEL_CREATED_PREFIX)) {
+                    this.notification = `${currentChannelName} a été créé`;
+                } else if (message.startsWith(ERROR_CHANNEL_PREFIX)) {
+                    this.notification = `${currentChannelName} n'a pas pu être crée`;
+                }
+
+                this.showNotificationPopup();
+            });
+        },
+        showNotificationPopup() {
+            this.showNotification = true;
+            this.timer = setTimeout(() => {
+                this.showNotification = false;
+                this.notification = '';
+            }, 5000);
+        },
+        resetForm() {
             this.channelName = '';
             this.hasPassword = false;
             this.password = '';
             this.isPrivate = false;
             this.showModal = false;
-
-            this.socketChat.once('createRoom', (message) => {
-                if (message.startsWith("Channel created")) {
-                    this.notification = `${currentChannelName} a été créé`;
-                } else if (message.startsWith("Error. Channel")) {
-                    this.notification = `${currentChannelName} n'a pas pu être crée`;
-                }
-
-                this.showNotification = true;
-                this.timer = setTimeout(() => {
-                    this.showNotification = false;
-                    this.notification = '';
-                }, 5000);
-            });
         }
     },
     beforeDestroy() {
@@ -119,6 +133,7 @@ export default {
     width: 50%;
     max-width: 400px;
     z-index: 1000;
+    position: relative;
 }
 
 .close-btn {
@@ -127,6 +142,8 @@ export default {
     right: 15px;
     top: 10px;
     font-size: 20px;
+    border: none;
+    background: none;
 }
 
 .notification {
