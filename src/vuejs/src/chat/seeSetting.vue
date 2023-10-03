@@ -6,11 +6,19 @@
         <li><button @click="openChangePassword">Changer le mot de passe</button></li>
         <li><button @click="openInviteRoom">Inviter à la salle</button></li>
         <li><button @click="openBanUser">Bannir un utilisateur</button></li>
+        <li><button @click="openUnbanUser">Debannir un utilisateur</button></li>
+        <li><button @click="openKickUser">Kick un utilisateur</button></li>
+        <li><button @click="openMuteUser">Mute un utilisateur</button></li>
+        <li><button @click="openUnmuteUser">Demute un utilisateur</button></li>
       </ul>
       <ChangePassword v-if="showChangePasswordModal" :visible="showChangePasswordModal" :channel-name="channelName" @close="showChangePasswordModal = false" />
       <QuitRoom v-if="showQuitRoomModal" :channel-name="channelName" @close="showQuitRoomModal = false" />
       <InviteRoom v-if="showInviteRoomModal" :channel-name="channelName" @close="showInviteRoomModal = false" />
       <BanUserModal v-if="showBanUserModal" :channel-name="channelName" @close="showBanUserModal = false" />
+      <UnbanUserModal v-if="showUnbanUserModal" :channel-name="channelName" @close="showUnbanUserModal = false" />
+      <KickUserModal v-if="showKickUserModal" :channel-name="channelName" @close="showKickUserModal = false" />
+      <MuteUserModal v-if="showMuteUserModal" :channel-name="channelName" @close="showMuteUserModal = false" />
+      <UnmuteUserModal v-if="showUnmuteUserModal" :channel-name="channelName" @close="showUnmuteUserModal = false" />
     </div>
   </template>
   
@@ -20,11 +28,15 @@
   import QuitRoom from './quitRoom.vue';
   import InviteRoom from './inviteRoom.vue';
   import BanUserModal from './banUser.vue';
+  import UnbanUserModal from './unbanUser.vue';
+  import KickUserModal from './kickUser.vue';
+  import MuteUserModal from './muteUser.vue';
+  import UnmuteUserModal from './unmuteUser.vue';
   
   
   export default {
     props: ['channelName'],
-    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal },
+    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal, UnbanUserModal, KickUserModal, MuteUserModal, UnmuteUserModal },
     data() {
       return {
         showMenu: false,
@@ -32,6 +44,10 @@
         showQuitRoomModal: false,
         showInviteRoomModal: false,
         showBanUserModal: false,
+        showUnbanUserModal: false,
+        showKickUserModal: false,
+        showMuteUserModal: false,
+        showUnmuteUserModal: false,
       };
     },
     methods: {
@@ -46,6 +62,18 @@
       },
       openBanUser() {
         this.showBanUserModal = true;
+      },
+      openUnbanUser() {
+        this.showUnbanUserModal = true;
+      },
+      openKickUser() {
+        this.showKickUserModal = true;
+      },
+      openMuteUser() {
+        this.showMuteUserModal = true;
+      },
+      openUnmuteUser() {
+        this.showUnmuteUserModal = true;
       },
     }
   }
