@@ -32,7 +32,7 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
       providerId: profile.id,
       name: profile.displayName,
       email: profile.emails[0].value,
-      picture: profile._json.image.link,
+      picture: "1.png",//profile._json.image.link,
       login: profile._json.login,
     };
     let user = await this.userService.findUserBy42Id(userDet.providerId);
