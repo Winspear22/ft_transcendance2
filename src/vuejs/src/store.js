@@ -7,7 +7,8 @@ export default createStore({
     accessToken: null,
     socketDm: null,
     socketChat: null,
-    gameSocket: null
+    gameSocket: null,
+    isSocketChatListenersAttached: false,
   },
 
   mutations: {
@@ -28,6 +29,9 @@ export default createStore({
     },
     SET_GAMESOCKET(state, gameSocket) {
       state.gameSocket = gameSocket;
+    },
+    SET_SOCKET_CHAT_LISTENERS_ATTACHED(state, value) {
+      state.isSocketChatListenersAttached = value;
     }
   },
 
@@ -49,6 +53,9 @@ export default createStore({
     },
     setGameSocket({ commit }, gameSocket) {
       commit('SET_GAMESOCKET', gameSocket);
+    },
+    setSocketChatListenersAttached({ commit }, value) {
+      commit('SET_SOCKET_CHAT_LISTENERS_ATTACHED', value);
     }
   },
 
@@ -58,6 +65,7 @@ export default createStore({
     accessToken: state => state.accessToken,
     socketDm: state => state.socketDm,
     socketChat: state => state.socketChat,
-    gameSocket: state => state.gameSocket
+    gameSocket: state => state.gameSocket,
+    isSocketChatListenersAttached: state => state.isSocketChatListenersAttached
   }
 });

@@ -7,12 +7,7 @@
       <router-link to="/chat/dm" class="dm-link">DM</router-link>
     </nav>
 
-    <!-- Render the child route component -->
-    <router-view v-slot="{ Component }">
-          <keep-alive>
-            <component :is="Component" />
-          </keep-alive>
-        </router-view>
+    <router-view />
 
     <AddFriend />
     <FriendRequests />

@@ -41,13 +41,15 @@ export default {
       rooms: [],
       selectedRoom: null,
       processedMessageIds: [],
-      isAttached: false,
     };
   },
 
   computed: {
     socketChat() {
       return this.$store.getters.socketChat;
+    },
+    isSocketListenersAttachedFromStore() {
+      return this.$store.getters.isSocketChatListenersAttached;
     }
   },
 
@@ -66,18 +68,18 @@ export default {
     },
 
     attachSocketListeners() {
-      if (this.isAttached) {
+      if (this.isSocketListenersAttachedFromStore) {
         console.log("Les écouteurs de socket sont déjà attachés.");
         return;
       }
       console.log("Attachement des écouteurs de socket.");
       this.socketChat.on('emitRooms', this.updateRooms);
       this.socketChat.on('sendMessage', this.addMessageToRoom);
-      this.isAttached = true;
+      this.$store.commit('SET_SOCKET_CHAT_LISTENERS_ATTACHED', true);
     },
 
     detachSocketListeners() {
-      if (!this.isAttached) {
+      if (!this.isSocketListenersAttachedFromStore) {
         console.log("Les écouteurs de socket n'ont jamais été attachés.");
         return;
       }
@@ -85,7 +87,7 @@ export default {
       this.socketChat.off('emitRooms', this.updateRooms);
       this.socketChat.off('sendMessage', this.addMessageToRoom);
       this.processedMessageIds = []; // Réinitialiser les IDs de messages traités
-      this.isAttached = false;
+      this.$store.commit('SET_SOCKET_CHAT_LISTENERS_ATTACHED', false);
     },
 
     updateRooms(rooms) {

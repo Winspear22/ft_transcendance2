@@ -1,16 +1,17 @@
 <template>
   <div class="settings-container">
     <button @click="showMenu = !showMenu">⚙</button>
-    <div v-if="showMenu" class="settings-dropdown">
-      <button @click="openQuitRoom">Quitter la salle</button>
-      <button @click="openChangePassword">Changer le mot de passe</button>
-      <button @click="openInviteRoom">Inviter à la salle</button>
-    </div>
+    <ul v-if="showMenu" class="settings-dropdown">
+      <li><button @click="openQuitRoom">Quitter la salle</button></li>
+      <li><button @click="openChangePassword">Changer le mot de passe</button></li>
+      <li><button @click="openInviteRoom">Inviter à la salle</button></li>
+    </ul>
     <ChangePassword v-if="showChangePasswordModal" :visible="showChangePasswordModal" :channel-name="channelName" @close="showChangePasswordModal = false" />
     <QuitRoom v-if="showQuitRoomModal" :channel-name="channelName" @close="showQuitRoomModal = false" />
     <InviteRoom v-if="showInviteRoomModal" :channel-name="channelName" @close="showInviteRoomModal = false" />
   </div>
 </template>
+
 
 <script>
 import ChangePassword from './ChangePassword.vue';
@@ -45,15 +46,22 @@ export default {
 
 <style scoped>
 .settings-container {
-position: relative;
+  position: relative;
 }
 
 .settings-dropdown {
-position: absolute;
-top: 100%;
-right: 0;
-border: 1px solid #ccc;
-background-color: #fff;
-z-index: 1;
+  padding: 0;         /* pour enlever le padding par défaut */
+  margin: 0;          /* pour enlever la marge par défaut */
+  position: absolute;
+  top: 100%;
+  right: 0;
+  border: 1px solid #ccc;
+  background-color: transparent;
+  z-index: 1;
 }
+
+.settings-dropdown li {
+  padding: 5px 10px;  /* un petit padding pour chaque élément de la liste */
+}
+
 </style>
