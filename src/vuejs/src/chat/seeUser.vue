@@ -1,26 +1,73 @@
 <template>
     <div class="see-user-modal">
-      <button class="close-btn" @click="$emit('close')">✖️</button>
-      <h2>Liste des utilisateurs</h2>
-      <ul>
-        <li v-for="user in usersDTO" :key="user.id">{{ user.username }}</li>
-      </ul>
+        <button class="close-btn" @click="$emit('close')">✖️</button>
+        <h2>Liste des utilisateurs</h2>
+        <ul>
+            <li v-for="user in usersDTO" :key="user.id">
+                <router-link v-if="isMe(user)" :to="'/setting'"> {{  user.username }} </router-link>
+                <router-link v-else-if="isFriend(user)" :to="`/friend-profile/${user.username}`">{{ user.username }}</router-link>
+                <router-link v-else :to="`/online-profile/${user.username}`">{{ user.username }}</router-link>
+            </li>
+        </ul>
     </div>
-  </template>
-  
-  <script>
-  export default {
+</template>
+
+<script>
+import { ref, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import axios from 'axios';
+
+export default {
     props: {
-      usersDTO: {
-        type: Array,
-        required: true
-      },
+        usersDTO: {
+            type: Array,
+            required: true
+        }
     },
-    mounted() {
-      console.log("Les users dans seeUser", this.usersDTO);
+    setup() {
+        const friends = ref([]);
+        const userInfo = ref(null);
+        const store = useStore();
+        const socketDm = store.getters.socketDm;
+
+        onMounted(async () => {
+            socketDm.emit('emitFriends');  // Demande de la liste d'amis
+
+            socketDm.on('emitFriends', (friendDetails) => {
+                friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
+            });
+
+            await fetchUserInfo();
+        });
+
+        const fetchUserInfo = async () => {
+            try {
+                const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
+                if (response.data.success) {
+                    userInfo.value = response.data.user;
+                }
+            } catch (error) {
+                console.error('Erreur lors de la récupération des informations utilisateur:', error);
+            }
+        };
+
+        const isFriend = (user) => {
+            return friends.value.some(friend => friend.id === user.id);
+        };
+
+        const isMe = (user) => {
+            return userInfo.value && userInfo.value.username === user.username;
+        };
+
+        return {
+            isFriend,
+            isMe
+        };
     }
-  }
-  </script>
+};
+</script>
+
+
   
   <style scoped>
   .see-user-modal {
