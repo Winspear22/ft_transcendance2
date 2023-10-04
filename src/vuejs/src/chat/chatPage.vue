@@ -9,6 +9,7 @@
         <createChatRoom/>
         <availableRoom/>
         <roomChat/>
+        <receivingPrivateRoom/>
     </div>
 </template>
 
@@ -21,8 +22,10 @@ import receivingInvitToPlay from '../utilsChatDm/receivingInvitToPlay';
 import createChatRoom from './createChatRoom';
 import availableRoom from './availableRoom';
 import roomChat from './roomChat';
+import receivingPrivateRoom from '../utilsChatDm/receivingPrivateRoom';
 
 export default {
-    components: { addFriend, receivingFriend, invitToPlay, friendRequests, receivingInvitToPlay, createChatRoom, availableRoom, roomChat },
+    components: { addFriend, receivingFriend, invitToPlay, friendRequests, receivingInvitToPlay, createChatRoom, availableRoom, roomChat,
+        receivingPrivateRoom },
 };
 </script>
