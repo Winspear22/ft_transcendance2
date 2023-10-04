@@ -1,9 +1,9 @@
 <template>
-    <div class="center-container">
-        <friendRequests class="centered-item"/>
-        <addFriend class="centered-item"/>
+    <div>
+        <friendRequests/>
+        <addFriend/>
         <receivingFriend/>
-        <invitToPlay class="centered-item"/>
+        <invitToPlay/>
         <receivingInvitToPlay/>
         <seeDmRoom/>
     </div>
@@ -21,17 +21,3 @@ export default {
     components: { addFriend, receivingFriend, invitToPlay, friendRequests, receivingInvitToPlay, seeDmRoom },
 };
 </script>
-
-<style scoped>
-.center-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh; /* Ajustez la hauteur en fonction de vos besoins */
-}
-
-.centered-item {
-    margin: 10px 0; /* Ajustez la marge selon vos préférences */
-}
-</style>
