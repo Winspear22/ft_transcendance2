@@ -46,7 +46,6 @@ export default {
 <style>
 .list-container {
     width: 50%; 
-    border: 1px solid #2459d5;
     overflow: auto;
     max-height: 80vh;
     padding: 10px;

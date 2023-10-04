@@ -1,5 +1,5 @@
 <template>
-    <div class="profile-friend-container">
+    <div class="profile-online-container">
         <!-- Affichage de la photo -->
         <img v-if="friendProfile.profile_picture" class="profile-picture" :src="getImageSrc(friendProfile.profile_picture)" alt="Friend's Profile Picture" />
         <div v-else>Aucune photo de profil disponible</div>
@@ -19,6 +19,7 @@
         </div>
         <!-- Ajouter comme ami -->
         <AddFromProfileButton :profileUsername="friendProfile.username || username" />
+        <ReceivingFriend></ReceivingFriend>
     </div>
 </template>
 
@@ -26,6 +27,7 @@
 import { ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import AddFromProfileButton from './addFriend.vue';
+import ReceivingFriend from '../utilsChatDm/receivingFriend.vue';
 
 export default {
     props: {
@@ -35,7 +37,8 @@ export default {
         }
     },
     components: {
-        AddFromProfileButton
+        AddFromProfileButton,
+        ReceivingFriend,
     },
     setup(props) {
         const store = useStore();
@@ -72,13 +75,14 @@ export default {
 
 
 <style scoped>
-.profile-friend-container {
+.profile-online-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center; 
     height: 100vh; 
     text-align: center; 
+    color: #2fe8ee;  
 }
 
 .profile-picture {

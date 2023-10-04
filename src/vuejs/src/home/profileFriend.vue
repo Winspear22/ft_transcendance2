@@ -78,6 +78,7 @@ export default {
     justify-content: center; 
     height: 100vh; 
     text-align: center; 
+    color: #2fe8ee;  
 }
 
 .profile-picture {

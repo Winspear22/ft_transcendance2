@@ -29,11 +29,11 @@ export default {
     const router = useRouter();
   
     const handleAcceptFriendRequest = () => {
-      router.push({ name: 'Home' });
+      router.push({ name: 'home' });
     };
   
     const handleRefuseFriendRequest = () => {
-      router.push({ name: 'Home' });
+      router.push({ name: 'home' });
     };
   
     const acceptRequest = () => {

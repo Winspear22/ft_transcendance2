@@ -53,7 +53,6 @@ export default {
 <style>
 .list-container-friend {
     width: 50%; 
-    border: 1px solid #2fe8ee;
     overflow: auto;
     max-height: 80vh;
     padding: 10px;
@@ -72,7 +71,6 @@ export default {
     border-radius: 50%;
     object-fit: cover;
     margin-right: 10px;
-    border-color: #2fe8ee;
     color: #2fe8ee;
 }
 

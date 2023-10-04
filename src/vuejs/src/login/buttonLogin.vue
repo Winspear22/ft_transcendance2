@@ -1,9 +1,9 @@
 <template>
-    <div>
-      <button @click="login" class="login-btn">
-        <span>Se connecter</span>
-      </button>
-    </div>
+  <div class="container">
+    <button @click="login" class="login-btn">
+      <span>Se connecter</span>
+    </button>
+  </div>
 </template>
 
 <script>
@@ -22,6 +22,13 @@ export default {
 </script>
 
 <style scoped>
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
 .login-btn {
   border: none;
   cursor: pointer;
@@ -32,6 +39,6 @@ export default {
 }
 
 .login-btn:hover {
-  background-color: #2459d5;
+  color: #000000; 
 }
 </style>

@@ -3,7 +3,7 @@
       <div class="header">
         <div class="title">{{ isTwoFaActivated ? 'Désactivation 2FA' : 'Activation 2FA   ' }}</div>
         <generateQr v-if="!isTwoFaActivated" :userInfo="userInfo" @qrCodeGenerated="handleQrCode"></generateQr>
-        <deactivateQr v-if="isTwoFaActivated"></deactivateQr>
+        <deactivateQr v-if="isTwoFaActivated" @resetQrCode="qrCodeUrl = null"></deactivateQr>
         <displayQr :qrCodeUrl="qrCodeUrl"></displayQr>
       </div>
     </div>
