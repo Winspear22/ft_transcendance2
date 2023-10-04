@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import AddFromProfileButton from './addFriend.vue';
 import ReceivingFriend from '../utilsChatDm/receivingFriend.vue';
@@ -45,13 +45,20 @@ export default {
         const gameSocket = store.getters.gameSocket; 
         const friendProfile = ref({}); 
 
+        const handleFriendProfile = (profile) => {
+            friendProfile.value = profile[0];
+        };
+
         onMounted(() => {
             if (gameSocket) {
                 gameSocket.emit('friendProfile', props.username);
+                gameSocket.on('friendProfile', handleFriendProfile);
+            }
+        });
 
-                gameSocket.on('friendProfile', (profile) => {
-                    friendProfile.value = profile[0];
-                });
+        onBeforeUnmount(() => {
+            if (gameSocket) {
+                gameSocket.off('friendProfile', handleFriendProfile); // Se désinscrire de l'événement lors de la destruction
             }
         });
 
@@ -71,7 +78,6 @@ export default {
     }
 };
 </script>
-
 
 
 <style scoped>

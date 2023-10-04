@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import axios from 'axios';
 
@@ -33,12 +33,18 @@ export default {
         onMounted(async () => {
             socketDm.emit('emitFriends');  // Demande de la liste d'amis
 
-            socketDm.on('emitFriends', (friendDetails) => {
-                friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
-            });
+            socketDm.on('emitFriends', handleFriendDetails);
 
             await fetchUserInfo();
         });
+
+        onBeforeUnmount(() => {
+            socketDm.off('emitFriends', handleFriendDetails); // Se désinscrire de l'événement lors de la destruction
+        });
+
+        const handleFriendDetails = (friendDetails) => {
+            friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
+        };
 
         const fetchUserInfo = async () => {
             try {
@@ -66,8 +72,6 @@ export default {
     }
 };
 </script>
-
-
   
   <style scoped>
   .see-user-modal {

@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 
 export default {
@@ -23,13 +23,18 @@ export default {
         const store = useStore();
         const socketDm = store.getters.socketDm;
 
+        const handleFriendDetails = (friendDetails) => {
+            friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
+            console.log(friends.value);
+        };
+
         onMounted(() => {
             socketDm.emit('emitFriends');  // Demande de la liste d'amis
+            socketDm.on('emitFriends', handleFriendDetails);
+        });
 
-            socketDm.on('emitFriends', (friendDetails) => {
-                friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
-                console.log(friends.value);
-            });
+        onBeforeUnmount(() => {
+            socketDm.off('emitFriends', handleFriendDetails); // Se désinscrire de l'événement lors de la destruction
         });
 
         const getImageSrc = (filename) => {
@@ -48,6 +53,7 @@ export default {
     }
 };
 </script>
+
 
 
 <style>

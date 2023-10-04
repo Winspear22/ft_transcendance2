@@ -16,9 +16,7 @@ export default {
   },
 
   methods: {
-    ...mapActions(['setsocketDm']),
-    ...mapActions(['setsocketChat']),
-    ...mapActions(['setGameSocket'])
+    ...mapActions(['setsocketDm', 'setsocketChat', 'setGameSocket'])
   },
 
   mounted() {
@@ -29,41 +27,35 @@ export default {
       return;
     }
 
-    const socketDm = io('http://localhost:3000/dms', {
-      query: {
-        Cookie: cookie
-      }
-    });
-    const socketChat = io('http://localhost:3000/chats', {
-      query: {
-        Cookie: cookie
-      }
-    });
-    const gameSocket = io('http://localhost:3000/game', {
-      query: {
-        Cookie: cookie
-      }
-    });
+    const socketDm = io('http://localhost:3000/dms', { query: { Cookie: cookie }});
+    const socketChat = io('http://localhost:3000/chats', { query: { Cookie: cookie }});
+    const gameSocket = io('http://localhost:3000/game', { query: { Cookie: cookie }});
 
     this.setsocketDm(socketDm);
     this.setsocketChat(socketChat);
     this.setGameSocket(gameSocket);
 
-    socketDm.on('Connection', () => {});
-    socketChat.on('Connection', () => {});
-    gameSocket.on('Connect', () => {});
-    },
+    socketDm.on('connect', () => { console.log('Connected to DM socket'); });
+    socketChat.on('connect', () => { console.log('Connected to Chat socket'); });
+    gameSocket.on('connect', () => { console.log('Connected to Game socket'); });
 
-    beforeDestroy() {
-      if (this.$store.state.socketDm) {
-        this.$store.state.socketDm.disconnect();
-      }
-      if (this.$store.state.socketChat) {
-        this.$store.state.socketChat.disconnect();
-      }
-      if (this.$store.state.gameSocket) {
-        this.$store.state.gameSocket.disconnect();
-      }
+    // Gestion des erreurs de connexion
+    socketDm.on('connect_error', (error) => { console.error('DM socket connection error:', error); });
+    socketChat.on('connect_error', (error) => { console.error('Chat socket connection error:', error); });
+    gameSocket.on('connect_error', (error) => { console.error('Game socket connection error:', error); });
+  },
+
+  beforeDestroy() {
+    if (this.$store.state.socketDm) {
+      this.$store.state.socketDm.disconnect();
     }
-  };
+    if (this.$store.state.socketChat) {
+      this.$store.state.socketChat.disconnect();
+    }
+    if (this.$store.state.gameSocket) {
+      this.$store.state.gameSocket.disconnect();
+    }
+  }
+};
 </script>
+

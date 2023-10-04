@@ -27,6 +27,10 @@ export default {
     this.initializeSocketEvents();
   },
 
+  beforeDestroy() {
+    this.removeSocketEvents();
+  },
+
   methods: {
     // ####################
     // MAIN METHODS
@@ -55,11 +59,19 @@ export default {
         return;
       }
 
-      this.socketChat.on('quitRoom', message => {
-        alert(message);
-        this.$emit('close');
-        this.router.push('/home');
-      });
+      this.socketChat.on('quitRoom', this.handleQuitRoom);
+    },
+
+    removeSocketEvents() {
+      if (this.socketChat) {
+        this.socketChat.off('quitRoom', this.handleQuitRoom);
+      }
+    },
+
+    handleQuitRoom(message) {
+      alert(message);
+      this.$emit('close');
+      this.router.push('/home');
     }
   }
 }

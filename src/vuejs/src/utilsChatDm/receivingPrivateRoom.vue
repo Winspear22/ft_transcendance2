@@ -11,7 +11,7 @@
   </template>
   
   <script>
-  import { ref, onMounted } from "vue";
+  import { ref, onMounted, onBeforeUnmount } from "vue";
   import { useStore } from "vuex";
   import ResponseRoom from "./responseRoom";
   
@@ -23,12 +23,20 @@
       const socketChat = store.getters.socketChat;
       const invitedRooms = ref([]);
   
-      onMounted(() => {
-        socketChat.on("emitRoomInvitation", (rooms) => {
-          invitedRooms.value = rooms;
-        });
+      const handleRoomInvitation = (rooms) => {
+        invitedRooms.value = rooms;
+      };
   
-        socketChat.emit("emitRoomInvitation");
+      onMounted(() => {
+        socketChat.on("emitRoomInvitation", handleRoomInvitation);
+        
+        // Request for room invitations
+        socketChat.emit("requestRoomInvitations");
+      });
+  
+      onBeforeUnmount(() => {
+        // Remove event listener when component is destroyed
+        socketChat.off("emitRoomInvitation", handleRoomInvitation);
       });
   
       return {

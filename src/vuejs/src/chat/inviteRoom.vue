@@ -16,21 +16,25 @@ import { mapGetters } from 'vuex';
 export default {
     props: ['channelName'],
     data() {
-      return {
-        invitedUsername: '',
-        showModal: true
-      };
+        return {
+            invitedUsername: '',
+            showModal: true
+        };
     },
     computed: {
-      ...mapGetters(['socketChat'])
+        ...mapGetters(['socketChat'])
+    },
+    mounted() {
+        this.socketChat.on('inviteRoom', this.handleInviteResponse);
+    },
+    beforeDestroy() {
+        this.socketChat.off('inviteRoom', this.handleInviteResponse);
     },
     methods: {
-        // Fermer la modal
         closeModal() {
             this.showModal = false;
             this.$emit('close');
         },
-        // Envoyer l'invitation
         sendInvite() {
             if (!this.socketChat) {
                 console.error("SocketChat n'est pas défini.");
@@ -42,17 +46,17 @@ export default {
                     channelName: this.channelName, 
                     invitedUsernames: this.invitedUsername 
                 });
-                
-                this.socketChat.on('inviteRoom', message => {
-                    alert(message);
-                });
             } catch (error) {
                 console.error("Erreur lors de l'envoi de l'invitation:", error);
             }
+        },
+        handleInviteResponse(message) {
+            alert(message);
         }
     }
 }
 </script>
+
 
 <style scoped>
 .modal {

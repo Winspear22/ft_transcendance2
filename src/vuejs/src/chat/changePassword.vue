@@ -32,21 +32,30 @@ export default {
         return this.$store.getters.socketChat;
       }
     },
-
     mounted() {
-        this.socketChat.on('changeRoomPassword', (message) => {
-            this.notificationMessage = message;
-            this.showNotificationPopup = true;
-            setTimeout(() => {
-                this.showNotificationPopup = false;
-            }, 5000);
-        });
+      this.addSocketListeners();
+    },
+
+    beforeDestroy() {
+      this.removeSocketListeners();
     },
 
     methods: {
-      // ####################
-      // MAIN METHODS
-      // ####################
+      addSocketListeners() {
+        this.socketChat.on('changeRoomPassword', this.handlePasswordChangeNotification);
+      },
+
+      removeSocketListeners() {
+        this.socketChat.off('changeRoomPassword', this.handlePasswordChangeNotification);
+      },
+
+      handlePasswordChangeNotification(message) {
+        this.notificationMessage = message;
+        this.showNotificationPopup = true;
+        setTimeout(() => {
+            this.showNotificationPopup = false;
+        }, 5000);
+      },
 
       submitChange() {
         if (!this.socketChat) {
@@ -59,10 +68,10 @@ export default {
         });
         this.closeModal();
       },
+    },
 
-      closeModal() {
-        this.$emit('close');
-      }
+    closeModal() {
+      this.$emit('close');
     }
 }
 </script>

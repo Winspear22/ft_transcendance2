@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 
 export default {
@@ -26,13 +26,21 @@ export default {
             }
         }
 
+        function handleOnlineUsers(users) {
+            onlineUsers.value = users;
+        }
+
         onMounted(() => {
             requestOnlineUsers();
 
             if(store.state.gameSocket) {
-                store.state.gameSocket.on('onlineUsers', (users) => {
-                    onlineUsers.value = users;
-                });
+                store.state.gameSocket.on('onlineUsers', handleOnlineUsers);
+            }
+        });
+
+        onBeforeUnmount(() => {
+            if (store.state.gameSocket) {
+                store.state.gameSocket.off('onlineUsers', handleOnlineUsers);  // Se désinscrire de l'événement lors de la destruction
             }
         });
 
@@ -42,6 +50,7 @@ export default {
     }
 };
 </script>
+
 
 <style>
 .list-container {
