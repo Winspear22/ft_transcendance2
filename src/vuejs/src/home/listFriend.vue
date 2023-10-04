@@ -1,10 +1,10 @@
 <template>
     <div class="list-container-friend">
-
         <h2 v-if="friends && friends.length">Liste d'amis</h2>
         <ul v-if="friends && friends.length">
             <li v-for="friend in friends" :key="friend.id">
-                <img :src="friend.profile_picture" alt="Profile Picture" />
+                <img v-if="friend.profile_picture" :src="getImageSrc(friend.profile_picture)" alt="Profile Picture" />
+                <div v-else>Aucune photo de profil disponible</div>
                 <router-link :to="`/friend-profile/${friend.username}`">{{ friend.username }}</router-link>
             </li>
         </ul>
@@ -28,15 +28,27 @@ export default {
 
             socketDm.on('emitFriends', (friendDetails) => {
                 friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
+                console.log(friends.value);
             });
         });
 
+        const getImageSrc = (filename) => {
+            try {
+                return require(`@/assets/${filename}`);
+            } catch (e) {
+                console.error("Erreur lors de la récupération de l'image:", e);
+                return '';  // ou une image par défaut
+            }
+        };
+
         return {
-            friends
+            friends,
+            getImageSrc
         };
     }
 };
 </script>
+
 
 <style>
 .list-container-friend {

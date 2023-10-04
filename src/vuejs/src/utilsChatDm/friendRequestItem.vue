@@ -1,18 +1,21 @@
 <template>
-    <div class="friend-request-item">
-      <img :src="request.profile_picture" alt="Profile" />
-      <span>{{ request.username }}</span>
-      <button @click="acceptRequest">Accepter</button>
-      <button @click="declineRequest">Refuser</button>
-    </div>
-  </template>
-  
-  <script>
-  import { onMounted, onBeforeUnmount } from 'vue';
-  import { useStore } from 'vuex';
-  import { useRouter } from 'vue-router';
-  
-  export default {
+  <div class="friend-request-item">
+    <!-- Récupération et affichage de la photo de profil -->
+    <img v-if="request.profile_picture" :src="getImageSrc(request.profile_picture)" alt="Profile" />
+    <div v-else>Aucune photo de profil disponible</div>
+    
+    <span>{{ request.username }}</span>
+    <button @click="acceptRequest">Accepter</button>
+    <button @click="declineRequest">Refuser</button>
+  </div>
+</template>
+
+<script>
+import { onMounted, onBeforeUnmount } from 'vue';
+import { useStore } from 'vuex';
+import { useRouter } from 'vue-router';
+
+export default {
   name: 'FriendRequestItem',
   props: {
     request: {
@@ -40,6 +43,15 @@
     const declineRequest = () => {
       socketDm.emit('refuseFriendRequest', { receiverUsername: props.request.username });
     };
+
+    const getImageSrc = (filename) => {
+      try {
+        return require(`@/assets/${filename}`);
+      } catch (e) {
+        console.error("Erreur lors de la récupération de l'image:", e);
+        return '';  // ou une image par défaut
+      }
+    };
   
     onMounted(() => {
       socketDm.on('acceptFriendRequest', handleAcceptFriendRequest);
@@ -53,11 +65,14 @@
   
     return {
       acceptRequest,
-      declineRequest
+      declineRequest,
+      getImageSrc  // Ajout de cette méthode pour le template
     };
   }
-  };
-  </script>
+};
+</script>
+
+
   
   
   <style scoped>

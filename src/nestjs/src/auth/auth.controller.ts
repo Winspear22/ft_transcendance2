@@ -261,11 +261,5 @@ export class AuthController {
     res.status(200).json(response);
   }
   /* A SUPPRIMER AVANT LE PUSH FINAL*/
-  @Delete('deleteallusers')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteAllUsers(@Res() res: Response) {
-    await this.userService.deleteAllUsers();
-    res.status(200).json({ message: 'All the Users in the database were deleted.' });
-  }
+
 }

@@ -55,7 +55,7 @@ export class ChatGateway
   // Gère la connexion d'un utilisateur au serveur WebSocket.
   // Authentifie l'utilisateur et stocke ses informations dans les maps.
   // Envoie également à l'utilisateur la liste des rooms et des rooms disponibles.
-  //@UseGuards(ChatGuard)
+  @UseGuards(ChatGuard)
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
@@ -75,23 +75,11 @@ export class ChatGateway
     this.ref_socket_userid.set(client, user.id);
     this.emitRooms(client);
     this.emitAvailableRooms(client);
+    this.emitRoomInvitation(client);
     //console.log(colors.BRIGHT + colors.YELLOW, "Utilisateur : " +  colors.WHITE + user.username + colors .YELLOW +" vient de se connecter." + colors.RESET);
     return true;
   }
 
-  // Gère la déconnexion d'un utilisateur du serveur WebSocket.
-  // Supprime également l'utilisateur des maps.
-  /*handleDisconnect(client: Socket)
-  {
-    client.disconnect();
-    for (let [Socket, id] of this.ref_Socket.entries()) {
-      if (Socket === client) {
-          console.log(colors.YELLOW, "La Socket " + colors.WHITE + Socket.id + colors.YELLOW + " a été supprimée de la map !");
-          this.ref_Socket.delete(Socket);
-          break;
-      }
-    }
-  }*/
 
   handleDisconnect(client: Socket) {
     client.disconnect();
@@ -169,6 +157,28 @@ export class ChatGateway
       }
   }
 
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitRoomInvitation')
+  async emitRoomInvitation(@ConnectedSocket() client: Socket) {
+      const user = await this.chatService.getUserFromSocket(client);
+  
+      if (!user) {
+          console.log("Utilisateur non trouvé");
+          return;
+      }
+  
+      // Récupération de tous les rooms où l'utilisateur est dans la liste pendingIds
+      const invitedRooms = await this.roomRepository
+          .createQueryBuilder('room')
+          .where(':userId = ANY(room.pendingIds)', { userId: user.id })
+          .getMany();
+  
+      // Envoi des rooms invitées à l'utilisateur
+      console.log(colors.RED + "-------------------------------------------------" + colors.RESET);
+      console.log("Émission des invitations de rooms pour le client : ", client.id, invitedRooms);
+      return await this.server.to(client.id).emit('emitRoomInvitation', invitedRooms);
+  }
+
 
   //--------------------------------------------------------------------------------------//
   //------------------------------------GESTION DES DMS-----------------------------------//
@@ -204,6 +214,8 @@ export class ChatGateway
         this.server.emit('createRoom', "Channel created : " + data.channelName );
         this.emitAvailableRooms(client);
         this.emitRooms(client);
+        this.emitRoomInvitation(client);
+
       } else {
         this.server.emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
       }
@@ -245,6 +257,8 @@ export class ChatGateway
       this.server.in(channelName).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
       this.emitAvailableRooms(client);
       this.emitRooms(client);
+      this.emitRoomInvitation(client);
+
       console.log("CHANGEMENT DE MDP REUSSIS");
       return ;
     }  else {
@@ -310,6 +324,8 @@ export class ChatGateway
         client.join(data.channelName);
         this.emitAvailableRooms(client);
         this.emitRooms(client);
+        this.emitRoomInvitation(client);
+
         return (result);
       }
       else
@@ -450,8 +466,8 @@ export class ChatGateway
       this.server.to(inviterSocket.id).emit("acceptRoomInvitation", `Your invitation to join the room ${room.roomName} has been accepted by ${user.username}.`);
       this.server.to(client.id).emit("acceptRoomInvitation", `You have joined the room ${room.roomName} successfully.`);
       this.emitAvailableRooms(client);
-
       this.emitRooms(client);
+      this.emitRoomInvitation(client);
       return true;
   }
 
@@ -477,6 +493,7 @@ export class ChatGateway
       await this.roomRepository.save(room);
       const inviterSocketId = this.ref_client.get(inviter.id);
       const inviterSocket = [...this.ref_Socket.keys()].find(socket => this.ref_Socket.get(socket) === inviterSocketId);
+      this.emitRoomInvitation(client);
       this.server.to(inviterSocket.id).emit("declineRoomInvitation", `${user.username} chose not to join your room.`);
       return this.server.to(client.id).emit("declineRoomInvitation", `You have declined the invitation for room ${room.roomName}.`);
   }
