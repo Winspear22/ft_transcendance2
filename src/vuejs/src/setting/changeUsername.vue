@@ -44,7 +44,9 @@
               console.error('Erreur lors de la récupération des informations utilisateur:', error);
             }
           }
-        } catch (error) {
+        } 
+        catch (error) 
+        {
           console.error("Erreur lors du changement de nom d'utilisateur:", error);
           this.showErrorMessage("Erreur lors du changement de nom d'utilisateur");
         }

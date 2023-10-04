@@ -22,15 +22,9 @@ export class RoomEntity {
 
   @Column('int', { array: true })
   users: number[];
-
-//  @Column('simple-array', { nullable: true })
-  //userDTOs: UserDTO[];
-//  @Column('json', { default: '', nullable: true })
-//userDTOs: UserDTO[] = [];
-@Column('json', { nullable: true, default: '[]' })
-userDTOs: UserDTO[];
-
   
+  @Column('json', { nullable: true, default: '[]' })
+  userDTOs: UserDTO[];
 
   @Column('int', { array: true })
   admins: number[];

@@ -6,6 +6,12 @@
       <p>{{ userInformation.username }}</p> 
       <p>{{ userInformation.email }}</p> 
     </div>
+    <div v-if="uMatchHistory">
+      <p>Total Parties: {{ uMatchHistory.total_parties }}</p>
+      <p>Total Victoires: {{ uMatchHistory.total_victoire }}</p>
+      <p>Total Défaites: {{ uMatchHistory.total_défaite }}</p>
+      <p>Winrate: {{ uMatchHistory.winrate }}%</p>
+    </div>
     <buttonQrcode :userInfo="userInformation"></buttonQrcode>
     <router-link :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
     <buttonLogout></buttonLogout>
@@ -18,9 +24,9 @@ import infoUser from './infoUser.vue';
 import displayPP from './DisplayPP.vue'; 
 import buttonLogout from './buttonLogout';
 import buttonQrcode from './buttonQrcode.vue';
-// import router from '@/router';
-// import store from '@/store';
-// import { onMounted } from 'vue';
+import router from '@/router';
+import store from '@/store';
+import { ref, onMounted } from 'vue';
 
 export default {
   components: {
@@ -35,11 +41,21 @@ export default {
     };
   },
   setup() {
-    // onMounted(() => {
-      // store.getters.gameSocket.on('goToGame', () => {
-                // router.push('/game');
-            // })
-    // }) 
+    const uMatchHistory = ref();
+    onMounted(() => {
+        store.getters.gameSocket.emit('matchHistory');
+        store.getters.gameSocket.on('matchHistory', (matchHistory) => {
+            uMatchHistory.value = matchHistory;
+            console.log("matchHistory ", uMatchHistory);
+        });
+        store.getters.gameSocket.on('goToGame', () => {
+            router.push('/game');
+        });
+    });
+    return {
+      uMatchHistory,
+    };
+
   },
   methods: {
     handleUserInfo(userInfo) {

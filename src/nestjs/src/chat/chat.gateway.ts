@@ -179,6 +179,51 @@ export class ChatGateway
       return await this.server.to(client.id).emit('emitRoomInvitation', invitedRooms);
   }
 
+  private getSocketByString(value: string): Socket | undefined {
+    for (let [socket, str] of this.ref_Socket.entries()) {
+        if (str === value) {
+            return socket;
+        }
+    }
+    return undefined;  // Si aucune correspondance n'est trouvée
+  }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitUsersInRoom')
+  async getUsersInRoom(@MessageBody() data: {
+    roomName: string } ): Promise<Socket[]> {
+      // Obtenez les sockets des clients dans la salle
+      console.log(data.roomName);
+      //const clientSockets = await this.server.in(roomName).fetchSockets();
+      //const sockets = await this.server.fetchSockets();
+      const sockets2 = await this.server.in(data.roomName).fetchSockets();
+
+      // Transformez les ID de socket en objets UserEntity
+      const users: Socket[] = [];
+    
+      //console.log(users);
+      //console.log(sockets.at(0).data);
+      //console.log(sockets.at(1).data);
+      //console.log(sockets.at(2).data);
+      console.log(sockets2.at(0).data);
+      console.log(sockets2.at(1).data);
+      //console.log(sockets2.at(2).data);
+
+
+      
+      //console.log(sockets2.at(2).data);
+
+      //const user = this.chatService.getUserFromSocket(sockets.at(0));
+      //console.log(sockets.at(3).id);
+
+  
+      return users;
+  }
+
+
+  
+
+
 
   //--------------------------------------------------------------------------------------//
   //------------------------------------GESTION DES DMS-----------------------------------//

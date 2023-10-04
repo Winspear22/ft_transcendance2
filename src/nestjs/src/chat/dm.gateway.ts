@@ -62,6 +62,8 @@ export class DMGateway
       console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
       return this.handleDisconnect(client);
     }
+    this.ref_client.set(user.id, client.id);
+    this.ref_socket.set(client, client.id);
     // Renvoie les DMrooms avec tous les messages et les utilisateurs présents à l'intérieur
     this.emitDMs(client);
     // Renvoie tous les Friends que l'utilisateur a.
@@ -69,41 +71,16 @@ export class DMGateway
     console.log(colors.BRIGHT + colors.CYAN, "User : " +  colors.WHITE + user.username + colors .CYAN +" just connected." + colors.RESET);
     // Ajoute les sockets dans deux maps différentes : c'est juste pour m'aider à répertorier les users
     this.emitFriendRequests(client);
-    this.ref_client.set(user.id, client.id);
-    this.ref_socket.set(client, client.id);
     console.log("-------------------------------------------------");
     console.log("----------------CONNEXION AU DM------------------");
     console.log("-------------------------------------------------");
     console.log(colors.BRIGHT + colors.CYAN + "Je suis l'utilisateur " + colors.WHITE + user.username + colors.CYAN + " avec la socket.id : " + colors.WHITE + client.id);
-
-    console.log(client.listenerCount('emitDM'));
-
-
-    //console.log(colors.BRIGHT + colors.CYAN, "User id: " +  colors.WHITE + user.id + colors .CYAN +" User socket id : " + colors.WHITE + client.id + colors.RESET);
-    //console.log(colors.BRIGHT + colors.CYAN, "User id: " +  colors.WHITE + user.id + colors .CYAN +" User socket id is in the handleConnection function: " + colors.WHITE + client.id + colors.RESET);
     return true;
   }
 
 
   // Phase de deconnexion : a chaque fois qu'un utilisateur va se déconnecter, il va passer par là
   // Sa socket sera déconnectée par client.disconnect()
-
-  /*handleDisconnect(@ConnectedSocket() client: Socket)
-  {
-    //La socket de l'utilisateur est déconnecté du serveur 
-    client.removeAllListeners();
-
-    client.disconnect();
-    //On retire l'id de la socket de la map.
-    for (let [socket, id] of this.ref_socket.entries()) {
-      if (socket === client) {
-          console.log(colors.CYAN, "La Socket " + colors.WHITE + socket.id + colors.CYAN + " a ete supprimee de la mao !")
-          this.ref_socket.delete(socket);
-          break;
-      }
-    }
-    console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
-  }*/
 
   async handleDisconnect(@ConnectedSocket() client: Socket)
   {
@@ -519,13 +496,13 @@ async RemoveFriend(
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('blockDM')
-  async BlockFriend(
+  async BlockFriend( 
   @ConnectedSocket() client: Socket,
-  @MessageBody() body: { receiverUsername: string }
+  @MessageBody() body: { receiverId: number }
   ): Promise<void> 
   {
     const sender = await this.chatService.getUserFromSocket(client);
-    const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
+    const receiver = await this.usersRepository.findOne({ where: { id: body.receiverId } }); 
 
     if (!sender || !receiver) {
       return;

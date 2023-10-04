@@ -90,22 +90,19 @@ export class UserController {
 
 	@Post('change/username')
 	@UseGuards(JwtAuthGuard)
-	@HttpCode(HttpStatus.CREATED)
+	//@HttpCode(HttpStatus.CREATED)
 	async ChangeUsername(@Body() data: UpdateUserDto,
 	@Req() req: Request, @Res({passthrough: true}) res: Response)
 	{
-		try
-		{
-			const user = req.user as UserEntity;
-			await this.userService.UpdateUserUsernameSettings(user, res, data);
-			const partialUser = await this.userService.returnPartialUserInfo(user.username);
-			res.status(201).json({ message: 'Username successfully modified to ' + partialUser.username, partialUser });
-		}
-		catch
-		{
-			return ;
-		}
-
+		const user = req.user as UserEntity;
+		const result = await this.userService.UpdateUserUsernameSettings(user, res, data);
+    if (result.success == true)
+    {
+		  const partialUser = await this.userService.returnPartialUserInfo(user.username);
+		  return res.status(201).json({ message: 'Username successfully modified to ' + partialUser.username, partialUser });
+    }
+    else	
+      return res.status(409).json({message: "Error. Could not change user's username"});
 	}
 
 	@Post('change/email')

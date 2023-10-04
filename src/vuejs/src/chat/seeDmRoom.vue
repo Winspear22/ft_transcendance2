@@ -8,7 +8,7 @@
           :key="chat.id" 
           @click="switchTab(index)" 
           :class="{ active: activeTabIndex === index }">
-        <span class="chat-name">{{ getChatName(chat) }}</span>
+          <router-link :to="`/friend-profile/${getChatName(chat)}`"><span class="chat-name">{{getChatName(chat) }}</span></router-link>
         <block-dm-button :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
 
       </div>
@@ -40,6 +40,7 @@ import InfoUser from '../setting/infoUser';
 import { useRouter } from 'vue-router';
 import { getChatUserName } from './dmName';
 import BlockDmButton from './blockDm';
+import { getChatUserId } from './dmName';
 
 export default {
   components: { SeeConv, SendDm, InfoUser, BlockDmButton },
@@ -64,9 +65,9 @@ export default {
     };
 
     const blockDM = (chat) => {
-      const usernameToBlock = getChatUserName(chat, userInfo.value);
-      if (usernameToBlock !== "Unknown") {
-        socketDm.emit('blockDM', { receiverUsername: usernameToBlock });
+      const userIdToBlock = getChatUserId(chat, userInfo.value);
+      if (userIdToBlock !== "Unknown") {
+        socketDm.emit('blockDM', { receiverId: userIdToBlock });
         router.push({ name: 'Login' });
       }
     };

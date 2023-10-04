@@ -249,7 +249,7 @@ export class UserService {
           username: (await User).username,
           accessToken: tokens.access_token,
           refreshToken: hashedRefreshToken,//tokens.refresh_token,
-          avatar: (await User).profile_picture
+          //avatar: (await User).profile_picture
         },
         res,
       );
@@ -428,32 +428,65 @@ export class UserService {
 
   }
 
-  async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
-    const rooms = await this.roomRepository.find({ 
+   /*async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
+     const rooms = await this.roomRepository.find({ 
+       where: {
+         users: In([userId])  // Trouver des rooms où l'utilisateur est présent
+       }
+     });
+     console.log("Je suis dans le changemznt de DTO");     
+     rooms.forEach(room => {
+      console.log("Before:", room);
+      const userDTOToUpdate = room.userDTOs.find(dto => dto.id === userId);
+      if (userDTOToUpdate) {
+        userDTOToUpdate.username = newUsername;
+      }
+      console.log("After:", room);
+     });     
+     await this.roomRepository.save(rooms); // Sauvegardez les rooms modifiés
+   }*/
+
+   async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
+    const rooms = await this.roomRepository.find({
       where: {
         users: In([userId])  // Trouver des rooms où l'utilisateur est présent
       }
     });
-    console.log("Je suis dans le changemznt de DTO");
-
+  
+    console.log("Je suis dans le changement de DTO");
+    
     rooms.forEach(room => {
-      const userDTOToUpdate = room.userDTOs.find(dto => dto.id === userId);
+      // Clone le tableau userDTOs
+      const updatedDTOs = [...room.userDTOs];
+  
+      // Trouver le DTO correspondant à l'utilisateur
+      const userDTOToUpdate = updatedDTOs.find(dto => dto.id === userId);
+      
       if (userDTOToUpdate) {
-        console.log(userDTOToUpdate);
         userDTOToUpdate.username = newUsername; // Mettez à jour l'username
+        console.log("DTO mis à jour:", userDTOToUpdate);
       }
+      
+      // Affectez le tableau cloné (avec la mise à jour) à room.userDTOs
+      room.userDTOs = updatedDTOs;
     });
-
-    await this.roomRepository.save(rooms); // Sauvegardez les rooms modifiés
+  
+    // Sauvegardez les rooms modifiés
+    await this.roomRepository.save(rooms);
   }
+  
 
   async UpdateUserUsernameSettings(user: UserEntity,
   @Res({passthrough: true}) res: Response,
-  newData: UpdateUserDto): Promise<void>
+  newData: UpdateUserDto)
   {
-    try
-    {
       const { username } = newData;
+      const me = await this.findUserById(user.id)
+      if (me.username === username)
+        return {success: false};
+      const OtherUser = await this.findUserByUsername(username);
+      if (OtherUser)
+        return {success: false};
       if (username)
       {
         await this.FindAndUpdateUser((await user).username, { username: username });
@@ -465,23 +498,17 @@ export class UserService {
       const salt = await bcrypt.genSalt(saltRounds);
       const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
       console.log("Je suis dans change name : ", user.id, username);
-      await this.updateUserDTOUsername(user.id, username);
+      //await this.updateUserDTOUsername(user.id, username); 
       this.FindAndUpdateUser((await user).username, { MyHashedRefreshToken: hashedRefreshToken });
       this.CreateNewAccessCookie(
       {
         username: (await user).username,
         accessToken: tokens.access_token,
         refreshToken: hashedRefreshToken,//tokens.refresh_token,
-        avatar: (await user).profile_picture
       },
       res,
       );
-
-    }
-    catch (error)
-    {
-      res.json({message: "Error. Could not change user username"})
-    }
+      return {success: true};
   }
 
   async UpdateUserEmailSettings(user: UserEntity,
@@ -559,7 +586,7 @@ export class UserService {
 
   async UploadAndSaveImage(@UploadedFile() file, user: UserEntity): Promise<ImageDto> {
     console.log(file?.filename);
-    if (!file?.filename) {
+    if (!file?.filename) { 
         throw new ForbiddenException('Error. Only image files are allowed !');
     }
     
