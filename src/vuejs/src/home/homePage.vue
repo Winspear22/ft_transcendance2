@@ -2,21 +2,21 @@
     <div class= "home-container">
       <ListFriend></ListFriend>
       <ListOnline></ListOnline>
-      <!-- <seeMatchHistory></seeMatchHistory> -->
+      <ReceivingFriend></ReceivingFriend>
     </div>
 </template>
 
 <script>
 import ListFriend from './listFriend';
 import ListOnline from './listOnline';
-// import seeMatchHistory from './seeMatchHistory.vue';
+import ReceivingFriend from '../utilsChatDm/receivingFriend.vue';
 
 export default {
   name: 'home-container',
   components: {
     ListFriend,
     ListOnline,
-    // seeMatchHistory
+    ReceivingFriend,
   },
 };
 </script>
@@ -24,6 +24,8 @@ export default {
 <style>
 .home-container {
     display: flex; 
-    justify-content: space-between; 
+    justify-content: space-between;
+    align-items: center; 
+    height: 100vh; 
 }
 </style>

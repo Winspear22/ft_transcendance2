@@ -1,10 +1,10 @@
 <template>
     <div class="list-container-friend">
-
         <h2 v-if="friends && friends.length">Liste d'amis</h2>
         <ul v-if="friends && friends.length">
             <li v-for="friend in friends" :key="friend.id">
-                <img :src="friend.profile_picture" alt="Profile Picture" />
+                <img v-if="friend.profile_picture" :src="getImageSrc(friend.profile_picture)" alt="Profile Picture" />
+                <div v-else>Aucune photo de profil disponible</div>
                 <router-link :to="`/friend-profile/${friend.username}`">{{ friend.username }}</router-link>
             </li>
         </ul>
@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 
 export default {
@@ -23,25 +23,42 @@ export default {
         const store = useStore();
         const socketDm = store.getters.socketDm;
 
+        const handleFriendDetails = (friendDetails) => {
+            friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
+            console.log(friends.value);
+        };
+
         onMounted(() => {
             socketDm.emit('emitFriends');  // Demande de la liste d'amis
-
-            socketDm.on('emitFriends', (friendDetails) => {
-                friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
-            });
+            socketDm.on('emitFriends', handleFriendDetails);
         });
 
+        onBeforeUnmount(() => {
+            socketDm.off('emitFriends', handleFriendDetails); // Se désinscrire de l'événement lors de la destruction
+        });
+
+        const getImageSrc = (filename) => {
+            try {
+                return require(`@/assets/${filename}`);
+            } catch (e) {
+                console.error("Erreur lors de la récupération de l'image:", e);
+                return '';  // ou une image par défaut
+            }
+        };
+
         return {
-            friends
+            friends,
+            getImageSrc
         };
     }
 };
 </script>
 
+
+
 <style>
 .list-container-friend {
     width: 50%; 
-    border: 1px solid #2fe8ee;
     overflow: auto;
     max-height: 80vh;
     padding: 10px;
@@ -60,7 +77,6 @@ export default {
     border-radius: 50%;
     object-fit: cover;
     margin-right: 10px;
-    border-color: #2fe8ee;
     color: #2fe8ee;
 }
 

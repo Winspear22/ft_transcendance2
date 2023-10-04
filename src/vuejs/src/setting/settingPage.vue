@@ -12,8 +12,8 @@
       <p>Total Défaites: {{ uMatchHistory.total_défaite }}</p>
       <p>Winrate: {{ uMatchHistory.winrate }}%</p>
     </div>
-    <buttonQrcode :userInfo="userInformation"></buttonQrcode>
-    <router-link :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
+    <buttonQrcode class="spacing" :userInfo="userInformation"></buttonQrcode>
+    <router-link class="spacing" :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
     <buttonLogout></buttonLogout>
   </div>
 </template>
@@ -65,27 +65,39 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
 .setting-container {
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centrer horizontalement */
-    justify-content: center; /* Centrer verticalement */
-    text-align: center; /* Centrer le texte à l'intérieur de chaque élément */
-    color: #2fe8ee; /* Changement de la couleur du texte à bleu */
+    align-items: center; 
+    justify-content: center; 
+    text-align: center; 
+    color: #2fe8ee;
+    font-family: 'Arial', sans-serif;
+    font-size: 16px;
 }
 
-/* Centrage et couleur du contenu du lien router */
 .setting-container a {
     text-align: center;
     width: 100%;
-    color: #2fe8ee; /* Changement de la couleur du lien à bleu */
-    text-decoration: none; /* Si vous souhaitez supprimer le soulignement des liens */
+    color: #2fe8ee;
+    text-decoration: none; 
+    font-size: inherit; 
 }
 
-/* Changement de la couleur du lien lors du survol */
 .setting-container a:hover {
-    color: #000000; /* Changement de la couleur à noir lorsque la souris passe dessus */
+    color: #000000; 
+}
+
+.spacing {
+    margin-top: 10px;
+}
+.setting-container p:last-of-type { 
+    margin-bottom: 10px; 
+}
+
+.setting-container .buttonQr-container {
+    margin-top: 0;
 }
 
 </style>

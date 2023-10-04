@@ -1,37 +1,31 @@
 <template>
-  <div class="chatContainer">
-    <!-- Links to Chat and DM sub-pages -->
-    <nav>
-      <router-link to="/chat" class="chat-link">Chat</router-link>
-      <span class="separator">|</span>
-      <router-link to="/chat/dm" class="dm-link">DM</router-link>
-    </nav>
-
-    <router-view />
-
-    <AddFriend />
-    <FriendRequests />
-    <ReceivingFriend />
-    <invitToPlay />
-    <receivingInvitToPlay />
-  </div>
+    <div>
+        <h2>C H A T </h2>
+        <addFriend/>
+        <receivingFriend/>
+        <friendRequests/>
+        <invitToPlay/>
+        <receivingInvitToPlay/>
+        <createChatRoom/>
+        <availableRoom/>
+        <roomChat/>
+        <receivingPrivateRoom/>
+    </div>
 </template>
 
 <script>
-import AddFriend from './addFriend';
-import FriendRequests from './friendRequests';
-import ReceivingFriend from './receivingFriend';
-import invitToPlay from './invitToPlay.vue';
-import receivingInvitToPlay from './receivingInvitToPlay.vue';
+import addFriend from '../utilsChatDm/addFriend';
+import receivingFriend from '../utilsChatDm/receivingFriend';
+import friendRequests from '../utilsChatDm/friendRequests';
+import invitToPlay from '../utilsChatDm/invitToPlay';
+import receivingInvitToPlay from '../utilsChatDm/receivingInvitToPlay';
+import createChatRoom from './createChatRoom';
+import availableRoom from './availableRoom';
+import roomChat from './roomChat';
+import receivingPrivateRoom from '../utilsChatDm/receivingPrivateRoom';
 
 export default {
-  name: 'ChatContainer',
-  components: {
-    AddFriend,
-    FriendRequests,
-    ReceivingFriend,
-    invitToPlay,
-    receivingInvitToPlay
-  }
+    components: { addFriend, receivingFriend, invitToPlay, friendRequests, receivingInvitToPlay, createChatRoom, availableRoom, roomChat,
+        receivingPrivateRoom },
 };
 </script>

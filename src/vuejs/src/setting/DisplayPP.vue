@@ -31,18 +31,18 @@ export default {
 <style scoped>
 .profile-picture-container {
     display: flex;
-    justify-content: center; /* Horizontalement centrer */
-    align-items: center;     /* Verticalement centrer */
-    width: 100px;            /* Largeur du conteneur */
-    height: 100px;           /* Hauteur du conteneur */
-    border-radius: 50%;      /* Pour rendre le conteneur rond */
-    overflow: hidden;        /* Cela s'assure que l'image ne déborde pas du conteneur */
-    margin-top: 20px;        /* Utilisez cette marge pour décaler l'image vers le bas */
+    justify-content: center; 
+    align-items: center;    
+    width: 100px;      
+    height: 100px;       
+    border-radius: 50%;     
+    overflow: hidden;       
+    margin-top: 20px;    
 }
 
 .profile-picture-container img {
-    max-width: 100%;         /* Largeur maximale de l'image à 100% du conteneur */
-    max-height: 100%;        /* Hauteur maximale de l'image à 100% du conteneur */
-    object-fit: cover;       /* Pour conserver l'aspect ratio tout en couvrant tout le conteneur */
+    max-width: 100%;     
+    max-height: 100%;    
+    object-fit: cover;  
 }
 </style>

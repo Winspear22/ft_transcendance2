@@ -1,6 +1,6 @@
 <template>
   <div v-if="pendingFriendRequests.length > 0">
-    <h2>Demandes d'amis en attente</h2>
+    <h2 class="pending-title">Demandes d'amis en attente</h2>
     <div v-for="request in pendingFriendRequests" :key="request.id">
       <FriendRequestItem :request="request" />
     </div>
@@ -42,3 +42,9 @@ export default {
   }
 };
 </script>
+
+<style scoped>
+.pending-title {
+  color: #2fe8ee;
+}
+</style>

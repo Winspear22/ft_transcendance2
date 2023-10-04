@@ -1,7 +1,8 @@
 <template>
-    <div class="profile-friend-container">
+    <div class="profile-online-container">
         <!-- Affichage de la photo -->
-        <img v-if="friendProfile.profile_picture" class="profile-picture" :src="friendProfile.profile_picture" alt="Friend's Profile Picture" />
+        <img v-if="friendProfile.profile_picture" class="profile-picture" :src="getImageSrc(friendProfile.profile_picture)" alt="Friend's Profile Picture" />
+        <div v-else>Aucune photo de profil disponible</div>
         
         <!-- Affichage du nom -->
         <h2>{{ friendProfile.username || username }}</h2>
@@ -18,14 +19,15 @@
         </div>
         <!-- Ajouter comme ami -->
         <AddFromProfileButton :profileUsername="friendProfile.username || username" />
+        <ReceivingFriend></ReceivingFriend>
     </div>
 </template>
 
-
 <script>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useStore } from 'vuex';
 import AddFromProfileButton from './addFriend.vue';
+import ReceivingFriend from '../utilsChatDm/receivingFriend.vue';
 
 export default {
     props: {
@@ -35,25 +37,43 @@ export default {
         }
     },
     components: {
-        AddFromProfileButton
+        AddFromProfileButton,
+        ReceivingFriend,
     },
     setup(props) {
         const store = useStore();
         const gameSocket = store.getters.gameSocket; 
         const friendProfile = ref({}); 
 
+        const handleFriendProfile = (profile) => {
+            friendProfile.value = profile[0];
+        };
+
         onMounted(() => {
             if (gameSocket) {
                 gameSocket.emit('friendProfile', props.username);
-
-                gameSocket.on('friendProfile', (profile) => {
-                    friendProfile.value = profile[0];
-                });
+                gameSocket.on('friendProfile', handleFriendProfile);
             }
         });
 
+        onBeforeUnmount(() => {
+            if (gameSocket) {
+                gameSocket.off('friendProfile', handleFriendProfile); // Se désinscrire de l'événement lors de la destruction
+            }
+        });
+
+        const getImageSrc = (filename) => {
+            try {
+                return require(`@/assets/${filename}`);
+            } catch (e) {
+                console.error("Erreur lors de la récupération de l'image:", e);
+                return '';  // ou une image par défaut
+            }
+        };
+
         return {
-            friendProfile
+            friendProfile,
+            getImageSrc
         };
     }
 };
@@ -61,13 +81,14 @@ export default {
 
 
 <style scoped>
-.profile-friend-container {
+.profile-online-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center; 
     height: 100vh; 
     text-align: center; 
+    color: #2fe8ee;  
 }
 
 .profile-picture {

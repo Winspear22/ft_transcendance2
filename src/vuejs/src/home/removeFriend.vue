@@ -5,6 +5,7 @@
 <script>
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import { onBeforeUnmount } from 'vue';
 
 export default {
   props: {
@@ -19,18 +20,23 @@ export default {
     const DmSocket = store.getters.socketDm;
     const router = useRouter();
 
+    const handleRemoveFriendResponse = (message) => {
+      alert(message);
+      if (!message.includes('Error')) {
+        router.push('/home');
+      }
+    };
+
     const removeFriend = (username) => {
       if (confirm(`Voulez-vous vraiment supprimer ${username} de votre liste d'amis ?`)) {
         DmSocket.emit('removeFriend', { receiverUsername: username });
-
-        DmSocket.on('removeFriend', (message) => {
-          alert(message);
-          if (!message.includes('Error')) {
-            router.push('/home');
-          }
-        });
+        DmSocket.on('removeFriend', handleRemoveFriendResponse);
       }
     };
+
+    onBeforeUnmount(() => {
+      DmSocket.off('removeFriend', handleRemoveFriendResponse);  // Se désinscrire de l'événement lors de la destruction
+    });
 
     return {
       removeFriend
@@ -38,6 +44,7 @@ export default {
   }
 };
 </script>
+
 
 <style scoped>
 .remove-button {

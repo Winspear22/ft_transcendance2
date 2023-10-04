@@ -107,8 +107,6 @@ export class DMGateway
     console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
-
-
   // Phase de renvoi des DMrooms 
   // Comme pour la phase de connexion, on a un guard, c'est toujours le même
   // - Renvoie les DMrooms dans lesquelles se situe l'utilisateur (avec ses amis)

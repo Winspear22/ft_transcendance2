@@ -1,39 +1,30 @@
 <template>
     <div v-if="visible" class="modal">
+      <!-- Change Password Container -->
       <div class="change-password-container">
         <h3>Changer le mot de passe</h3>
         <input v-model="password" placeholder="Nouveau mot de passe" />
         <button @click="submitChange">Confirmer</button>
         <button @click="closeModal">Fermer</button>
       </div>
+      
+      <!-- Notification Popup -->
       <div v-if="showNotificationPopup" class="notification-change">
         {{ notificationMessage }}
       </div>
     </div>
 </template>
-  
+
 <script>
 export default {
     props: ['visible', 'channelName'],
+
     data() {
         return {
             password: '',
-            notificationMessage: '',    // Ajout de ce champ
-            showNotificationPopup: false    // Ajout de ce champ
+            notificationMessage: '',    // Message for the notification popup
+            showNotificationPopup: false    // Control display of notification popup
         };
-    },
-    mounted() {
-        this.socketChat.on('changeRoomPassword', (message) => {
-            this.notificationMessage = message;    // Mettre à jour le message
-            console.log(message);
-            this.showNotificationPopup = true;         // Montrer la notification
-            console.log("show notif ==", this.showNotificationPopup);
-
-            setTimeout(() => {
-                this.showNotificationPopup = false;
-            console.log("show notif passe a false normalement ==", this.showNotificationPopup);
-            }, 5000);
-        });
     },
 
     computed: {
@@ -41,25 +32,50 @@ export default {
         return this.$store.getters.socketChat;
       }
     },
+    mounted() {
+      this.addSocketListeners();
+    },
+
+    beforeDestroy() {
+      this.removeSocketListeners();
+    },
+
     methods: {
+      addSocketListeners() {
+        this.socketChat.on('changeRoomPassword', this.handlePasswordChangeNotification);
+      },
+
+      removeSocketListeners() {
+        this.socketChat.off('changeRoomPassword', this.handlePasswordChangeNotification);
+      },
+
+      handlePasswordChangeNotification(message) {
+        this.notificationMessage = message;
+        this.showNotificationPopup = true;
+        setTimeout(() => {
+            this.showNotificationPopup = false;
+        }, 5000);
+      },
+
       submitChange() {
         if (!this.socketChat) {
           console.error("Socket Chat not initialized!");
           return;
         }
-        this.socketChat.emit('changeRoomPassword', { 
-          channelName: this.channelName, 
-          password: this.password 
+        this.socketChat.emit('changeRoomPassword', {
+          channelName: this.channelName,
+          password: this.password
         });
-        this.$emit('close');
+        this.closeModal();
       },
-      closeModal() {
-        this.$emit('close');
-      }
+    },
+
+    closeModal() {
+      this.$emit('close');
     }
 }
 </script>
-  
+
 <style scoped>
   .modal {
     position: fixed;
@@ -73,7 +89,7 @@ export default {
     align-items: center;
     z-index: 1000;
   }
-  
+
   .change-password-container {
     background-color: #fff;
     padding: 20px;
@@ -81,15 +97,15 @@ export default {
     width: 300px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   }
+
   .notification-change {
-    position: right;
+    position: absolute;
     top: 10px;
     right: 10px;
     padding: 15px;
     background-color: #ffdd57;
     border-radius: 8px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1100;  
-}
-
+    z-index: 1100;
+  }
 </style>
