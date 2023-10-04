@@ -5,8 +5,8 @@
     <div v-else>Aucune photo de profil disponible</div>
     
     <span>{{ request.username }}</span>
-    <button @click="acceptRequest">Accepter</button>
-    <button @click="declineRequest">Refuser</button>
+    <button class="accept-button" @click="acceptRequest">Accepter</button>
+    <button class="decline-button" @click="declineRequest">Refuser</button>
   </div>
 </template>
 
@@ -29,11 +29,11 @@ export default {
     const router = useRouter();
   
     const handleAcceptFriendRequest = () => {
-      router.push({ name: 'home' });
+      router.push({ name: 'Home' });
     };
   
     const handleRefuseFriendRequest = () => {
-      router.push({ name: 'home' });
+      router.push({ name: 'Home' });
     };
   
     const acceptRequest = () => {
@@ -66,26 +66,42 @@ export default {
     return {
       acceptRequest,
       declineRequest,
-      getImageSrc  // Ajout de cette méthode pour le template
+      getImageSrc  
     };
   }
 };
 </script>
+<style scoped>
+  .friend-request-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1em;
+  }
 
+  .friend-request-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 0.5em;
+  }
 
-  
-  
-  <style scoped>
-    .friend-request-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 1em;
-    }
-  
-    .friend-request-item img {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      margin-right: 0.5em;
-    }
-  </style>
+  /* Styles pour les boutons */
+  .accept-button, .decline-button {
+    background-color: transparent;
+    color: #2fe8ee; 
+    border: none;
+    cursor: pointer;
+    padding: 10px 20px;
+    margin-left: 5px;
+    transition: color 0.3s;
+  }
+
+  .accept-button:hover, .decline-button:hover {
+    color: #000;
+  }
+
+  .accept-button:disabled, .decline-button:disabled {
+    cursor: not-allowed;
+    color: #aaa;
+  }
+</style>
