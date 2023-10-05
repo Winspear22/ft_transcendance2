@@ -80,7 +80,6 @@ export class ChatGateway
     return true;
   }
 
-
   handleDisconnect(client: Socket) {
     client.disconnect();
 

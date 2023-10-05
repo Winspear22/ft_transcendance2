@@ -16,7 +16,7 @@
       setTimeout(() => {
         this.showPopup = false;
         this.$router.push('/setting');
-      }, 1000);
+      }, 2000);
     }
   };
   </script>

@@ -22,7 +22,8 @@ export default {
 
         function requestOnlineUsers() {
             if(store.state.gameSocket) {
-                store.state.gameSocket.emit('onlineUsers');
+                console.log("CA PART");
+                store.state.gameSocket.emit('onlineUsers', );
             }
         }
 
@@ -30,11 +31,12 @@ export default {
             onlineUsers.value = users;
         }
 
-        onMounted(() => {
+        onMounted( () => {
             requestOnlineUsers();
 
             if(store.state.gameSocket) {
                 store.state.gameSocket.on('onlineUsers', handleOnlineUsers);
+                console.log("ONLINE ", handleOnlineUsers);
             }
         });
 
