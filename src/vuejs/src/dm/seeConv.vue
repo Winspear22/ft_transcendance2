@@ -87,17 +87,17 @@ Copy code
     border-radius: 5px;
   }
   .chat-name-link {
-    color: #2fe8ee; /* Couleur bleue de votre charte graphique */
-    text-decoration: none; /* Supprime le soulignement par défaut */
-    transition: color 0.3s; /* Transition pour le survol */
+    color: #2fe8ee; 
+    text-decoration: none; 
+    transition: color 0.3s; 
 }
 .chat-name-link:hover, 
 .chat-window .chat-name-link:hover {
-    color: black; /* Couleur au survol */
+    color: black; 
 }
-/* Pour s'assurer qu'il n'y a pas de changement de couleur sur les liens déjà cliqués */
+
 .chat-name-link:visited {
-    color: #2fe8ee; /* Même couleur bleue que le lien non visité */
+    color: #2fe8ee;
 }
   </style>
   

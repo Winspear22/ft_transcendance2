@@ -2,22 +2,19 @@
   <div class="dm-container">
     <info-user @userInfoFetched="handleUserInfo"></info-user>
 
-    <!-- List of chats -->
     <div class="chats-list">
       <div v-for="(chat, index) in chats" 
         :key="chat.id" 
         @click="switchTab(index)" 
         :class="{ active: activeTabIndex === index }"
-        class="chat-item"> <!-- Ajout de cette classe -->
+        class="chat-item"> 
           <span class="chat-name">{{ getChatName(chat) }}</span>
         <block-dm-button :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
       </div>
     </div>
 
-    <!-- Vertical separator -->
     <div class="vertical-separator"></div>
 
-    <!-- Selected chat -->
     <div class="selected-chat">
       <see-conv v-if="chats[activeTabIndex]" 
                 :chat="chats[activeTabIndex]" 

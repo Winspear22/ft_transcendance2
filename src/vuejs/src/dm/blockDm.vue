@@ -82,7 +82,8 @@ export default {
 }
 
 .modal-content {
-    background-color: white;
+    background: linear-gradient(#2fe8ee, #2459d5); /* Fond en dégradé */
+    color: white;
     padding: 20px;
     border-radius: 10px;
     width: 300px;
@@ -92,5 +93,14 @@ export default {
 .modal-content button {
     margin-top: 20px;
     padding: 10px 20px;
+    background-color: transparent; /* Fond transparent pour voir le dégradé */
+    color: #2fe8ee;
+    border: 1px solid #2fe8ee;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.modal-content button:hover {
+    color: black; /* Survol du bouton : texte noir */
 }
 </style>
