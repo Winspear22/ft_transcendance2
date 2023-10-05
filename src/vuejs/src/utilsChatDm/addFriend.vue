@@ -62,6 +62,7 @@ export default {
 <style scoped>
 .add-friend-container {
     font-family: 'Arial', sans-serif; 
+    text-align: center;
 }
 
 .add-friend-input {

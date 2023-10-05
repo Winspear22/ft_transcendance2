@@ -46,5 +46,6 @@ export default {
 <style scoped>
 .pending-title {
   color: #2fe8ee;
+  text-align: center;
 }
 </style>

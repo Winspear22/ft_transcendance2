@@ -10,7 +10,7 @@
                 <h2>Créer une nouvelle salle</h2>
                 <input v-model="channelName" placeholder="Channel Name" />
                 <input type="checkbox" v-model="isPrivate" /> Chambre privée
-                <input type="checkbox" v-model="hasPassword" /> Ajouter un mot de passe
+                <input type="checkbox" v-model="hasPassword" /> Créer un mdp
                 <input v-if="hasPassword" v-model="password" type="password" placeholder="Mot de passe" />
                 <button @click="createRoom">Valider</button>
             </div>
@@ -112,7 +112,7 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .modal {
     display: flex;
     justify-content: center;
@@ -126,14 +126,53 @@ export default {
     z-index: 999;
 }
 
+
 .modal-content {
-    background-color: white;
+    background-color: #2459d5; 
     padding: 20px;
     border-radius: 8px;
     width: 50%;
     max-width: 400px;
     z-index: 1000;
     position: relative;
+    color: #2fe8ee; 
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="password"],
+.modal-content input[type="checkbox"] + label {
+    color: #2fe8ee; 
+}
+
+.modal-content input[type="text"]::placeholder,
+.modal-content input[type="password"]::placeholder {
+    color: #2fe8ee;
+}
+
+.modal-content .close-btn {
+    cursor: pointer;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 20px;
+    border: none;
+    background: none;
+    color: #2fe8ee;
+}
+
+.modal-content button {
+    cursor: pointer; 
+    background-color: transparent;
+    color: #2fe8ee; 
+    border: none; 
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    transition: color 0.3s;
+}
+
+.modal-content button:hover {
+    color: black; 
 }
 
 .close-btn {
@@ -145,15 +184,36 @@ export default {
     border: none;
     background: none;
 }
-
 .notification {
     position: fixed;
     top: 10%;
     left: 50%;
     transform: translate(-50%, -50%);
     padding: 20px;
-    background-color: #eee;
-    border: 1px solid #333;
+    background-color: #2459d5;
+    border: 1px solid #2fe8ee; 
+    color: #2fe8ee; 
     z-index: 1001;
+    transition: background-color 0.3s, color 0.3s; 
+}
+
+.notification:hover {
+    background-color: #2fe8ee; 
+    color: black; 
+}
+
+button {
+    cursor: pointer; 
+    background-color: transparent; 
+    color: #2fe8ee; 
+    border: none; 
+    display: block; 
+    margin-left: auto;
+    margin-right: auto;
+    transition: color 0.3s; 
+}
+
+button:hover {
+    color: black; 
 }
 </style>

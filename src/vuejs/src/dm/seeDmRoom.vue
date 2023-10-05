@@ -5,12 +5,14 @@
     <!-- List of chats -->
     <div class="chats-list">
       <div v-for="(chat, index) in chats" 
-          :key="chat.id" 
-          @click="switchTab(index)" 
-          :class="{ active: activeTabIndex === index }">
-          <router-link :to="`/friend-profile/${getChatName(chat)}`"><span class="chat-name">{{getChatName(chat) }}</span></router-link>
+        :key="chat.id" 
+        @click="switchTab(index)" 
+        :class="{ active: activeTabIndex === index }"
+        class="chat-item"> <!-- Ajout de cette classe -->
+        <router-link :to="`/friend-profile/${getChatName(chat)}`">
+          <span class="chat-name">{{ getChatName(chat) }}</span>
+        </router-link>
         <block-dm-button :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
-
       </div>
     </div>
 
@@ -120,13 +122,19 @@ export default {
   justify-content: space-between;
 }
 .chat-name {
-  color: #2fe8ee;  /* couleur de base pour le nom des conversations */
-  cursor: pointer;  /* change le curseur pour indiquer que l'utilisateur peut cliquer */
-  transition: color 0.3s;  /* ajoute une transition pour un changement de couleur doux */
+  color: #2fe8ee;  
+  cursor: pointer; 
+  transition: color 0.3s; 
 }
 
 .chat-name:hover {
-  color: black;  /* couleur au survol pour le nom des conversations */
+  color: black;  
+}
+
+.chat-item {
+    display: flex;
+    align-items: center; 
+    justify-content: space-between; 
 }
 
 </style>

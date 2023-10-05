@@ -471,7 +471,7 @@ async RemoveFriend(
   await this.DMsService.removeFriend(client.data.user.username, body.receiverUsername);
 
   if (receiverSocketId !== undefined) {
-    this.server.to(client.id).emit("removeFriend", "You have unfriended " + receiver.username);
+    this.server.to(client.id).emit("removeFriend", "Vous avez supprimé : " + receiver.username);
     this.server.to(receiverSocketId).emit("removeFriend", "You have been unfriended by " + sender.username);
     this.emitFriends(client);
     this.emitFriends(receiverSocket);

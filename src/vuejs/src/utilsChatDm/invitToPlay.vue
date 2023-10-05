@@ -54,6 +54,7 @@ export default {
 <style scoped>
 .invite-play-container {
     font-family: 'Arial', sans-serif;
+    text-align: center;
 }
 
 .invite-play-input {

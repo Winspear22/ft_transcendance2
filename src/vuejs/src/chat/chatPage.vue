@@ -1,6 +1,5 @@
 <template>
     <div>
-        <h2>C H A T </h2>
         <addFriend/>
         <receivingFriend/>
         <friendRequests/>

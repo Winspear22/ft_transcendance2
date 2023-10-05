@@ -57,7 +57,7 @@
   
     watch: {
       'chat.messages': {
-        immediate: true, // Start the watcher immediately on component creation
+        immediate: true,
         handler() {
           this.scrollToBottom();
         },

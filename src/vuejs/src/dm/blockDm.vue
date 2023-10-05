@@ -62,6 +62,11 @@ export default {
     cursor: pointer;
     color: #2fe8ee;
     margin-left: 10px;
+    transition: color 0.3s;
+}
+
+.block-dm-button:hover {
+    color: black;
 }
 
 .modal {
