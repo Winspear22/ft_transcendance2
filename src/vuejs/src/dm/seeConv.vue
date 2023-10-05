@@ -1,4 +1,3 @@
-Copy code
 <template>
     <div class="chat-window">
       <h3>

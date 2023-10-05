@@ -11,15 +11,6 @@
               <button @click="closeConfirmModal">Annuler</button>
           </div>
       </div>
-
-      <!-- Modal de validation -->
-      <div v-if="showMessageModal" class="modal">
-          <div class="modal-content">
-              <h3>Message</h3>
-              <p>{{ responseMessage }}</p>
-              <button @click="closeMessageModal">Fermer</button>
-          </div>
-      </div>
   </div>
 </template>
   
@@ -60,15 +51,6 @@ export default {
       showConfirmModal.value = false;
       removeFriend(username.value);
     };
-
-    const handleRemoveFriendResponse = (message) => {
-      responseMessage.value = message;
-      showMessageModal.value = true;
-      if (!message.includes('Error')) {
-        router.push('/home');
-      }
-    };
-
     const closeMessageModal = () => {
       showMessageModal.value = false;
     };
@@ -81,6 +63,9 @@ export default {
     onBeforeUnmount(() => {
       DmSocket.off('removeFriend', handleRemoveFriendResponse);
     });
+    const handleRemoveFriendResponse = () => {
+      router.push('/home');
+    };
 
     return {
         removeFriend,

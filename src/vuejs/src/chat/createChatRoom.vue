@@ -27,7 +27,6 @@
 import bcrypt from 'bcryptjs';
 
 const CHANNEL_CREATED_PREFIX = "Channel created";
-const ERROR_CHANNEL_PREFIX = "Error. Channel";
 
 export default {
     data() {
@@ -63,6 +62,7 @@ export default {
 
             const hashedPassword = this.hasPassword ? await this.hashPassword(this.password) : null;
             this.emitRoomCreation(hashedPassword);
+            console.log(hashedPassword);
             this.resetForm();
         },
         isFormValid() {
@@ -82,9 +82,8 @@ export default {
             this.socketChat.once('createRoom', (message) => {
                 if (message.startsWith(CHANNEL_CREATED_PREFIX)) {
                     this.notification = `${currentChannelName} a été créé`;
-                } else if (message.startsWith(ERROR_CHANNEL_PREFIX)) {
+                } else
                     this.notification = `${currentChannelName} n'a pas pu être crée`;
-                }
 
                 this.showNotificationPopup();
             });

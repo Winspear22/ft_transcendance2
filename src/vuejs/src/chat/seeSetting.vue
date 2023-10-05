@@ -54,6 +54,13 @@
         showSeeUserModal: false,
       };
     },
+    watch: {
+      channelName(newVal, oldVal) {
+        if (newVal !== oldVal) {
+            this.showMenu = false;  // Fermez le menu si le channelName change
+        }
+      }
+    }, 
     methods: {
       openChangePassword() {
         this.showChangePasswordModal = true;
@@ -91,19 +98,54 @@
     position: relative;
   }
   
-  .settings-dropdown {
-    padding: 0;         /* pour enlever le padding par défaut */
-    margin: 0;          /* pour enlever la marge par défaut */
+ 
+  .settings-container > button {
+    background-color: transparent;  
+    border: none;                   
+    color: #2fe8ee;               
+    cursor: pointer;           
+}
+
+.settings-container > button:hover {
+    color: black;                  
+}
+  
+.settings-dropdown {
+    padding: 0;         
+    margin: 0;          
     position: absolute;
     top: 100%;
     right: 0;
     border: 1px solid #ccc;
-    background-color: transparent;
+    background: linear-gradient(to left, #2fe8ee, #2459d5); /* Gradient de bleu */
     z-index: 1;
-  }
-  
-  .settings-dropdown li {
-    padding: 5px 10px;  /* un petit padding pour chaque élément de la liste */
-  }
-  
+}
+
+.settings-dropdown li {
+    padding: 5px 10px; 
+    list-style-type: none; /* Enlève les puces */
+}
+
+.settings-dropdown li button {
+    background-color: transparent; /* Fond transparent pour les boutons */
+    border: none;                   /* Pas de bordure pour les boutons */
+    color: #2fe8ee;                /* Couleur initiale des boutons */
+    cursor: pointer;               /* Indiquer que les boutons sont cliquables */
+    font-size: inherit;            /* Hérite de la taille de la police du parent */
+    text-align: left;              /* Aligner le texte à gauche */
+    width: 100%;                   /* Utiliser toute la largeur disponible */
+}
+
+.settings-dropdown li button:hover {
+    color: black;                  /* Couleur de survol pour les boutons */
+}
+
+.settings-container > button {
+    background-color: transparent;  
+    border: none;                    
+    color: #2fe8ee;               
+    cursor: pointer;             
+    font-size: 24px;               
+}
+
   </style>
