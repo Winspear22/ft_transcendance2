@@ -72,19 +72,41 @@
   
   <style scoped>
   .friend-request-popup {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      padding: 20px;
+      background-color: #2459d5;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+      color: #2fe8ee; 
+      z-index: 1000;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
   }
   
-  .friend-request-popup button + button {
-    margin-left: 10px;
+  .friend-request-popup p {
+      margin-bottom: 1em; 
+  }
+  
+  .friend-request-popup button {
+      background-color: transparent;
+      color: #2fe8ee; 
+      border: none;
+      cursor: pointer;
+      padding: 10px 20px;
+      margin-left: 5px;
+      transition: color 0.3s;
+  }
+  
+  .friend-request-popup button:hover {
+      color: #000;
+  }
+  
+  .friend-request-popup button:disabled {
+      cursor: not-allowed;
+      color: #aaa;
   }
   </style>
   
