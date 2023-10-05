@@ -3,24 +3,26 @@
       <button @click="showMenu = !showMenu">⚙</button>
       <ul v-if="showMenu" class="settings-dropdown">
         <li><button @click="openQuitRoom">Quitter la salle</button></li>
-        <li><button @click="openChangePassword">Changer le mot de passe</button></li>
-        <li><button @click="openInviteRoom">Inviter à la salle</button></li>
-        <li><button @click="openBanUser">Bannir un utilisateur</button></li>
-        <li><button @click="openUnbanUser">Debannir un utilisateur</button></li>
-        <li><button @click="openKickUser">Kick un utilisateur</button></li>
-        <li><button @click="openMuteUser">Mute un utilisateur</button></li>
-        <li><button @click="openUnmuteUser">Demute un utilisateur</button></li>
+        <li v-if="isAdmin"><button @click="openChangePassword">Changer le mot de passe</button></li>
+        <li v-if="isAdmin && room.isPrivate === true"><button @click="openInviteRoom">Inviter à la salle</button></li>
+        <li v-if="isAdmin"><button @click="openBanUser">Bannir un utilisateur</button></li>
+        <li v-if="isAdmin"><button @click="openUnbanUser">Debannir un utilisateur</button></li>
+        <li v-if="isAdmin"><button @click="openKickUser">Kick un utilisateur</button></li>
+        <li v-if="isAdmin"><button @click="openMuteUser">Mute un utilisateur</button></li>
+        <li v-if="isAdmin"><button @click="openUnmuteUser">Demute un utilisateur</button></li>
         <li><button @click="openSeeUser">Voir les utilisateurs</button></li>
       </ul>
-      <ChangePassword v-if="showChangePasswordModal" :visible="showChangePasswordModal" :channel-name="channelName" @close="showChangePasswordModal = false" />
-      <QuitRoom v-if="showQuitRoomModal" :channel-name="channelName" @close="showQuitRoomModal = false" />
-      <InviteRoom v-if="showInviteRoomModal" :channel-name="channelName" @close="showInviteRoomModal = false" />
-      <BanUserModal v-if="showBanUserModal" :channel-name="channelName" @close="showBanUserModal = false" />
-      <UnbanUserModal v-if="showUnbanUserModal" :channel-name="channelName" @close="showUnbanUserModal = false" />
-      <KickUserModal v-if="showKickUserModal" :channel-name="channelName" @close="showKickUserModal = false" />
-      <MuteUserModal v-if="showMuteUserModal" :channel-name="channelName" @close="showMuteUserModal = false" />
-      <UnmuteUserModal v-if="showUnmuteUserModal" :channel-name="channelName" @close="showUnmuteUserModal = false" />
-      <SeeUserModal v-if="showSeeUserModal" :usersDTO="userDTOs" @close="showSeeUserModal = false" />
+      <infoUser @userInfoFetched="handleUserInfo"></infoUser>
+
+      <ChangePassword v-if="showChangePasswordModal" :visible="showChangePasswordModal" :channelName="room.roomName" @close="showChangePasswordModal = false" />
+  <QuitRoom v-if="showQuitRoomModal" :channelName="room.roomName" @close="showQuitRoomModal = false" />
+  <InviteRoom v-if="showInviteRoomModal" :channelName="room.roomName" @close="showInviteRoomModal = false" />
+  <BanUserModal v-if="showBanUserModal" :channelName="room.roomName" @close="showBanUserModal = false" />
+  <UnbanUserModal v-if="showUnbanUserModal" :channelName="room.roomName" @close="showUnbanUserModal = false" />
+  <KickUserModal v-if="showKickUserModal" :channelName="room.roomName" @close="showKickUserModal = false" />
+  <MuteUserModal v-if="showMuteUserModal" :channelName="room.roomName" @close="showMuteUserModal = false" />
+  <UnmuteUserModal v-if="showUnmuteUserModal" :channelName="room.roomName" @close="showUnmuteUserModal = false" />
+  <SeeUserModal v-if="showSeeUserModal" :usersDTO="room.userDTOs" @close="showSeeUserModal = false" />
     </div>
   </template>
   
@@ -35,11 +37,18 @@
   import MuteUserModal from './muteUser.vue';
   import UnmuteUserModal from './unmuteUser.vue';
   import SeeUserModal from './seeUser.vue';
+  import infoUser from '../setting/infoUser.vue';
   
   
   export default {
-    props: ['channelName', 'userDTOs'],
-    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal, UnbanUserModal, KickUserModal, MuteUserModal, UnmuteUserModal, SeeUserModal },
+    props: {
+      room: {
+        type: Object,
+        required: true
+      }
+    },
+
+    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal, UnbanUserModal, KickUserModal, MuteUserModal, UnmuteUserModal, SeeUserModal, infoUser },
     data() {
       return {
         showMenu: false,
@@ -52,16 +61,25 @@
         showMuteUserModal: false,
         showUnmuteUserModal: false,
         showSeeUserModal: false,
+        userId: null,
       };
+    },
+    computed: {
+      isAdmin() {
+        return this.room.admins.includes(this.userId);
+      },
     },
     watch: {
       channelName(newVal, oldVal) {
         if (newVal !== oldVal) {
-            this.showMenu = false;  // Fermez le menu si le channelName change
+            this.showMenu = false; 
         }
       }
     }, 
     methods: {
+      handleUserInfo(userInfo) {
+        this.userId = userInfo.id;
+      },
       openChangePassword() {
         this.showChangePasswordModal = true;
       },
@@ -127,17 +145,17 @@
 }
 
 .settings-dropdown li button {
-    background-color: transparent; /* Fond transparent pour les boutons */
-    border: none;                   /* Pas de bordure pour les boutons */
-    color: #2fe8ee;                /* Couleur initiale des boutons */
-    cursor: pointer;               /* Indiquer que les boutons sont cliquables */
-    font-size: inherit;            /* Hérite de la taille de la police du parent */
-    text-align: left;              /* Aligner le texte à gauche */
-    width: 100%;                   /* Utiliser toute la largeur disponible */
+    background-color: transparent;
+    border: none;           
+    color: #2fe8ee;           
+    cursor: pointer;           
+    font-size: inherit;          
+    text-align: left;     
+    width: 100%;              
 }
 
 .settings-dropdown li button:hover {
-    color: black;                  /* Couleur de survol pour les boutons */
+    color: black;               
 }
 
 .settings-container > button {

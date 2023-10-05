@@ -21,8 +21,6 @@
       }
     },
     setup(props) {
-        console.log(props.room);
-
       const store = useStore();
       const socketChat = store.getters.socketChat;
       const password = ref('');

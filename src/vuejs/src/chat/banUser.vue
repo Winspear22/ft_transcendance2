@@ -1,123 +1,155 @@
 <template>
-    <div class="ban-user-modal">
+  <div class="modal">
+    <div class="modal-content">
       <!-- Header Section -->
       <h3>Bannir un utilisateur</h3>
 
       <!-- User Input Section -->
       <label>
-        Nom d'utilisateur :
-        <input v-model="targetUsername" />
+          Nom d'utilisateur :
+          <input v-model="targetUsername" />
       </label>
+
+      <!-- Message Response -->
+      <p v-if="inviteMessage" class="invite-message">{{ inviteMessage }}</p>
 
       <!-- Action Buttons Section -->
       <button @click="banUser">Bannir</button>
       <button @click="closeModal">Fermer</button>
     </div>
+  </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
 
 export default {
-    props: ['channelName'],
+  props: ['channelName'],
 
-    data() {
+  data() {
       return {
-        targetUsername: '',
+          targetUsername: '',
+          inviteMessage: null
       };
-    },
+  },
 
-    computed: {
+  computed: {
       ...mapGetters(['socketChat'])
-    },
+  },
 
-    methods: {
-      // ####################
-      // MAIN METHODS
-      // ####################
+  mounted() {
+      this.socketChat.on('banUser', this.handleBanResponse);
+  },
 
+  beforeDestroy() {
+      this.socketChat.off('banUser', this.handleBanResponse);
+  },
+
+  methods: {
       banUser() {
-        if (!this.targetUsername.trim()) {
-          alert('Veuillez entrer un nom d\'utilisateur valide à bannir.');
-          return;
-        }
+          if (!this.targetUsername.trim()) {
+              alert('Veuillez entrer un nom d\'utilisateur valide à bannir.');
+              return;
+          }
 
-        this.socketChat.emit('banUser', {
-          channelName: this.channelName,
-          targetUsername: this.targetUsername,
-        });
-        this.closeModal();
+          this.socketChat.emit('banUser', {
+              channelName: this.channelName,
+              targetUsername: this.targetUsername,
+          });
       },
 
-      // ####################
-      // UTILITY METHODS
-      // ####################
+      handleBanResponse(data) {
+    if (data && data.message) {
+        if (data.message.includes(`You have successfully banned`)) {
+            this.inviteMessage = "Utilisateur banni";
+        } else {
+            this.inviteMessage = "Ban impossible";
+        }
+        setTimeout(this.closeModal, 1000);
+    } else {
+        console.error("Data or data.message is not defined", data);
+    }
+},
+
+
 
       closeModal() {
-        this.$emit('close');
-      },
-    }
+          this.$emit('close');
+      }
+  }
 }
 </script>
 
 <style scoped>
-  /* Modal Styling */
-  .ban-user-modal {
-    width: 300px;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-  }
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0,0,0,0.7);
+}
 
-  /* Header Styling */
-  .ban-user-modal h3 {
-    margin-top: 0;
-  }
+.modal-content {
+  width: 300px;
+  padding: 20px;
+  background: linear-gradient(to left, #2fe8ee, #2459d5); 
+  border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
 
-  /* Label Styling */
-  .ban-user-modal label {
-    display: block;
-    margin-bottom: 10px;
-  }
+.close {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background-color: transparent;
+  border: none;
+  color: #2fe8ee;
+  cursor: pointer;
+  font-size: 24px;
+}
 
-  /* Input Styling */
-  .ban-user-modal input {
-    width: 100%;
-    padding: 5px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-  }
+.close:hover {
+  color: black;
+}
 
-  /* Button Styling */
-  .ban-user-modal button {
-    padding: 5px 10px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
+button {
+  margin-top: 10px;
+  padding: 5px 15px;
+  background-color: transparent;
+  border: 1px solid #2fe8ee;
+  color: #2fe8ee;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
 
-  .ban-user-modal button:hover {
-    background-color: #0056b3;
-  }
+button:hover {
+  background-color: #2fe8ee;
+  color: black;
+}
 
-  .ban-user-modal button:last-child {
-    margin-left: 10px;
-    background-color: #ccc;
-    color: #333;
-  }
+.invite-message {
+  margin-top: 10px;
+  color: #2fe8ee;
+  font-weight: bold;
+}
 
-  .ban-user-modal button:last-child:hover {
-    background-color: #aaa;
-  }
+input {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: transparent;
+  border: 1px solid #2fe8ee;
+  border-radius: 5px;
+  color: #2fe8ee;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+input:hover, input:focus {
+  background-color: #2fe8ee;
+  color: black;
+}
 </style>

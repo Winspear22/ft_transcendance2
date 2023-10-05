@@ -273,7 +273,6 @@ export class ChatGateway
     password?: string
   }, @ConnectedSocket() client: Socket) 
   {
-    console.log("tentative changement de mdp");
     const { channelName, password } = data;
     const user = client.data.user;
     const userId = user.id;
@@ -284,6 +283,7 @@ export class ChatGateway
     // S'assurer que la salle existe
     if (!room) {
         return { success: false, error: 'Channel does not exist' };
+  
     }
 
     // Vérifier si l'utilisateur est le propriétaire de la salle
@@ -303,12 +303,9 @@ export class ChatGateway
       this.emitRooms(client);
       this.emitRoomInvitation(client);
 
-      console.log("CHANGEMENT DE MDP REUSSIS");
       return ;
     }  else {
         this.server.to(client.id).emit('changeRoomPassword', "Error. Password of the room " + channelName + " not modified.");
-        console.log("ECHEC CHANGEMENT DE MDP ");
-
         return ;
     }
   }
@@ -404,9 +401,10 @@ export class ChatGateway
         this.server.to(client.id).emit("inviteRoom", "Error, you do not have the permission to invite people.");
         return ;
     }
-
+    console.log("**********************************************************************1");
     // Trouvez les utilisateurs invités par leur nom d'utilisateur
     const invitedUser = await this.usersService.findUserByUsername(data.invitedUsernames);
+    console.log("**********************************************************************2");
 
     // Vérifiez si l'utilisateur est déjà dans la room
     if (room.users.includes(invitedUser.id)) {
@@ -559,11 +557,13 @@ export class ChatGateway
       // Utilise le service roomService pour bannir un utilisateur de la salle
       const result = await this.roomService.banUserfromRoom(data, client);
       if (result.success) {
+        console.log("result succe");
         // Récupère l'ID Socket de l'utilisateur banni pour lui envoyer une notification
         const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
         const targetSocketId = this.ref_client.get(bannedUser.id);
       const targetSocket = [...this.ref_Socket.keys()].find(Socket => this.ref_Socket.get(Socket) === targetSocketId);
     if (targetSocket) {
+        console.log("socket");
       // Émettre l'événement pour informer l'administrateur
       this.server.to(client.id).emit('banUser', {
         message: `You have successfully banned ${data.targetUsername} from room ${data.channelName}`,

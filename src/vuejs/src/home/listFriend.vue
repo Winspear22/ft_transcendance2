@@ -25,7 +25,6 @@ export default {
 
         const handleFriendDetails = (friendDetails) => {
             friends.value = friendDetails;  // Mettre à jour la liste des amis avec les données reçues
-            console.log(friends.value);
         };
 
         onMounted(() => {

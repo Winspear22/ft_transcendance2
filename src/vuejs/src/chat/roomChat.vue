@@ -16,7 +16,7 @@
     <div v-if="selectedRoom" class="chat-window">
       <h3 class="chat-header">
         <span class="chat-name">{{ selectedRoom.roomName }}</span>
-        <see-setting :channel-name="selectedRoom.roomName" :userDTOs="selectedRoom.userDTOs"></see-setting>
+        <see-setting :room="selectedRoom"></see-setting>
       </h3>
       <div class="messages" v-if="selectedRoom.messages.length > 0" ref="messagesContainer">
         <div v-for="message in selectedRoom.messages" :key="message.id">

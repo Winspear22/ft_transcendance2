@@ -62,7 +62,6 @@ export default {
 
             const hashedPassword = this.hasPassword ? await this.hashPassword(this.password) : null;
             this.emitRoomCreation(hashedPassword);
-            console.log(hashedPassword);
             this.resetForm();
         },
         isFormValid() {

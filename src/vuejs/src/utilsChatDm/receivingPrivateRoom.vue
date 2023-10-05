@@ -30,12 +30,10 @@
       onMounted(() => {
         socketChat.on("emitRoomInvitation", handleRoomInvitation);
         
-        // Request for room invitations
         socketChat.emit("requestRoomInvitations");
       });
   
       onBeforeUnmount(() => {
-        // Remove event listener when component is destroyed
         socketChat.off("emitRoomInvitation", handleRoomInvitation);
       });
   
