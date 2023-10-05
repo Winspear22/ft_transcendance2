@@ -9,9 +9,7 @@
         @click="switchTab(index)" 
         :class="{ active: activeTabIndex === index }"
         class="chat-item"> <!-- Ajout de cette classe -->
-        <router-link :to="`/friend-profile/${getChatName(chat)}`">
           <span class="chat-name">{{ getChatName(chat) }}</span>
-        </router-link>
         <block-dm-button :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
       </div>
     </div>

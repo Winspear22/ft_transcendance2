@@ -5,8 +5,11 @@
     <div v-else>Aucune photo de profil disponible</div>
     
     <span>{{ request.username }}</span>
+    <div class="buttons-container">
     <button class="accept-button" @click="acceptRequest">Accepter</button>
     <button class="decline-button" @click="declineRequest">Refuser</button>
+</div>
+
   </div>
 </template>
 
@@ -72,36 +75,47 @@ export default {
 };
 </script>
 <style scoped>
-  .friend-request-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1em;
-  }
+.friend-request-item {
+  display: flex;
+  flex-direction: column; /* Pour empiler les éléments verticalement */
+  align-items: center; /* Centrer les éléments horizontalement */
+  margin-bottom: 1em;
+  padding: 1em;
+}
 
-  .friend-request-item img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    margin-right: 0.5em;
-  }
+.friend-request-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-bottom: 0.5em; /* Espace sous l'image */
+}
 
-  /* Styles pour les boutons */
-  .accept-button, .decline-button {
-    background-color: transparent;
-    color: #2fe8ee; 
-    border: none;
-    cursor: pointer;
-    padding: 10px 20px;
-    margin-left: 5px;
-    transition: color 0.3s;
-  }
+/* Styles pour les boutons */
+.accept-button, .decline-button {
+  background-color: transparent;
+  color: #2fe8ee; 
+  border: none;
+  cursor: pointer;
+  padding: 10px 20px;
+  transition: color 0.3s;
+  margin-top: 0.5em; /* Espace au-dessus des boutons */
+}
 
-  .accept-button:hover, .decline-button:hover {
-    color: #000;
-  }
+.accept-button:hover, .decline-button:hover {
+  color: #000;
+}
 
-  .accept-button:disabled, .decline-button:disabled {
-    cursor: not-allowed;
-    color: #aaa;
-  }
+.accept-button:disabled, .decline-button:disabled {
+  cursor: not-allowed;
+  color: #aaa;
+}
+
+/* Styles pour afficher les boutons côte à côte */
+.buttons-container {
+  display: flex;
+  gap: 10px; /* Espacement entre les boutons */
+}
+
+
+
 </style>

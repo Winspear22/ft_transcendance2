@@ -1,13 +1,16 @@
+Copy code
 <template>
     <div class="chat-window">
-      <h3>{{ chatName }}</h3>
+      <h3>
+        <router-link class="chat-name-link" :to="`/friend-profile/${chatName}`">{{ chatName }}</router-link>
+      </h3>
       <div class="messages" v-if="hasMessages" ref="messagesContainer">
         <div v-for="message in chat.messages" :key="message.id">
           <span>{{ getSenderName(message.senderId) }}: {{ message.text }}</span>
         </div>
       </div>
     </div>
-  </template>
+</template>
   
   <script>
   import { getChatUserName } from './dmName';
@@ -83,5 +86,18 @@
     border: 1px solid #ccc;
     border-radius: 5px;
   }
+  .chat-name-link {
+    color: #2fe8ee; /* Couleur bleue de votre charte graphique */
+    text-decoration: none; /* Supprime le soulignement par défaut */
+    transition: color 0.3s; /* Transition pour le survol */
+}
+.chat-name-link:hover, 
+.chat-window .chat-name-link:hover {
+    color: black; /* Couleur au survol */
+}
+/* Pour s'assurer qu'il n'y a pas de changement de couleur sur les liens déjà cliqués */
+.chat-name-link:visited {
+    color: #2fe8ee; /* Même couleur bleue que le lien non visité */
+}
   </style>
   
