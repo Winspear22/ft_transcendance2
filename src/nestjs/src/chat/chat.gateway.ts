@@ -144,14 +144,13 @@ export class ChatGateway
   @SubscribeMessage('emitAvailableRooms')
   async emitAvailableRooms(@ConnectedSocket() client: Socket) {
       const allUsers = await this.usersRepository.find();
-
       for (const user of allUsers) {
         const userSocket = [...this.ref_socket_userid.entries()]
             .find(([socket, userId]) => userId === user.id)?.[0];
         if (userSocket) {
           const availableRooms = await this.roomService.getRooms(userSocket);
           this.server.to(userSocket.id).emit('emitAvailableRooms', availableRooms);
-          console.log("JE SUIS DANS EMIT AVAILABLE ROOM");
+          console.log("JE SUIS DANS EMIT AVAILABLE ROOM ", userSocket.id); 
         }
       }
   }

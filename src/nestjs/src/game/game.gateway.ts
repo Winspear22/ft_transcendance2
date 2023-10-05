@@ -176,7 +176,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('invitPlayRequest')
   async gameInvitation(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
-      if (socket.data.user) {
+      if (socket.data.user && name) {
         if (name == socket.data.user.username)
           return;
         const guest = await this.usersRepository.find({

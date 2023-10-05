@@ -1,8 +1,8 @@
 <template>
     <div>
       <h2 v-if="availableRooms.length > 0">Salles disponibles :</h2>
-  
-      <div class="tabs" v-if="availableRooms.length > 0">
+
+      <div v-if="availableRooms.length > 0">
         <div 
           v-for="(room, index) in availableRooms" 
           :key="index"
@@ -13,7 +13,7 @@
       </div>
     </div>
 </template>
-  
+
 <script>
 import { mapGetters } from 'vuex';
 import joinRoom from './joinRoom';
@@ -34,6 +34,8 @@ export default {
       this.socketChat.on('emitAvailableRooms', (response) => {
         if (response.success && response.channels) {
             this.availableRooms = response.channels;
+            console.log("this.socketChat.id ", this.socketChat.id)
+            console.log("availableRooms ", this.availableRooms);
         }
      });
     }
