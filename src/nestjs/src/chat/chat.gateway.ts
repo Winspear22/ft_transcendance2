@@ -566,20 +566,18 @@ export class ChatGateway
       // Utilise le service roomService pour bannir un utilisateur de la salle
       const result = await this.roomService.banUserfromRoom(data, client);
       if (result.success) {
-        console.log("result succe");
         // Récupère l'ID Socket de l'utilisateur banni pour lui envoyer une notification
         const bannedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
         const targetSocketId = this.ref_client.get(bannedUser.id);
       const targetSocket = [...this.ref_Socket.keys()].find(Socket => this.ref_Socket.get(Socket) === targetSocketId);
     if (targetSocket) {
-        console.log("socket");
       // Émettre l'événement pour informer l'administrateur
       this.server.to(client.id).emit('banUser', {
         message: `You have successfully banned ${data.targetUsername} from room ${data.channelName}`,
     });
         // Émettre l'événement pour informer l'utilisateur banni
         targetSocket.emit('banned', {
-            message: `You have been banned from room ${data.channelName} by an administrator.`,
+            message: `Vous êtes banni de la room ${data.channelName} par un admin.`,
         });
         
         // Émettre l'événement pour informer la salle

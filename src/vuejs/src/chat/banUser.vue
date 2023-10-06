@@ -57,18 +57,18 @@ export default {
               targetUsername: this.targetUsername,
           });
       },
-
       handleBanResponse(data) {
-    
-        // Si data est un objet et contient la propriété message
-        if (data.message) {
-          if (data.includes(`You have successfully banned ${data.targetUsername} from room ${data.channelName}`)) {
-            this.inviteMessage = "Utilisateur banni";}
-         else   
-          this.inviteMessage = "Ban impossible";
-          setTimeout(this.closeModal, 2000);
+        console.log("CONTENU DE DATA APRES AVOIR TENTE DE BAN : ", data);
+
+        if (typeof data === "string" && data.includes("Error")) {
+          this.inviteMessage = "Impossible de bannir cette personne";
+        } else if (data.message && data.message.includes("successfully banned")) {
+          this.inviteMessage = "Ban réussi";
+        } else {
+            this.inviteMessage = "Erreur inattendue";
         }
-      },
+        setTimeout(this.closeModal, 2000);
+    },
 
 
       closeModal() {

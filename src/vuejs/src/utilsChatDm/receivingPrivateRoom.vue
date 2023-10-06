@@ -25,12 +25,13 @@
   
       const handleRoomInvitation = (rooms) => {
         invitedRooms.value = rooms;
+        console.log("handle room invitation", rooms);
       };
   
       onMounted(() => {
+        socketChat.emit("requestRoomInvitations");
         socketChat.on("emitRoomInvitation", handleRoomInvitation);
         
-        socketChat.emit("requestRoomInvitations");
       });
   
       onBeforeUnmount(() => {
