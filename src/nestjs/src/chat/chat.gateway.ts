@@ -518,7 +518,7 @@ export class ChatGateway
 
 
       this.server.to(inviterSocket.id).emit("acceptRoomInvitation", `Your invitation to join the room ${room.roomName} has been accepted by ${user.username}.`);
-      this.server.to(client.id).emit("acceptRoomInvitation", `You have joined the room ${room.roomName} successfully.`);
+      this.server.to(client.id).emit("acceptRoomInvitationOk", `You have joined the room ${room.roomName} successfully.`);
       this.emitAvailableRooms(client);
       this.emitRooms(client);
       this.emitRoomInvitation(client);

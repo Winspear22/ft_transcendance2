@@ -1,6 +1,5 @@
 <template>
   <div class="rooms-container">
-    <h2 v-if="availableRooms.length > 0" class="centered-text blue-text">Salles disponibles :</h2>
 
     <div v-if="availableRooms.length > 0">
       <div 

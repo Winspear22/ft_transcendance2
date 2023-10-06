@@ -1,7 +1,7 @@
 <template>
   <div class="join-room-container">
     <input v-if="room.hasPassword" v-model="password" placeholder="Password (if any)" class="password-input" />
-    <button @click="attemptJoin">✔</button>
+    <button @click="attemptJoin">valider pour rejoindre</button>
   </div>
 </template>
   
