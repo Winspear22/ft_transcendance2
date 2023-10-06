@@ -11,18 +11,19 @@
         <li v-if="isAdmin"><button @click="openMuteUser">Mute un utilisateur</button></li>
         <li v-if="isAdmin"><button @click="openUnmuteUser">Demute un utilisateur</button></li>
         <li><button @click="openSeeUser">Voir les utilisateurs</button></li>
+
       </ul>
       <infoUser @userInfoFetched="handleUserInfo"></infoUser>
 
       <ChangePassword v-if="showChangePasswordModal" :visible="showChangePasswordModal" :channelName="room.roomName" @close="showChangePasswordModal = false" />
-  <QuitRoom v-if="showQuitRoomModal" :channelName="room.roomName" @close="showQuitRoomModal = false" />
-  <InviteRoom v-if="showInviteRoomModal" :channelName="room.roomName" @close="showInviteRoomModal = false" />
-  <BanUserModal v-if="showBanUserModal" :channelName="room.roomName" @close="showBanUserModal = false" />
-  <UnbanUserModal v-if="showUnbanUserModal" :channelName="room.roomName" @close="showUnbanUserModal = false" />
-  <KickUserModal v-if="showKickUserModal" :channelName="room.roomName" @close="showKickUserModal = false" />
-  <MuteUserModal v-if="showMuteUserModal" :roomName="room.roomName" @close="showMuteUserModal = false" />
-  <UnmuteUserModal v-if="showUnmuteUserModal" :channelName="room.roomName" @close="showUnmuteUserModal = false" />
-  <SeeUserModal v-if="showSeeUserModal" :usersDTO="room.userDTOs" @close="showSeeUserModal = false" />
+      <QuitRoom v-if="showQuitRoomModal" :channelName="room.roomName" @close="showQuitRoomModal = false" />
+      <InviteRoom v-if="showInviteRoomModal" :channelName="room.roomName" @close="showInviteRoomModal = false" />
+      <BanUserModal v-if="showBanUserModal" :channelName="room.roomName" @close="showBanUserModal = false" />
+      <UnbanUserModal v-if="showUnbanUserModal" :channelName="room.roomName" @close="showUnbanUserModal = false" />
+      <KickUserModal v-if="showKickUserModal" :channelName="room.roomName" @close="showKickUserModal = false" />
+      <MuteUserModal v-if="showMuteUserModal" :roomName="room.roomName" @close="showMuteUserModal = false" />
+      <UnmuteUserModal v-if="showUnmuteUserModal" :channelName="room.roomName" @close="showUnmuteUserModal = false" />
+      <SeeUserModal v-if="showSeeUserModal" :channelName="room.roomName" @close="showSeeUserModal = false" />
     </div>
   </template>
   

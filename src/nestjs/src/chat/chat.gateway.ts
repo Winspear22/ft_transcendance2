@@ -189,6 +189,7 @@ export class ChatGateway
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitUsersInRoom')
   async getUsersInRoom(@MessageBody() data: { channelName: string }): Promise<any[]> {
+    console.log("j'essaye d'envoyer les usr");
     // Obtenez les sockets des clients dans la salle
     const socketsInRoom = await this.server.in(data.channelName).fetchSockets();
   
@@ -218,6 +219,7 @@ export class ChatGateway
   
     // Émettez cet événement à tous les clients de cette salle avec le tableau uniqueUsersData
     this.server.to(data.channelName).emit('usersDataInRoom', uniqueUsersData);
+    console.log("J'envoie les usr");
   
     // Retournez également le tableau uniqueUsersData
     return uniqueUsersData;
