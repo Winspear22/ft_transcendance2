@@ -1,123 +1,139 @@
 <template>
-    <div class="kick-user-modal">
-      <!-- Header Section -->
-      <h3>Expulser un utilisateur</h3>
+  <div class="kick-user-modal modal">
+    <!-- Header Section -->
+    <h3>Expulser un utilisateur</h3>
 
-      <!-- User Input Section -->
-      <label>
-        Nom d'utilisateur :
-        <input v-model="targetUsername" />
-      </label>
+    <!-- User Input Section -->
+    <label>
+      Nom d'utilisateur :
+      <input v-model="targetUsername" />
+    </label>
 
-      <!-- Action Buttons Section -->
-      <button @click="kickUser">Expulser</button>
-      <button @click="closeModal">Fermer</button>
-    </div>
+    <!-- Message Display Section -->
+    <p class="invite-message" v-if="inviteMessage">{{ inviteMessage }}</p>
+
+    <!-- Action Buttons Section -->
+    <button @click="kickUser">Expulser</button>
+    <button @click="closeModal">Fermer</button>
+  </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
 
 export default {
-    props: ['channelName'],
+  props: ['channelName'],
 
-    data() {
-      return {
-        targetUsername: '',
-      };
+  data() {
+    return {
+      targetUsername: '',
+      inviteMessage: ''
+    };
+  },
+
+  computed: {
+    ...mapGetters(['socketChat'])
+  },
+
+  mounted() {
+    this.socketChat.on('kickUser', this.handleKickResponse);
+  },
+
+  beforeDestroy() {
+    this.socketChat.off('kickUser', this.handleKickResponse);
+  },
+
+  methods: {
+    // ####################
+    // MAIN METHODS
+    // ####################
+
+    kickUser() {
+      if (!this.targetUsername.trim()) {
+        alert('Veuillez entrer un nom d\'utilisateur valide à expulser.');
+        return;
+      }
+
+      this.socketChat.emit('kickUser', {
+        channelName: this.channelName,
+        targetUsername: this.targetUsername,
+      });
     },
 
-    computed: {
-      ...mapGetters(['socketChat'])
+    handleKickResponse(data) {
+      if (typeof data === "string" && data.includes("Error")) {
+        this.inviteMessage = "Impossible d'expulser cette personne";
+      } else if (data.message && data.message.includes("successfully kicked")) {
+        this.inviteMessage = "Expulsion réussie";
+      } else {
+        this.inviteMessage = "Erreur inattendue";
+      }
+      setTimeout(this.closeModal, 2000);
     },
 
-    methods: {
-      // ####################
-      // MAIN METHODS
-      // ####################
+    // ####################
+    // UTILITY METHODS
+    // ####################
 
-      kickUser() {
-        if (!this.targetUsername.trim()) {
-          alert('Veuillez entrer un nom d\'utilisateur valide à expulser.');
-          return;
-        }
-
-        this.socketChat.emit('kickUser', {
-          channelName: this.channelName,
-          targetUsername: this.targetUsername,
-        });
-        this.closeModal();
-      },
-
-      // ####################
-      // UTILITY METHODS
-      // ####################
-
-      closeModal() {
-        this.$emit('close');
-      },
-    }
+    closeModal() {
+      this.inviteMessage = ''; // Resetting the message
+      this.$emit('close');
+    },
+  }
 }
 </script>
 
 <style scoped>
-  /* Modal Styling */
-  .kick-user-modal {
-    width: 300px;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-  }
+.modal {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px;
+  background: linear-gradient(to left, #2fe8ee, #2459d5);
+  border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  width: 300px;
+}
 
-  /* Header Styling */
-  .kick-user-modal h3 {
-    margin-top: 0;
-  }
+button {
+  margin-top: 10px;
+  padding: 5px 15px;
+  background-color: transparent;
+  border: 1px solid #2fe8ee;
+  color: #2fe8ee;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
 
-  /* Label Styling */
-  .kick-user-modal label {
-    display: block;
-    margin-bottom: 10px;
-  }
+button:hover {
+  background-color: #2fe8ee;
+  color: black;
+}
 
-  /* Input Styling */
-  .kick-user-modal input {
-    width: 100%;
-    padding: 5px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-  }
+.invite-message {
+  margin-top: 10px;
+  color: #2fe8ee;
+  font-weight: bold;
+}
 
-  /* Button Styling */
-  .kick-user-modal button {
-    padding: 5px 10px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
+input {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: transparent;
+  border: 1px solid #2fe8ee;
+  border-radius: 5px;
+  color: #2fe8ee;
+  transition: background-color 0.2s, color 0.2s;
+}
 
-  .kick-user-modal button:hover {
-    background-color: #0056b3;
-  }
-
-  .kick-user-modal button:last-child {
-    margin-left: 10px;
-    background-color: #ccc;
-    color: #333;
-  }
-
-  .kick-user-modal button:last-child:hover {
-    background-color: #aaa;
-  }
+input:hover, input:focus {
+  background-color: #2fe8ee;
+  color: black;
+}
 </style>

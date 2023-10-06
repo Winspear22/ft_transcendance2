@@ -25,11 +25,15 @@ computed: {
 
 mounted() {
   this.socketChat.on('banned', this.handleBanned);
+  this.socketChat.on('kicked', this.handleBanned);
+
   this.socketChat.on('unbanned', this.handleUnbanned);
 },
 
 beforeDestroy() {
   this.socketChat.off('banned', this.handleBanned);
+  this.socketChat.off('kicked', this.handleBanned);
+
   this.socketChat.off('unbanned', this.handleUnbanned);
 },
 
