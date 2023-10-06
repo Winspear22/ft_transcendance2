@@ -1,8 +1,12 @@
 <template>
-    <div class="unban-user-modal">
-      <!-- Header Section -->
+  <div class="unban">
+    <!-- Header Section -->
+    <div class="unban-content">
       <h3>Débannir un utilisateur</h3>
-
+      
+      <!-- Message Display Section -->
+      <p class="unban-message" v-if="unbanMessage">{{ unbanMessage }}</p>
+      
       <!-- User Input Section -->
       <label>
         Nom d'utilisateur :
@@ -13,112 +17,128 @@
       <button @click="unbanUser">Débannir</button>
       <button @click="closeModal">Fermer</button>
     </div>
+  </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
 
 export default {
-    props: ['channelName'],
+  props: ['channelName'],
 
-    data() {
-      return {
-        targetUsername: '',
-      };
+  data() {
+    return {
+      targetUsername: '',
+      unbanMessage: ''
+    };
+  },
+
+  computed: {
+    ...mapGetters(['socketChat'])
+  },
+
+  mounted() {
+    this.socketChat.on('unbanUser', this.handleUnbanResponse);
+  },
+
+  beforeDestroy() {
+    this.socketChat.off('unbanUser', this.handleUnbanResponse);
+  },
+
+  methods: {
+    // ####################
+    // MAIN METHODS
+    // ####################
+
+    unbanUser() {
+      if (!this.targetUsername.trim()) {
+        alert('Veuillez entrer un nom d\'utilisateur valide à débannir.');
+        return;
+      }
+
+      this.socketChat.emit('unbanUser', {
+        channelName: this.channelName,
+        targetUsername: this.targetUsername,
+      });
     },
 
-    computed: {
-      ...mapGetters(['socketChat'])
+    handleUnbanResponse(data) {
+      if (typeof data === "string" && data.includes("Error")) {
+        this.unbanMessage = "Impossible de débannir cette personne";
+      } else if (data.message && data.message.includes("successfully unbanned")) {
+        this.unbanMessage = "Déban réussi";
+      } else {
+          this.unbanMessage = "Erreur inattendue";
+      }
+      setTimeout(this.closeModal, 2000);
     },
 
-    methods: {
-      // ####################
-      // MAIN METHODS
-      // ####################
+    // ####################
+    // UTILITY METHODS
+    // ####################
 
-      unbanUser() {
-        if (!this.targetUsername.trim()) {
-          alert('Veuillez entrer un nom d\'utilisateur valide à débannir.');
-          return;
-        }
-
-        this.socketChat.emit('unbanUser', {
-          channelName: this.channelName,
-          targetUsername: this.targetUsername,
-        });
-        this.closeModal();
-      },
-
-      // ####################
-      // UTILITY METHODS
-      // ####################
-
-      closeModal() {
-        this.$emit('close');
-      },
-    }
+    closeModal() {
+      this.$emit('close');
+    },
+  }
 }
 </script>
 
-
 <style scoped>
-  /* Modal Styling */
-  .unban-user-modal {
-    width: 300px;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-  }
+.unban {
+display: flex;
+justify-content: center;
+align-items: center;
+position: fixed;
+top: 0;
+right: 0;
+bottom: 0;
+left: 0;
+background-color: rgba(0,0,0,0.7);
+}
 
-  /* Header Styling */
-  .unban-user-modal h3 {
-    margin-top: 0;
-  }
+.unban-content {
+width: 300px;
+padding: 20px;
+background: linear-gradient(to left, #2fe8ee, #2459d5); 
+border-radius: 5px;
+box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
 
-  /* Label Styling */
-  .unban-user-modal label {
-    display: block;
-    margin-bottom: 10px;
-  }
+button {
+margin-top: 10px;
+padding: 5px 15px;
+background-color: transparent;
+border: 1px solid #2fe8ee;
+color: #2fe8ee;
+border-radius: 5px;
+cursor: pointer;
+transition: color 0.2s, background-color 0.2s;
+}
 
-  /* Input Styling */
-  .unban-user-modal input {
-    width: 100%;
-    padding: 5px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-  }
+button:hover {
+background-color: #2fe8ee;
+color: black;
+}
 
-  /* Button Styling */
-  .unban-user-modal button {
-    padding: 5px 10px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
+.unban-message {
+margin-top: 10px;
+color: #2fe8ee;
+font-weight: bold;
+}
 
-  .unban-user-modal button:hover {
-    background-color: #0056b3;
-  }
+input {
+margin-top: 10px;
+padding: 5px 10px;
+background-color: transparent;
+border: 1px solid #2fe8ee;
+border-radius: 5px;
+color: #2fe8ee;
+transition: background-color 0.2s, color 0.2s;
+}
 
-  .unban-user-modal button:last-child {
-    margin-left: 10px;
-    background-color: #ccc;
-    color: #333;
-  }
-
-  .unban-user-modal button:last-child:hover {
-    background-color: #aaa;
-  }
+input:hover, input:focus {
+background-color: #2fe8ee;
+color: black;
+}
 </style>

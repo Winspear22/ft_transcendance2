@@ -1,47 +1,65 @@
 <template>
-    <div v-if="showPopup" class="banned-popup">
-      <div class="popup-content">
-        <p>{{ bannedMessage }}</p>
-        <button @click="redirectToHome">OK</button>
-      </div>
+  <div v-if="showPopup" class="banned-popup">
+    <div class="popup-content">
+      <p>{{ bannedMessage }}</p>
+      <button @click="handleOkClick">OK</button>
     </div>
-  </template>
-  
-  <script>
-  import { mapGetters } from 'vuex';
-  
-  export default {
-    data() {
-      return {
-        showPopup: false,
-        bannedMessage: ''
-      };
-    },
-  
-    computed: {
-      ...mapGetters(['socketChat'])
-    },
-  
-    mounted() {
-      this.socketChat.on('banned', this.handleBanned);
-    },
-  
-    beforeDestroy() {
-      this.socketChat.off('banned', this.handleBanned);
-    },
-  
-    methods: {
-      handleBanned(data) {
-        this.bannedMessage = data.message;
-        this.showPopup = true;
-      },
-  
-      redirectToHome() {
-        this.$router.push({ name: 'Home' });
-      }
+  </div>
+</template>
+
+<script>
+import { mapGetters } from 'vuex';
+
+export default {
+data() {
+  return {
+    showPopup: false,
+    bannedMessage: '',
+    isBanned: false
+  };
+},
+
+computed: {
+  ...mapGetters(['socketChat'])
+},
+
+mounted() {
+  this.socketChat.on('banned', this.handleBanned);
+  this.socketChat.on('unbanned', this.handleUnbanned);
+},
+
+beforeDestroy() {
+  this.socketChat.off('banned', this.handleBanned);
+  this.socketChat.off('unbanned', this.handleUnbanned);
+},
+
+methods: {
+  handleBanned(data) {
+    this.bannedMessage = data.message;
+    this.showPopup = true;
+    this.isBanned = true;
+  },
+
+  handleUnbanned(data) {
+    this.bannedMessage = data.message;
+    this.showPopup = true;
+    this.isBanned = false;
+  },
+
+  handleOkClick() {
+    this.showPopup = false;
+    if(this.isBanned) {
+      this.redirectToHome();
     }
+  },
+
+  redirectToHome() {
+    this.$router.push({ name: 'Home' });
   }
-  </script>
+}
+}
+</script>
+
   
   <style scoped>
   .banned-popup {

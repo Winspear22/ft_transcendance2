@@ -58,8 +58,6 @@ export default {
           });
       },
       handleBanResponse(data) {
-        console.log("CONTENU DE DATA APRES AVOIR TENTE DE BAN : ", data);
-
         if (typeof data === "string" && data.includes("Error")) {
           this.inviteMessage = "Impossible de bannir cette personne";
         } else if (data.message && data.message.includes("successfully banned")) {
@@ -97,21 +95,6 @@ export default {
   background: linear-gradient(to left, #2fe8ee, #2459d5); 
   border-radius: 5px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-.close {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  background-color: transparent;
-  border: none;
-  color: #2fe8ee;
-  cursor: pointer;
-  font-size: 24px;
-}
-
-.close:hover {
-  color: black;
 }
 
 button {

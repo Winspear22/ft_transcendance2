@@ -625,7 +625,7 @@ export class ChatGateway
     });
         // Émettre l'événement pour informer l'utilisateur banni
         targetSocket.emit('unbanned', {
-            message: `You have been unbanned from room ${data.channelName} by an administrator.`,
+            message: `Vous êtes débanni de la room ${data.channelName} par un admin.`,
         });
         
         // Émettre l'événement pour informer la salle
@@ -642,7 +642,6 @@ export class ChatGateway
     }
     return result;
   }
-
   //--------------------------------------------------------------------------------------//
 
   //------------------------------------KICK LES USERS------------------------------------//
