@@ -8,7 +8,7 @@ export default createStore({
     socketDm: null,
     socketChat: null,
     gameSocket: null,
-    isSocketChatListenersAttached: false,
+    firstConnection: true,
   },
 
   mutations: {
@@ -30,9 +30,10 @@ export default createStore({
     SET_GAMESOCKET(state, gameSocket) {
       state.gameSocket = gameSocket;
     },
-    SET_SOCKET_CHAT_LISTENERS_ATTACHED(state, value) {
-      state.isSocketChatListenersAttached = value;
+    SET_FIRST_CONNECTION(state, value) {
+      state.firstConnection = value;
     }
+    
   },
 
   actions: {
@@ -54,9 +55,10 @@ export default createStore({
     setGameSocket({ commit }, gameSocket) {
       commit('SET_GAMESOCKET', gameSocket);
     },
-    setSocketChatListenersAttached({ commit }, value) {
-      commit('SET_SOCKET_CHAT_LISTENERS_ATTACHED', value);
+    setFirstConnection({ commit }, value) {
+      commit('SET_FIRST_CONNECTION', value);
     }
+    
   },
 
   getters: {
@@ -66,6 +68,6 @@ export default createStore({
     socketDm: state => state.socketDm,
     socketChat: state => state.socketChat,
     gameSocket: state => state.gameSocket,
-    isSocketChatListenersAttached: state => state.isSocketChatListenersAttached
+    firstConnection: state => state.firstConnection,
   }
 });
