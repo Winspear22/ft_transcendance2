@@ -9,9 +9,9 @@
                 <button class="close-btn" @click="closeModal">&times;</button>
                 <h2>Créer une nouvelle salle</h2>
                 <input v-model="channelName" placeholder="Channel Name" />
-                <input type="checkbox" v-model="isPrivate" /> Chambre privée
-                <input type="checkbox" v-model="hasPassword" /> Créer un mdp
-                <input v-if="hasPassword" v-model="password" type="password" placeholder="Mot de passe" />
+                <input type="checkbox" v-model="isPrivate" v-on:change="handleIsPrivateChange" /> Chambre privée
+                <input type="checkbox" v-model="hasPassword" v-if="!isPrivate" /> Créer un mdp
+                <input v-if="hasPassword && !isPrivate" v-model="password" type="password" placeholder="Mot de passe" />
                 <button @click="createRoom">Valider</button>
             </div>
         </div>
@@ -100,6 +100,11 @@ export default {
             this.password = '';
             this.isPrivate = false;
             this.showModal = false;
+        },
+        handleIsPrivateChange() {
+            if (this.isPrivate) {
+                this.hasPassword = false;
+            }
         }
     },
     beforeDestroy() {
