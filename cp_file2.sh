@@ -1,0 +1,1 @@
+mkdir ../volume_adaloui;cp /mnt/nfs/homes/adaloui/Desktop/Makefile .; cp /mnt/nfs/homes/adaloui/Desktop/docker-compose.yml .; cp /mnt/nfs/homes/adaloui/Desktop/.env .; cd src/nestjs;npm install;cd ../vuejs;npm install
