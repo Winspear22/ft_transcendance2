@@ -59,18 +59,16 @@ export default {
       },
 
       handleBanResponse(data) {
-    if (data && data.message) {
-        if (data.message.includes(`You have successfully banned`)) {
-            this.inviteMessage = "Utilisateur banni";
-        } else {
-            this.inviteMessage = "Ban impossible";
+    
+        // Si data est un objet et contient la propriété message
+        if (data.message) {
+          if (data.includes(`You have successfully banned ${data.targetUsername} from room ${data.channelName}`)) {
+            this.inviteMessage = "Utilisateur banni";}
+         else   
+          this.inviteMessage = "Ban impossible";
+          setTimeout(this.closeModal, 2000);
         }
-        setTimeout(this.closeModal, 1000);
-    } else {
-        console.error("Data or data.message is not defined", data);
-    }
-},
-
+      },
 
 
       closeModal() {
