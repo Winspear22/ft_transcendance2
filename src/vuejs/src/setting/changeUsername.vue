@@ -38,13 +38,16 @@
               const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
               if (response.data.success) {
                 await store.dispatch('setToken', response.data.cookie);
+                store.getters.gameSocket.disconnect();
+                store.getters.socketChat.disconnect();
+                store.getters.socketDm.disconnect();
                 this.shouldInitSocket = true;
               }
             } catch (error) {
               console.error('Erreur lors de la récupération des informations utilisateur:', error);
             }
           }
-        } 
+        }
         catch (error) 
         {
           console.error("Erreur lors du changement de nom d'utilisateur:", error);

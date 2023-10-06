@@ -53,7 +53,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
     console.log("Disconnection detected: ", socket.id);
   }
-  
+
   @SubscribeMessage('connection')   
   async handleConnection(@ConnectedSocket() socket: Socket) {
     // Gérez la connexion d'un joueur
@@ -79,10 +79,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           user: true,
         } 
         });
-        for (let value of gameHistory.values()){
-          if (user.username == value.user.username)
-          {
-            return;
+        if (gameHistory.length > 0) {
+          for (let value of gameHistory.values()){
+            if (user.username == value.user.username)
+            {
+              return;
+            }
           }
         }
         this.gameService.createMatchHistory(user);
@@ -134,6 +136,22 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         gameI.player2.username = socket.data.user.username;
         gameI.player2.idClient = socket.id;
         gameI.player2.idUser = socket.data.user.id;
+        const p1 = await this.usersRepository.find({
+            where: {
+              username: gameI.player1.username,
+            }
+          });
+        const p2 = await this.usersRepository.find({
+          where: {
+            username: gameI.player2.username,
+          }
+        });
+        let pl1 = p1[0];
+        let pl2 = p2[0];
+        pl1.user_status = "playing";
+        pl2.user_status = "playing";
+        await this.usersRepository.save(pl1);
+        await this.usersRepository.save(pl2);
         gameI.status = "playing";
         this.server.to(gameI.player1.idClient).emit('goToGame'); //Envoyer la game aux 2 clients
         this.server.to(gameI.player2.idClient).emit('goToGame');
@@ -173,10 +191,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-
   @SubscribeMessage('invitPlayRequest')
   async gameInvitation(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
-      if (socket.data.user) {
+      if (socket.data.user && name) {
         if (name == socket.data.user.username)
           return;
         const guest = await this.usersRepository.find({
@@ -226,9 +243,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
-  
     @SubscribeMessage('acceptInvitToPlayRequest')
-  
     async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) {
       for (let value of gameMap.values()) {
@@ -269,6 +284,20 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const gameI = gameMap.get(inGame.get(socket.id));
       if(gameI && (gameI.player1.idClient == socket.id || gameI.player1.deco == 1))
       {
+        const p1 = await this.usersRepository.find({
+          where: {
+            username: gameI.player1.username,
+          }
+        });
+        const p2 = await this.usersRepository.find({
+          where: {
+            username: gameI.player2.username,
+          }
+        }); 
+        p1[0].user_status = "Online";
+        p2[0].user_status = "Online";
+        await this.usersRepository.save(p1);
+        await this.usersRepository.save(p2);
         this.gameService.createMatch(gameI, ref_client);
         let idP2 = gameI.player2.idClient;
         gameMap.delete(inGame.get(socket.id));

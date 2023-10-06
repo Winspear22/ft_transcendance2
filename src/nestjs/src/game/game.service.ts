@@ -26,7 +26,6 @@ export class GameService {
     ) {}
 
     async createMatchHistory(user: UserEntity) {
-        console.log("PAS BON");
         const matchHistory = this.matchHistoryRepository.create({
             total_parties: 0,
             total_victoire: 0,
@@ -49,7 +48,7 @@ export class GameService {
         await this.matchRepository.save(match);
         //Cherche le match history des deux joueurs
         let matchHistoryArray = await this.matchHistoryRepository.find({
-            relations: { 
+            relations: {
               user: true,
             //   matches: true,
             }

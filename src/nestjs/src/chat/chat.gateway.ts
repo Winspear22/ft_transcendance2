@@ -144,14 +144,13 @@ export class ChatGateway
   @SubscribeMessage('emitAvailableRooms')
   async emitAvailableRooms(@ConnectedSocket() client: Socket) {
       const allUsers = await this.usersRepository.find();
-
       for (const user of allUsers) {
         const userSocket = [...this.ref_socket_userid.entries()]
             .find(([socket, userId]) => userId === user.id)?.[0];
         if (userSocket) {
           const availableRooms = await this.roomService.getRooms(userSocket);
           this.server.to(userSocket.id).emit('emitAvailableRooms', availableRooms);
-          console.log("JE SUIS DANS EMIT AVAILABLE ROOM");
+          console.log("JE SUIS DANS EMIT AVAILABLE ROOM ", userSocket.id); 
         }
       }
   }
@@ -189,39 +188,42 @@ export class ChatGateway
 
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitUsersInRoom')
-  async getUsersInRoom(@MessageBody() data: {
-    roomName: string } ): Promise<Socket[]> {
-      // Obtenez les sockets des clients dans la salle
-      console.log(data.roomName);
-      //const clientSockets = await this.server.in(roomName).fetchSockets();
-      //const sockets = await this.server.fetchSockets();
-      const sockets2 = await this.server.in(data.roomName).fetchSockets();
-
-      // Transformez les ID de socket en objets UserEntity
-      const users: Socket[] = [];
-    
-      //console.log(users);
-      //console.log(sockets.at(0).data);
-      //console.log(sockets.at(1).data);
-      //console.log(sockets.at(2).data);
-      console.log(sockets2.at(0).data);
-      console.log(sockets2.at(1).data);
-      //console.log(sockets2.at(2).data);
-
-
-      
-      //console.log(sockets2.at(2).data);
-
-      //const user = this.chatService.getUserFromSocket(sockets.at(0));
-      //console.log(sockets.at(3).id);
-
+  async getUsersInRoom(@MessageBody() data: { channelName: string }): Promise<any[]> {
+    // Obtenez les sockets des clients dans la salle
+    const socketsInRoom = await this.server.in(data.channelName).fetchSockets();
   
-      return users;
+    // Récupérez le champ `.user` de chaque socket (plutôt que `.data`)
+    const usersData = socketsInRoom.map(socket => socket.data.user);
+  
+    //console.log("Avant filtrage:", usersData);
+  
+    // Filtrer les doublons basés sur l'ID de l'utilisateur
+    const seenIds = {}; // objet pour suivre les ID déjà vus
+    const uniqueUsersData = usersData.filter(user => {
+      if (!user || !user.id) {
+      //  console.warn("Socket sans user ou user.id:", user);
+        return false;
+      }
+    
+      if (seenIds[user.id]) {
+      //  console.log(`ID déjà vu: ${user.id} (${user.username})`);
+        return false; // Si l'ID a déjà été vu, ne pas inclure l'utilisateur
+      }
+    
+      seenIds[user.id] = true; // Marquer l'ID comme vu
+      return true; // Inclure l'utilisateur
+    });
+  
+    console.log("Après filtrage:", uniqueUsersData);
+  
+    // Émettez cet événement à tous les clients de cette salle avec le tableau uniqueUsersData
+    this.server.to(data.channelName).emit('usersDataInRoom', uniqueUsersData);
+  
+    // Retournez également le tableau uniqueUsersData
+    return uniqueUsersData;
   }
 
-
   
-
 
 
   //--------------------------------------------------------------------------------------//
@@ -405,6 +407,13 @@ export class ChatGateway
     // Trouvez les utilisateurs invités par leur nom d'utilisateur
     const invitedUser = await this.usersService.findUserByUsername(data.invitedUsernames);
     console.log("**********************************************************************2");
+
+    if (!invitedUser){
+
+      this.server.to(client.id).emit("inviteRoom", "Error, the user doesn't exist.");
+      return ;
+  }
+
 
     // Vérifiez si l'utilisateur est déjà dans la room
     if (room.users.includes(invitedUser.id)) {
