@@ -29,6 +29,7 @@ mounted() {
 
   this.socketChat.on('unbanned', this.handleUnbanned);
   this.socketChat.on('muted', this.handleUnbanned);
+  this.socketChat.on('unmuted', this.handleUnbanned);
 },
 
 beforeDestroy() {
@@ -37,6 +38,7 @@ beforeDestroy() {
 
   this.socketChat.off('unbanned', this.handleUnbanned);
   this.socketChat.off('muted', this.handleUnbanned);
+  this.socketChat.off('unmuted', this.handleUnbanned);
 },
 
 methods: {

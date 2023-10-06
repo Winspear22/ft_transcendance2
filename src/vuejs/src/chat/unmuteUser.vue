@@ -1,127 +1,144 @@
 <template>
-    <div class="unmute-user-modal">
-      <infoUser @userInfoFetched="setUserInfo"></infoUser>
+  <div class="modal">
+    <div class="modal-content">
       <!-- Header Section -->
-      <h3>Retirer la mise en sourdine d'un utilisateur</h3>
+      <h3>Démuté un utilisateur</h3>
 
       <!-- User Input Section -->
       <label>
-        Nom d'utilisateur à désactiver la mise en sourdine :
-        <input v-model="targetUsername" placeholder="Nom d'utilisateur" />
+          Nom d'utilisateur :
+          <input v-model="targetUsername" />
       </label>
 
+      <!-- Message Response -->
+      <p v-if="unmuteMessage" class="unmute-message">{{ unmuteMessage }}</p>
+
+      <info-user @userInfoFetched="handleUserInfo"></info-user>
       <!-- Action Buttons Section -->
-      <button @click="unmuteUser">Retirer la mise en sourdine</button>
+      <button @click="unmuteUser">Démuté</button>
       <button @click="closeModal">Fermer</button>
     </div>
+  </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
-import infoUser from '../setting/infoUser'; 
+import infoUser from '../setting/infoUser';
 
 export default {
-    components: {
-        infoUser
-    },
-    props: ['roomName'],
+  props: ['roomName'],
 
-    data() {
+  components: {
+    infoUser
+  },
+
+  data() {
       return {
-        targetUsername: '',
-        username: ''
+          targetUsername: '',
+          unmuteMessage: null
       };
-    },
+  },
 
-    computed: {
+  computed: {
       ...mapGetters(['socketChat'])
-    },
+  },
 
-    methods: {
-      unmuteUser() {
+  mounted() {
+      this.socketChat.on('unmuteUser', this.handleUnmuteResponse);
+  },
+
+  beforeDestroy() {
+      this.socketChat.off('unmuteUser', this.handleUnmuteResponse);
+  },
+
+  methods: {
+    handleUserInfo(userInfo) {
+        this.currentUserInfo = userInfo;
+    },
+    unmuteUser() {
         if (!this.targetUsername.trim()) {
-          alert('Veuillez entrer un nom d\'utilisateur valide.');
-          return;
+            alert('Veuillez entrer un nom d\'utilisateur valide.');
+            return;
         }
 
         this.socketChat.emit('unmuteUser', {
-          username: this.username,
-          roomName: this.roomName,
-          targetUsername: this.targetUsername
+            username: this.currentUserInfo.username,
+            roomName: this.roomName,
+            targetUsername: this.targetUsername
         });
-        this.closeModal();
-      },
-
-      setUserInfo(userInfo) {
-        this.username = userInfo.username;
-      },
-
-      closeModal() {
+    },
+    handleUnmuteResponse(data) {
+      if (data.error) {
+        this.unmuteMessage = "Erreur lors de la démétir de l'utilisateur: " + data.error;
+      } else {
+        this.unmuteMessage = `L'utilisateur ${this.targetUsername} a été démuté`;
+      }
+      setTimeout(this.closeModal, 2000);
+    },
+    closeModal() {
         this.$emit('close');
-      },
     }
+  }
 }
 </script>
 
 
+
 <style scoped>
-  /* Modal Styling */
-  .unmute-user-modal {
-    width: 300px;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
-  }
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0,0,0,0.7);
+}
 
-  /* Header Styling */
-  .unmute-user-modal h3 {
-    margin-top: 0;
-  }
+.modal-content {
+  width: 300px;
+  padding: 20px;
+  background: linear-gradient(to left, #2fe8ee, #2459d5); 
+  border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
 
-  /* Label Styling */
-  .unmute-user-modal label {
-    display: block;
-    margin-bottom: 10px;
-  }
+button {
+  margin-top: 10px;
+  padding: 5px 15px;
+  background-color: transparent;
+  border: 1px solid #2fe8ee;
+  color: #2fe8ee;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+}
 
-  /* Input Styling */
-  .unmute-user-modal input {
-    width: 100%;
-    padding: 5px;
-    margin-bottom: 10px;
-    border: 1px solid #ccc;
-    border-radius: 3px;
-  }
+button:hover {
+  background-color: #2fe8ee;
+  color: black;
+}
 
-  /* Button Styling */
-  .unmute-user-modal button {
-    padding: 5px 10px;
-    border: none;
-    background-color: #007bff;
-    color: #fff;
-    border-radius: 3px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
+.invite-message {
+  margin-top: 10px;
+  color: #2fe8ee;
+  font-weight: bold;
+}
 
-  .unmute-user-modal button:hover {
-    background-color: #0056b3;
-  }
+input {
+  margin-top: 10px;
+  padding: 5px 10px;
+  background-color: transparent;
+  border: 1px solid #2fe8ee;
+  border-radius: 5px;
+  color: #2fe8ee;
+  transition: background-color 0.2s, color 0.2s;
+}
 
-  .unmute-user-modal button:last-child {
-    margin-left: 10px;
-    background-color: #ccc;
-    color: #333;
-  }
-
-  .unmute-user-modal button:last-child:hover {
-    background-color: #aaa;
-  }
+input:hover, input:focus {
+  background-color: #2fe8ee;
+  color: black;
+}
 </style>

@@ -768,7 +768,8 @@ export class ChatGateway
           const targetSocketId = this.ref_client.get(unmutedUser.id);
 
           this.server.to(client.id).emit('unmuteUser', "User " + data.targetUsername + " has been unmuted");
-          this.server.to(targetSocketId).emit('unmuted', "You have been unmuted by an administrator");
+          this.server.to(targetSocketId).emit('unmuted', {
+            message: "Vous avez ete demute par un admistrateur sur " + data.roomName} );
 
           this.server.to(data.roomName).emit('userUnmuted', {
               message: `${data.targetUsername} has been unmuted.`,
