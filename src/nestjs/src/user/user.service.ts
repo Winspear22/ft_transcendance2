@@ -484,6 +484,8 @@ export class UserService {
       const me = await this.findUserById(user.id)
       if (me.username === username)
         return {success: false};
+      if (me.user_status === "playing")
+        return {success: false};
       const OtherUser = await this.findUserByUsername(username);
       if (OtherUser)
         return {success: false};

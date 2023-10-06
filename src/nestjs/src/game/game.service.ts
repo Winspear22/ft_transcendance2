@@ -26,7 +26,6 @@ export class GameService {
     ) {}
 
     async createMatchHistory(user: UserEntity) {
-        console.log("PAS BON");
         const matchHistory = this.matchHistoryRepository.create({
             total_parties: 0,
             total_victoire: 0,
