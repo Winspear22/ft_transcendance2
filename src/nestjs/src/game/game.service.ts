@@ -48,7 +48,7 @@ export class GameService {
         await this.matchRepository.save(match);
         //Cherche le match history des deux joueurs
         let matchHistoryArray = await this.matchHistoryRepository.find({
-            relations: { 
+            relations: {
               user: true,
             //   matches: true,
             }

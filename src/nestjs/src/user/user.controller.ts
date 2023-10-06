@@ -98,10 +98,10 @@ export class UserController {
 		const result = await this.userService.UpdateUserUsernameSettings(user, res, data);
     if (result.success == true)
     {
-		  const partialUser = await this.userService.returnPartialUserInfo(user.username);
-		  return res.status(201).json({ message: 'Username successfully modified to ' + partialUser.username, partialUser });
+		const partialUser = await this.userService.returnPartialUserInfo(user.username);
+		return res.status(201).json({ message: 'Username successfully modified to ' + partialUser.username, partialUser });
     }
-    else	
+    else
       return res.status(409).json({message: "Error. Could not change user's username"});
 	}
 

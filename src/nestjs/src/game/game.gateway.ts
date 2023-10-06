@@ -133,6 +133,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           return;
         let idx = waitingGames.shift();
         let gameI = gameMap.get(idx);
+        gameI.player2.username = socket.data.user.username;
+        gameI.player2.idClient = socket.id;
+        gameI.player2.idUser = socket.data.user.id;
         const p1 = await this.usersRepository.find({
             where: {
               username: gameI.player1.username,
@@ -143,13 +146,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             username: gameI.player2.username,
           }
         });
-        p1[0].user_status = "playing";
-        p2[0].user_status = "playing";
-        await this.usersRepository.save(p1);
-        await this.usersRepository.save(p2);
-        gameI.player2.username = socket.data.user.username;
-        gameI.player2.idClient = socket.id;
-        gameI.player2.idUser = socket.data.user.id;
+        let pl1 = p1[0];
+        let pl2 = p2[0];
+        pl1.user_status = "playing";
+        pl2.user_status = "playing";
+        await this.usersRepository.save(pl1);
+        await this.usersRepository.save(pl2);
         gameI.status = "playing";
         this.server.to(gameI.player1.idClient).emit('goToGame'); //Envoyer la game aux 2 clients
         this.server.to(gameI.player2.idClient).emit('goToGame');
