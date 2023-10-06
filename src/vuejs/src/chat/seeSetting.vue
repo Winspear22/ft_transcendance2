@@ -20,7 +20,7 @@
   <BanUserModal v-if="showBanUserModal" :channelName="room.roomName" @close="showBanUserModal = false" />
   <UnbanUserModal v-if="showUnbanUserModal" :channelName="room.roomName" @close="showUnbanUserModal = false" />
   <KickUserModal v-if="showKickUserModal" :channelName="room.roomName" @close="showKickUserModal = false" />
-  <MuteUserModal v-if="showMuteUserModal" :channelName="room.roomName" @close="showMuteUserModal = false" />
+  <MuteUserModal v-if="showMuteUserModal" :roomName="room.roomName" @close="showMuteUserModal = false" />
   <UnmuteUserModal v-if="showUnmuteUserModal" :channelName="room.roomName" @close="showUnmuteUserModal = false" />
   <SeeUserModal v-if="showSeeUserModal" :usersDTO="room.userDTOs" @close="showSeeUserModal = false" />
     </div>

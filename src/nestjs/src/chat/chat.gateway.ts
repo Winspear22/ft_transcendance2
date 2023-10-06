@@ -672,7 +672,7 @@ export class ChatGateway
       });
           // Émettre l'événement pour informer l'utilisateur banni
           targetSocket.emit('kicked', {
-              message: `Vous êtes expulsé de la room ${data.channelName} par un admin.`,
+            message: `Vous êtes expulsé de la room ${data.channelName} par un admin.`,
           });
           
           // Émettre l'événement pour informer la salle
@@ -703,40 +703,46 @@ export class ChatGateway
   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
   */
   
-  @UseGuards(ChatGuard)
-  @SubscribeMessage('muteUser')
-  async muteUser(@MessageBody() data: {
-  username: string; 
-  roomName: string; 
-  targetUsername: string; 
-  duration: number }, 
-  @ConnectedSocket() client: Socket) 
-  {
-    
-    const result = await this.roomService.muteUserRoom(data);
-    
-    if (result.success) {
-      const mutedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
-      const targetSocketId = this.ref_client.get(mutedUser.id);
 
-      this.server.to(client.id).emit('muteUser', "User " + data.targetUsername + " has been muted for " + data.duration);
-      this.server.to(targetSocketId).emit('muted', "You have been muted by an administrator for " + data.duration);
-
-      this.server.to(data.roomName).emit('userMuted', {
-          message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
-          targetUsername: data.targetUsername,
-          duration: data.duration
+   @UseGuards(ChatGuard)
+   @SubscribeMessage('muteUser')
+   async muteUser(@MessageBody() data: {
+   username: string; 
+   roomName: string; 
+   targetUsername: string; 
+   duration: number }, 
+   @ConnectedSocket() client: Socket) 
+   {
+     
+     const result = await this.roomService.muteUserRoom(data);
+     
+     if (result.success) {
+       const mutedUser = await this.usersRepository.findOne({ where: { username: data.targetUsername } });
+       const targetSocketId = this.ref_client.get(mutedUser.id);
+ 
+       this.server.to(client.id).emit('muteUser', {
+        message: "User " + data.targetUsername + " has been muted for " + data.duration,
+        success: true
       });
-      return (result);
-
-    } else {
-        this.server.to(client.id).emit('userMuted', {
-            error: result.error
-        });
-    }
-
-    return result;
-  }
+       this.server.to(targetSocketId).emit('muted', {
+        message : "Vous etes mise en sourdine par un admin " + data.duration + "s sur " + data.roomName + "." });
+ 
+       this.server.to(data.roomName).emit('userMuted', {
+           message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
+           targetUsername: data.targetUsername,
+           duration: data.duration
+       });
+       return (result);
+ 
+     } else {
+         this.server.to(client.id).emit('muteUser', {
+             error: result.error
+         });
+     }
+ 
+     return result;
+   }
+ 
 
    /**
   * Permet à un administrateur de retirer la sourdine d'un utilisateur dans une salle de chat.
