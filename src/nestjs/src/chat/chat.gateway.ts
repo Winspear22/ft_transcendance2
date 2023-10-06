@@ -407,6 +407,13 @@ export class ChatGateway
     // Trouvez les utilisateurs invités par leur nom d'utilisateur
     const invitedUser = await this.usersService.findUserByUsername(data.invitedUsernames);
 
+    if (!invitedUser){
+
+      this.server.to(client.id).emit("inviteRoom", "Error, the user doesn't exist.");
+      return ;
+  }
+
+
     // Vérifiez si l'utilisateur est déjà dans la room
     if (room.users.includes(invitedUser.id)) {
 
