@@ -1,9 +1,10 @@
 <template>
-    <div>
-      <input v-if="room.hasPassword" v-model="password" placeholder="Password (if any)" />
-      <button @click="attemptJoin">✔</button>
-    </div>
-  </template>
+  <div class="join-room-container">
+    <input v-if="room.hasPassword" v-model="password" placeholder="Password (if any)" class="password-input" />
+    <button @click="attemptJoin">✔</button>
+  </div>
+</template>
+  
   
     <script>
     export default {
@@ -37,5 +38,34 @@
     };
     </script>
   
-    <style>
-    </style>
+  <style>
+  .join-room-container {
+    text-align: center;
+    display: inline-flex;  
+    align-items: center;  
+  }
+  
+  .password-input {
+    background-color: transparent;
+    color: #2fe8ee;
+    border: 1px solid #2fe8ee; 
+    margin-right: 10px; 
+    outline: none; 
+  }
+  
+  .password-input::placeholder {  
+    color: #2fe8ee;
+    opacity: 0.7; 
+  }
+  
+  button {
+    background-color: transparent;
+    color: #2fe8ee;
+    border: none;
+    transition: color 0.3s;
+  }
+  
+  button:hover {
+    color: black;
+  }
+  </style>

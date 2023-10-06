@@ -376,7 +376,8 @@ export class ChatGateway
       else
       {
         // En cas d'erreur lors de la tentative de rejoindre
-        this.server.to(client.id).emit('joinRoom', "Error, there was a problem in joining the room : " + data.channelName);
+        this.server.to(client.id).emit('joinRoomFail', {
+          message: "Vous n'avez pas reussis a rejoindre la room : " + data.channelName });
         return (result);
       }
   }
