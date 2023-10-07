@@ -152,7 +152,7 @@ export class RoomService
     const filteredChannels = channels.filter(channel => 
       (!channel.users.includes(user.id) && !channel.bannedIds.includes(user.id)) || 
       (channel.isPrivate && channel.users.includes(user.id)));
-  
+        
   //const filteredChannels = channels.filter(channel => !channel.bannedIds.includes(user.id) || !channel.users.includes(user.id)
 //);
 
@@ -219,7 +219,7 @@ export class RoomService
         return { success: false, error: 'Channel not found' };
     }
 
-    if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
+    if (room.owner !== user.id && !room.admins.includes(user.id)) {
         return { success: false, error: 'You are not admin' };
     }
 
@@ -228,26 +228,26 @@ export class RoomService
         return { success: false, error: 'Target user not found' };
     }
 
-    if (targetUser.id === (await room).owner) {
+    if (targetUser.id === room.owner) {
         return { success: false, error: 'Cannot ban owner' };
     }
 
-    if (!(await room).users.includes(targetUser.id)) {
+    if (!room.users.includes(targetUser.id)) {
         return { success: false, error: 'Target user is not in this channel' };
     }
 
-    if ((await room).admins.includes(targetUser.id)) {
-        if ((await room).owner === user.id) {
-            (await room).users = (await room).users.filter(id => id !== targetUser.id);
-            (await room).bannedIds.push(targetUser.id);
+    if (room.admins.includes(targetUser.id)) {
+        if (room.owner === user.id) {
+            room.users = room.users.filter(id => id !== targetUser.id);
+            room.bannedIds.push(targetUser.id);
             await this.roomRepository.save(room);
             return { success: true };
         } else {
             return { success: false, error: 'Cannot ban another admin' };
         }
     }
-    (await room).users = (await room).users.filter(id => id !== targetUser.id);
-    (await room).bannedIds.push(targetUser.id);
+    room.users = room.users.filter(id => id !== targetUser.id);
+    room.bannedIds.push(targetUser.id);
     await this.roomRepository.save(room);
 
     return { success: true };
@@ -298,25 +298,25 @@ export class RoomService
         return { success: false, error: 'Channel not found' };
     }
     
-    if ((await room).owner !== user.id && !(await room).admins.includes(user.id)) {
+    if (room.owner !== user.id && !room.admins.includes(user.id)) {
         return { success: false, error: 'You are not admin' };
     }
     const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
     if (!targetUser) {
         return { success: false, error: 'Target user not found' };
     }
-    if (targetUser.id === (await room).owner) {
+    if (targetUser.id === room.owner) {
         return { success: false, error: 'Cannot kick owner' };
     }
-    if (!(await room).users.includes(targetUser.id)) {
+    if (!room.users.includes(targetUser.id)) {
         return { success: false, error: 'Target user is not in this channel' };
     }
-    if ((await room).admins.includes(targetUser.id)) {
-        if ((await room).admins.includes(user.id)) {
+    if (room.admins.includes(targetUser.id)) {
+        if (room.admins.includes(user.id)) {
             return { success: false, error: 'Cannot kick another admin' };
         } 
-        else if ((await room).owner === user.id) {
-            (await room).users = (await room).users.filter(id => id !== targetUser.id);
+        else if (room.owner === user.id) {
+            room.users = room.users.filter(id => id !== targetUser.id);
             await this.roomRepository.save(room);
             return { success: true };
         }
@@ -324,7 +324,7 @@ export class RoomService
             return { success: false, error: 'You are not admin' };
         }
     }
-    (await room).users = (await room).users.filter(id => id !== targetUser.id);
+    room.users = room.users.filter(id => id !== targetUser.id);
     await this.roomRepository.save(room);
     return { success: true };
   }

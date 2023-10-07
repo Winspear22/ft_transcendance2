@@ -1,24 +1,20 @@
 all: up
-
 up:
-	 docker compose up --build
-
-sync:
-	./syncFolder.sh &
+	docker-compose up --build
 
 down:
-	 docker-compose down
+	docker-compose down
 
 rm:
-	 docker-compose rm
+	docker-compose rm
 
 rmi:
-	 docker-compose down --rmi all
+	docker-compose down --rmi all
 
 fclean:
 	 docker-compose -f docker-compose.yml down \
 	&&  docker system prune -a --force \
-	&&  rm -Rf /tmp/vol_naben-za/*
+	&&  rm -Rf ../volume_adaloui/*
 
 show:
 	 docker container ps -a
@@ -32,7 +28,7 @@ volume_delete:
 	 docker volume prune
 volume_delete2:
 	bash
-	 docker volume rm $(docker volume ls -q)
+	docker volume rm $(docker volume ls -q)
 	exit
 post:
 	 docker exec -it postgresql bash -l
@@ -46,12 +42,12 @@ vuejs:
 retry:
 	make down
 	make volume_delete
-	 find /tmp/vol_naben-za -mindepth 1 -delete
+	 find ../volume_adaloui -mindepth 1 -delete
 	make fclean
 	make up
 inspect:
 	 docker inspect postgresql | grep "IPAddress"
 
 .PHONY: up down rm rmi show volume_show volume_delete \
-post pgadmin pgadmin_sudo fclean inspect retry all show_network \
+post pgadmin pgadmin fclean inspect retry all show_network \
 volume_delete2

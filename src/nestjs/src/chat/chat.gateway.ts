@@ -553,7 +553,7 @@ export class ChatGateway
    * @param client - L'objet Socket représentant le client qui émet l'événement.
    * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
    */
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('banUser')
   async banUserFromRoom(@MessageBody() data: {
     channelName: string, 
@@ -583,6 +583,7 @@ export class ChatGateway
         });
         await this.emitRooms(targetSocket);
         await this.emitAvailableRooms(targetSocket);
+        await this.emitRoomInvitation(targetSocket);
         return (result);
       }
     }
@@ -601,7 +602,7 @@ export class ChatGateway
   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
   */
 
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('unbanUser')
   async unbanUserFromRoom(@MessageBody() data: {
   channelName: string, 
@@ -632,6 +633,7 @@ export class ChatGateway
         });
         await this.emitRooms(targetSocket);
         await this.emitAvailableRooms(targetSocket);
+        await this.emitRoomInvitation(targetSocket);
         return (result);
       }
     }
@@ -652,7 +654,7 @@ export class ChatGateway
    * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
    */
 
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('kickUser')
   async kickUserFromRoom(@MessageBody() data: {
   channelName: string, 
@@ -672,13 +674,14 @@ export class ChatGateway
           targetSocket.emit('kicked', {
             message: `Vous êtes expulsé de la room ${data.channelName} par un admin.`,
           });
-          
           // Émettre l'événement pour informer la salle
           this.server.to(data.channelName).emit('userKicked', {
               username: data.targetUsername,
               message: `User ${data.targetUsername} has been kicked from this room by an administrator.`,
           });
-        
+          this.emitAvailableRooms(targetSocket);
+          this.emitRooms(targetSocket);
+          this.emitRoomInvitation(targetSocket);
           return (result);
         }
     }
@@ -702,7 +705,7 @@ export class ChatGateway
   */
   
 
-   @UseGuards(ChatGuard)
+   @UseGuards(ChatGuard, RoomBanGuard)
    @SubscribeMessage('muteUser')
    async muteUser(@MessageBody() data: {
    username: string; 
@@ -750,7 +753,7 @@ export class ChatGateway
   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
   */
 
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('unmuteUser')
   async unmuteUser(
     @MessageBody() data: {
