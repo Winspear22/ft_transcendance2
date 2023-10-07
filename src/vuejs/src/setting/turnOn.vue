@@ -63,7 +63,7 @@ export default {
             }
         },
         validate() {
-            axios.post('http://localhost:3000/auth/turn-on', { TfaCode: this.code, username: this.username }, {withCredentials: true}) // Remplacez 'votreNomDutilisateur' par la valeur appropriée
+            axios.post('http://paul-f4ar5s6:3000/auth/turn-on', { TfaCode: this.code, username: this.username }, {withCredentials: true}) // Remplacez 'votreNomDutilisateur' par la valeur appropriée
                 .then(response => {
                     if (response.data.message === '2FA enabled') {
                         this.twoFaEnabled = true; 

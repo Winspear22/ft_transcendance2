@@ -27,9 +27,9 @@ export default {
       return;
     }
 
-    const socketDm = io('http://localhost:3000/dms', { query: { Cookie: cookie }});
-    const socketChat = io('http://localhost:3000/chats', { query: { Cookie: cookie }});
-    const gameSocket = io('http://localhost:3000/game', { query: { Cookie: cookie }});
+    const socketDm = io('http://paul-f4ar5s6:3000/dms', { query: { Cookie: cookie }});
+    const socketChat = io('http://paul-f4ar5s6:3000/chats', { query: { Cookie: cookie }});
+    const gameSocket = io('http://paul-f4ar5s6:3000/game', { query: { Cookie: cookie }});
 
     this.setsocketDm(socketDm);
     this.setsocketChat(socketChat);

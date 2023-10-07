@@ -29,13 +29,13 @@
     methods: {
       async updateUsername() {
         try {
-          const response = await axios.post('http://localhost:3000/user/change/username', { username: this.newUsername }, { withCredentials: true });
+          const response = await axios.post('http://paul-f4ar5s6:3000/user/change/username', { username: this.newUsername }, { withCredentials: true });
           if (response.status === 201) {
             console.log("Username changed successfully.");
                 this.showValidationPopup = true;
                 store.getters.gameSocket.emit('updateUser', this.newUsername);
                 try {
-                  const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
+                  const response = await axios.get('http://paul-f4ar5s6:3000/auth/getUserInfo', { withCredentials: true });
                   if (response.data.success) {
                     await store.dispatch('setToken', response.data.cookie);
                     store.getters.gameSocket.disconnect();

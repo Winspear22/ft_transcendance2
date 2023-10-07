@@ -25,7 +25,7 @@
     methods: {
       async updateEmail() {
         try {
-          const response = await axios.post('http://localhost:3000/user/change/email', { email: this.newEmail }, { withCredentials: true });
+          const response = await axios.post('http://paul-f4ar5s6:3000/user/change/email', { email: this.newEmail }, { withCredentials: true });
           if (response.status === 201) {
             this.$emit('emailChanged', this.newEmail);
             this.showValidationPopup = true;

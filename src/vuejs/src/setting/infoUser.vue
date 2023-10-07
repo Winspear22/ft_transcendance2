@@ -19,7 +19,7 @@
     methods: {
       async fetchUserInfo() {
         try {
-          const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
+          const response = await axios.get('http://paul-f4ar5s6:3000/auth/getUserInfo', { withCredentials: true });
           if (response.data.success) {
             this.userInfo = response.data.user;
             this.$emit('userInfoFetched', this.userInfo);
