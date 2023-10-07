@@ -107,11 +107,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (user != undefined)
       { 
         ref_user.delete(socket.data.user.id);
-        ref_client.delete(socket.data.user.username);
+        ref_client.delete(socket.data.user.id);
         ref_user.set(user[0].id, user[0]);
         ref_client.set(user[0].id, socket);
         socket.data.user = user[0];
-        // console.log("UPDATE USER", ref_user);
+        console.log("UPDATE USER ", socket.data.user);
       }
     }
   }
@@ -203,7 +203,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
         if (guest != undefined) {
           // Offline
-          console.log("TESSSSSSSSST");
           if (guest[0].user_status == "Offline")
           {
             for(let value of gameMap.values()) {
@@ -386,10 +385,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('onlineUsers') 
+  //User undefined qd changement de username depuis un onglet et accept d'une invit depuis un autre onglet
+  @SubscribeMessage('onlineUsers')  
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
       const user = await this.gameService.getUserFromSocket(socket);
-      console.log("USER ", user); 
+      console.log("USER ", user);
+      console.log("SOCKET DATA USER ", socket.data.user);
       let me = await this.usersRepository.find({
         relations: {
           friends: true,
