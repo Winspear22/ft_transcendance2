@@ -31,26 +31,24 @@
         try {
           const response = await axios.post('http://localhost:3000/user/change/username', { username: this.newUsername }, { withCredentials: true });
           if (response.status === 201) {
-            this.showValidationPopup = true;
-            store.getters.gameSocket.emit('updateUser', this.newUsername);
-
-            try {
-              const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
-              if (response.data.success) {
-                await store.dispatch('setToken', response.data.cookie);
-                store.getters.gameSocket.disconnect();
-                store.getters.socketChat.disconnect();
-                store.getters.socketDm.disconnect();
-                this.shouldInitSocket = true;
-              }
-            } catch (error) {
-              console.error('Erreur lors de la récupération des informations utilisateur:', error);
-            }
+            console.log("Username changed successfully.");
+                this.showValidationPopup = true;
+                store.getters.gameSocket.emit('updateUser', this.newUsername);
+                try {
+                  const response = await axios.get('http://localhost:3000/auth/getUserInfo', { withCredentials: true });
+                  if (response.data.success) {
+                    await store.dispatch('setToken', response.data.cookie);
+                    store.getters.gameSocket.disconnect();
+                    store.getters.socketChat.disconnect();
+                    store.getters.socketDm.disconnect();
+                    this.shouldInitSocket = true;
+                  }
+                } catch (error) {
+                  console.error('Erreur lors de la récupération des informations utilisateur:', error);
+                }
           }
-        }
-        catch (error) 
-        {
-          console.error("Erreur lors du changement de nom d'utilisateur:", error);
+        } catch (error) {
+          console.log("error: ", error.response.data.message);
           this.showErrorMessage("Erreur lors du changement de nom d'utilisateur");
         }
       },

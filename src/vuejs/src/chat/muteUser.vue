@@ -61,8 +61,8 @@ export default {
         this.currentUserInfo = userInfo;
     },
       muteUser() {
-          if (!this.targetUsername.trim() || this.duration <= 0) {
-              alert('Veuillez entrer un nom d\'utilisateur valide et une durée valide.');
+          if (!this.targetUsername.trim() || this.duration <= 0 || this.duration > 600 ) {
+              alert('Veuillez entrer un nom d\'utilisateur valide et une durée valide (max 10min).');
               return;
           }
 

@@ -80,8 +80,6 @@ export const storage = {
 }
 
 
-
-
 @Controller('user')
 export class UserController {
 	constructor (
@@ -96,13 +94,14 @@ export class UserController {
 	{
 		const user = req.user as UserEntity;
 		const result = await this.userService.UpdateUserUsernameSettings(user, res, data);
-    if (result.success == true)
-    {
-		const partialUser = await this.userService.returnPartialUserInfo(user.username);
-		return res.status(201).json({ message: 'Username successfully modified to ' + partialUser.username, partialUser });
-    }
-    else
-      return res.status(409).json({message: "Error. Could not change user's username"});
+		if (result.success == true)
+		{
+			const partialUser = await this.userService.returnPartialUserInfo(user.username);
+			res.status(201).json({ message: 'Username successfully modified to ' + partialUser.username, partialUser });
+		}
+		else {
+			res.status(409).json({message: "Error. Could not change user's username"});
+		}
 	}
 
 	@Post('change/email')

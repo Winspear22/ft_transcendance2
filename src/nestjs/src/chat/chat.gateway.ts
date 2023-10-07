@@ -32,8 +32,8 @@ export class ChatGateway
     @InjectRepository(MessageEntity)
     private messagesRepository: Repository<MessageEntity>,
 
-    
-    ) {}
+    ) {
+    }
   
   // Map pour stocker les références entre l'ID utilisateur et l'ID de Socket
   private ref_client = new Map<number, string>()
@@ -69,14 +69,12 @@ export class ChatGateway
     console.log("---------------CONNEXION AU CHAT-----------------");
     console.log("-------------------------------------------------");
     console.log(colors.BRIGHT + colors.YELLOW + "Je suis l'utilisateur " + colors.WHITE + user.username + colors.YELLOW + " avec la socket.id : " + colors.WHITE + client.id);
-    
     this.ref_client.set(user.id, client.id);
     this.ref_Socket.set(client, client.id);
     this.ref_socket_userid.set(client, user.id);
     this.emitRooms(client);
     this.emitAvailableRooms(client);
     this.emitRoomInvitation(client);
-    //console.log(colors.BRIGHT + colors.YELLOW, "Utilisateur : " +  colors.WHITE + user.username + colors .YELLOW +" vient de se connecter." + colors.RESET);
     return true;
   }
 
@@ -111,6 +109,7 @@ export class ChatGateway
 
   // Récupère et renvoie à l'utilisateur la liste des rooms auxquels il appartient.
   // Fait également rejoindre l'utilisateur à tous ces rooms.
+
   @UseGuards(ChatGuard)
   @SubscribeMessage('emitRooms')
   async emitRooms(@ConnectedSocket() client: Socket) 
@@ -129,18 +128,23 @@ export class ChatGateway
         .leftJoinAndSelect('channel.messages', 'message')
         .getMany();
 
-    // Ajout de l'utilisateur à tous ses rooms
-    rooms.forEach(channel => {
+    // Filtrer les rooms où l'utilisateur est banni
+    const allowedRooms = rooms.filter(channel => 
+        !(channel.bannedIds && channel.bannedIds.includes(user.id))
+    );
+
+    // Ajout de l'utilisateur à tous ses rooms autorisés
+    allowedRooms.forEach(channel => {
         client.join(channel.roomName);
     });
 
     // Envoi des rooms à l'utilisateur
     console.log("Émission des rooms pour le client : ", client.id);
-    return await this.server.to(client.id).emit('emitRooms', rooms);
+    return this.server.to(client.id).emit('emitRooms', allowedRooms);
   }
 
+
   @UseGuards(ChatGuard)
-  //@SubscribeMessage('getAvailableRoomsForAllUsers')
   @SubscribeMessage('emitAvailableRooms')
   async emitAvailableRooms(@ConnectedSocket() client: Socket) {
       const allUsers = await this.usersRepository.find();
@@ -150,7 +154,6 @@ export class ChatGateway
         if (userSocket) {
           const availableRooms = await this.roomService.getRooms(userSocket);
           this.server.to(userSocket.id).emit('emitAvailableRooms', availableRooms);
-          console.log("JE SUIS DANS EMIT AVAILABLE ROOM ", userSocket.id); 
         }
       }
   }
@@ -175,15 +178,6 @@ export class ChatGateway
       console.log(colors.RED + "-------------------------------------------------" + colors.RESET);
       console.log("Émission des invitations de rooms pour le client : ", client.id, invitedRooms);
       return await this.server.to(client.id).emit('emitRoomInvitation', invitedRooms);
-  }
-
-  private getSocketByString(value: string): Socket | undefined {
-    for (let [socket, str] of this.ref_Socket.entries()) {
-        if (str === value) {
-            return socket;
-        }
-    }
-    return undefined;  // Si aucune correspondance n'est trouvée
   }
 
   @UseGuards(ChatGuard)
@@ -588,7 +582,8 @@ export class ChatGateway
             username: data.targetUsername,
             message: `User ${data.targetUsername} has been banned from this room by an administrator.`,
         });
-      
+        await this.emitRooms(targetSocket);
+        await this.emitAvailableRooms(targetSocket);
         return (result);
       }
     }
@@ -636,7 +631,8 @@ export class ChatGateway
             username: data.targetUsername,
             message: `User ${data.targetUsername} has been unbanned from this room by an administrator.`,
         });
-      
+        await this.emitRooms(targetSocket);
+        await this.emitAvailableRooms(targetSocket);
         return (result);
       }
     }
@@ -803,6 +799,8 @@ export class ChatGateway
   * @param body - Contient des informations sur le message, y compris le nom de la salle, le nom d'utilisateur de l'expéditeur et le contenu du message.
   * @returns void - Cette fonction n'a pas de valeur de retour explicite.
   */
+    
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('sendMessage')
   async handleMessage(@ConnectedSocket() client: Socket,
   @MessageBody() body: { channelName: string,
