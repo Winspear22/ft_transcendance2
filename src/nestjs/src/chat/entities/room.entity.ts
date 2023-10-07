@@ -62,7 +62,6 @@ export class RoomEntity {
   
 }
 
-
 export class UserDTO {
   @IsString()
   username: string;
