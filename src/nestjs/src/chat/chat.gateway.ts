@@ -553,7 +553,7 @@ export class ChatGateway
    * @param client - L'objet Socket représentant le client qui émet l'événement.
    * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
    */
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('banUser')
   async banUserFromRoom(@MessageBody() data: {
     channelName: string, 
@@ -601,7 +601,7 @@ export class ChatGateway
   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
   */
 
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('unbanUser')
   async unbanUserFromRoom(@MessageBody() data: {
   channelName: string, 
@@ -652,7 +652,7 @@ export class ChatGateway
    * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
    */
 
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('kickUser')
   async kickUserFromRoom(@MessageBody() data: {
   channelName: string, 
@@ -702,7 +702,7 @@ export class ChatGateway
   */
   
 
-   @UseGuards(ChatGuard)
+   @UseGuards(ChatGuard, RoomBanGuard)
    @SubscribeMessage('muteUser')
    async muteUser(@MessageBody() data: {
    username: string; 
@@ -750,7 +750,7 @@ export class ChatGateway
   * @returns Un objet avec une clé "success" indiquant si l'opération a réussi ou non, ainsi que des messages d'erreur potentiels.
   */
 
-  @UseGuards(ChatGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('unmuteUser')
   async unmuteUser(
     @MessageBody() data: {

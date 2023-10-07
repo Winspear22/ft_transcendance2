@@ -10,7 +10,7 @@
 export default {
   setup() {
     function login() {
-      window.location.href = 'http://localhost:3000/auth/42/login';
+      window.location.href = 'http://paul-f4ar5s6:3000/auth/42/login';
     }
 
     return {
