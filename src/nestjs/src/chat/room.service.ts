@@ -103,76 +103,6 @@ export class RoomService
         await this.roomRepository.save(room);
         return { success: true };
     }
-    /*async joinRoom(body: { 
-        channelName: string, 
-        password?: string; }, 
-        @ConnectedSocket() client: Socket) 
-      {
-          const { password } = body;
-      
-          const user: UserDTO = {
-              username: client.data.user.username, // ou une autre logique pour obtenir le nom d'utilisateur
-              id: client.data.user.id,
-          };
-          const room = await this.getRoomByName(body.channelName);
-          if (!room) {
-              return { success: false, error: 'Channel not found' };
-          }
-      
-          if (room.bannedIds.includes(user.id)) {
-            return { success: false, error: 'You are banned from this channel' };
-          }
-      
-          if (room.password && room.password !== '') {
-            if (!bcrypt.compareSync(password, room.password)) {
-              return { success: false, error: 'Invalid password' };
-            }
-          }
-      
-          // Vérifier si l'utilisateur est déjà dans la salle
-          //const userInRoom = room.userDTOs.find(u => u.id === user.id);
-        const userInRoom = room.users.find(id => id === user.id);
-
-          if (userInRoom) {
-            return { success: true };
-          }
-      
-          // Ajout de l'id de l'utilisateur à 'users'
-          room.users.push(user.id);
-          // Ajout de UserDTO à 'userDTOs'
-          room.userDTOs.push(user);
-          console.log(room.userDTOs);
-      
-          await this.roomRepository.save(room);
-          return { success: true };
-      }*/
-      
-      
-
-//async quitRoom(body: { 
-//    channelName: string; }, 
-//    @ConnectedSocket() client: Socket) {
-//    const { channelName } = body;
-//    
-//    const user = client.data.user;
-//    const room = await this.getRoomByName(channelName);
-//    if (!room) {
-//        return { success: false, error: 'Channel not found' };
-//    }
-//    if (user.id === room.owner) {
-//        // Supprimez tous les messages du canal et ensuite le canal lui-même
-//      //  await this.messagesRepository.delete({ id: room.id });
-//      await this.messagesRepository.delete({ channelId: room.id });
-//
-//      await this.roomRepository.delete({ id: room.id });
-//        return { success: true };
-//    } else {
-//        room.users = room.users.filter(id => id !== user.id);
-//
-//        await this.roomRepository.save(room);
-//        return { success: true };
-//    }
-//}
 
   async quitRoom(body: { 
   channelName: string; }, 
@@ -203,80 +133,36 @@ export class RoomService
   }
 
 
-    //--------------------------------------------------------------------------------------//
-    //-------------------------------------ROOM GETTERS-------------------------------------//
-    //--------------------------------------------------------------------------------------//
-    async getYourRooms(@ConnectedSocket() client: Socket) {
-    
-        const user = client.data.user;
-        
-        // Trouver tous les channels où l'utilisateur est présent
-        const channels = await this.roomRepository.find({
-          where: {
-            users: user.id,
-          }
-        });
-    
-        const channelNames = channels.map(channel => ({ channelName: channel.roomName }));
-        return { success: true, yourChannels: channelNames };
+  //--------------------------------------------------------------------------------------//
+  //-------------------------------------ROOM GETTERS-------------------------------------//
+  //--------------------------------------------------------------------------------------//
+  async getRooms(@ConnectedSocket() client: Socket) 
+  {
+    const user = client.data.user;
+    const channels = await this.roomRepository.find({
+        where: {
+          isPrivate: false,
       }
-    
-
-      async getRooms(@ConnectedSocket() client: Socket) {
-        const user = client.data.user;
-    
-        // Trouvez toutes les salles qui ne sont pas privées.
-        const channels = await this.roomRepository.find({
-          where: {
-            isPrivate: false,
-          }
-        });
-    
-        // Filtrer les salles auxquelles l'utilisateur appartient déjà.
-        // Aussi, exclure les salles privées auxquelles l'utilisateur n'appartient pas.
-        const filteredChannels = channels.filter(channel => 
-            !channel.users.includes(user.id) || 
-            (channel.isPrivate && channel.users.includes(user.id))
-        );
-    
-        const retChannels = filteredChannels.map(channel => ({
-            channelName: channel.roomName,
-            users: channel.users.length,
-            owner: channel.owner,
-            hasPassword: !!channel.password,
-        }));
-    
-        return { success: true, channels: retChannels };
-    }
-    
-    
-  async getRoomMessages(body: { roomName: string; }, @ConnectedSocket() client: Socket) {
-    const { roomName } = body;
-
-    const user = client.data.user;        
-    // Votre logique d'authentification avec des jetons ici...
-
-    const room = await this.roomRepository.findOne({
-      where: { roomName },
-      relations: ['messages']
     });
+    /*const filteredChannels = channels.filter(channel => 
+        !channel.users.includes(user.id) || 
+        (channel.isPrivate && channel.users.includes(user.id))
+    );*/
 
-    if (!room) {
-      return { success: false, error: 'Room not found' };
-    }
-    
-    const retMessages = await Promise.all(room.messages.map(async (message) => {
-    const sender = await this.usersRepository.findOne({ where: { id: message.senderId } });
-    return {
-        senderId: message.senderId,
-        text: message.text,
-        time: message.createdAt,
-        username: sender.username,
-        avatar: sender.profile_picture,
-      };
+    const filteredChannels = channels.filter(channel => 
+      (!channel.users.includes(user.id) && !channel.bannedIds.includes(user.id)) || 
+      (channel.isPrivate && channel.users.includes(user.id)));
+  
+  //const filteredChannels = channels.filter(channel => !channel.bannedIds.includes(user.id) || !channel.users.includes(user.id)
+//);
+
+    const retChannels = filteredChannels.map(channel => ({
+      channelName: channel.roomName,
+    users: channel.users.length,
+    owner: channel.owner,
+    hasPassword: !!channel.password,
     }));
-
-    return { success: true, chat: { room: roomName, messages: retMessages } };
+    return { success: true, channels: retChannels };
   }
     
   getSocketFromUserId(
