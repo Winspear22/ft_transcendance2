@@ -138,12 +138,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         gameI.player2.idUser = socket.data.user.id;
         const p1 = await this.usersRepository.find({
             where: {
-              username: gameI.player1.username,
+              id: gameI.player1.idUser,
             }
           });
         const p2 = await this.usersRepository.find({
           where: {
-            username: gameI.player2.username,
+            id: gameI.player2.idUser,
           }
         });
         let pl1 = p1[0];
@@ -203,6 +203,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         });
         if (guest != undefined) {
           // Offline
+          console.log("TESSSSSSSSST");
           if (guest[0].user_status == "Offline")
           {
             for(let value of gameMap.values()) {
@@ -243,6 +244,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
+    //Pb si l'utilisateur change de username apres avoir recu une invit et avant de l'accepter
     @SubscribeMessage('acceptInvitToPlayRequest')
     async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) {
@@ -253,6 +255,23 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           let idx = value.id;
           value.player2.idClient = socket.id;
           value.player2.idUser = socket.data.user.id;
+          value.player2.username = socket.data.user.username;
+          const p1 = await this.usersRepository.find({
+            where: {
+              id: value.player1.idUser,
+            }
+          });
+          const p2 = await this.usersRepository.find({
+            where: { 
+              id: value.player2.idUser,
+            }
+          });
+          let pl1 = p1[0];
+          let pl2 = p2[0];
+          pl1.user_status = "playing";
+          pl2.user_status = "playing";
+          await this.usersRepository.save(pl1);
+          await this.usersRepository.save(pl2);
           value.status = "playing";
           this.server.to(value.player1.idClient).emit('goToGame');
           this.server.to(value.player2.idClient).emit('goToGame');
@@ -286,12 +305,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       {
         const p1 = await this.usersRepository.find({
           where: {
-            username: gameI.player1.username,
+            id: gameI.player1.idUser,
           }
         });
         const p2 = await this.usersRepository.find({
           where: {
-            username: gameI.player2.username,
+            id: gameI.player2.idUser,
           }
         }); 
         p1[0].user_status = "Online";
@@ -370,12 +389,13 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('onlineUsers') 
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
       const user = await this.gameService.getUserFromSocket(socket);
+      console.log("USER ", user); 
       let me = await this.usersRepository.find({
         relations: {
           friends: true,
         },
         where: {
-          username: user.username,
+          id: socket.data.user.id,
         }
       });
 
@@ -384,7 +404,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           friends: false,
         },
         where: {
-          username: Not(user.username),
+          id: Not(socket.data.user.id),
           user_status: "Online",
         }
       });
