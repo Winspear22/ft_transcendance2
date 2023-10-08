@@ -1,5 +1,5 @@
 <template>
-    <div></div>
+  <div></div>
 </template>
 
 <script>
@@ -7,33 +7,34 @@ import io from 'socket.io-client';
 import { mapGetters, mapActions } from 'vuex';
 
 export default {
-  data() {
-    return {};
-  },
+data() {
+  return {};
+},
 
-  computed: {
-    ...mapGetters(['accessToken'])
-  },
+computed: {
+  ...mapGetters(['accessToken'])
+},
 
-  methods: {
-    ...mapActions(['setsocketDm', 'setsocketChat', 'setGameSocket'])
-  },
+methods: {
+  ...mapActions(['setsocketDm', 'setsocketChat', 'setGameSocket', 'disconnectAllSockets'])
+},
 
-  mounted() {
-    const cookie = this.accessToken;
-    
-    if (!cookie) {
-      console.error("Token non disponible !");
-      return;
-    }
+mounted() {
+  const cookie = this.accessToken;
+  
+  if (!cookie) {
+    console.error("Token non disponible !");
+    return;
+  }
 
-    const socketDm = io('http://localhost:3000/dms', { query: { Cookie: cookie }});
-    const socketChat = io('http://localhost:3000/chats', { query: { Cookie: cookie }});
-    const gameSocket = io('http://localhost:3000/game', { query: { Cookie: cookie }});
+  const socketDm = io('http://localhost:3000/dms', { query: { Cookie: cookie }});
+  const socketChat = io('http://localhost:3000/chats', { query: { Cookie: cookie }});
+  const gameSocket = io('http://localhost:3000/game', { query: { Cookie: cookie }});
 
-    this.setsocketDm(socketDm);
-    this.setsocketChat(socketChat);
-    this.setGameSocket(gameSocket);
+  this.setsocketDm(socketDm);
+  this.setsocketChat(socketChat);
+  this.setGameSocket(gameSocket);
+
 
     socketDm.on('connect', () => { console.log('Connected to DM socket'); });
     socketChat.on('connect', () => { console.log('Connected to Chat socket'); });
@@ -46,16 +47,7 @@ export default {
   },
 
   beforeDestroy() {
-    if (this.$store.state.socketDm) {
-      this.$store.state.socketDm.disconnect();
-    }
-    if (this.$store.state.socketChat) {
-      this.$store.state.socketChat.disconnect();
-    }
-    if (this.$store.state.gameSocket) {
-      this.$store.state.gameSocket.disconnect();
-    }
+    this.disconnectAllSockets();
   }
 };
 </script>
-

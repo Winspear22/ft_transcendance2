@@ -4,7 +4,7 @@ export default createStore({
   state: {
     isAuthenticated: false,
     isTwoFaActivated: false,
-    accessToken: null,
+    accessToken: localStorage.getItem('accessToken') || null, // initialisez avec la valeur de localStorage si disponible
     socketDm: null,
     socketChat: null,
     gameSocket: null,
@@ -20,6 +20,7 @@ export default createStore({
     },
     SET_ACCESS_TOKEN(state, token) {
       state.accessToken = token;
+      localStorage.setItem('accessToken', token); // mettre à jour localStorage quand le state change
     },
     SET_SOCKET_DM(state, socketDm) {
       state.socketDm = socketDm;
@@ -57,8 +58,18 @@ export default createStore({
     },
     setFirstConnection({ commit }, value) {
       commit('SET_FIRST_CONNECTION', value);
+    },
+    disconnectAllSockets({ state }) {
+      if (state.socketDm) {
+        state.socketDm.disconnect();
+      }
+      if (state.socketChat) {
+        state.socketChat.disconnect();
+      }
+      if (state.gameSocket) {
+        state.gameSocket.disconnect();
+      }
     }
-    
   },
 
   getters: {
