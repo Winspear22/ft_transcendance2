@@ -201,7 +201,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             username: name,
           }
         });
-        if (guest != undefined) {
+        if (guest.length > 0) {
           // Offline
           if (guest[0].user_status == "Offline")
           {
