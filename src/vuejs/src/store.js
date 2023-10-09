@@ -9,6 +9,7 @@ export default createStore({
     socketChat: null,
     gameSocket: null,
     firstConnection: true,
+
   },
 
   mutations: {
@@ -20,7 +21,7 @@ export default createStore({
     },
     SET_ACCESS_TOKEN(state, token) {
       state.accessToken = token;
-      localStorage.setItem('accessToken', token); // mettre à jour localStorage quand le state change
+      localStorage.setItem('accessToken', token);
     },
     SET_SOCKET_DM(state, socketDm) {
       state.socketDm = socketDm;

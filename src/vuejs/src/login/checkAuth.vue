@@ -2,6 +2,9 @@
     <div>
         <turn-on v-if="showTurnOnComponent" @twoFaStatusChanged="handleTwoFaStatus"></turn-on>
         <init-socket v-if="shouldInitSocket"></init-socket>
+        <div v-if="showPopup">
+            Bienvenue! C'est votre première connexion.
+        </div>
     </div>
 </template>
 
@@ -24,31 +27,37 @@ export default {
         const router = useRouter();
         const showTurnOnComponent = ref(false);
         const shouldInitSocket = ref(false);
+        const showPopup = ref(false);
 
         onMounted(authenticate);
 
         async function authenticate() {
             try {
                 const response = await axios.get('http://localhost:3000/auth/check-auth', { withCredentials: true });
-                if (response.data.success) {
-                    if (response.data.cookie) {
-                        store.dispatch('setToken', response.data.cookie);
+                    if (response.data.success) {
+                        if (response.data.cookie) {
+                            store.dispatch('setToken', response.data.cookie);
+                        }
+                        const isAuthenticated = response.data.infoUser.user_status === 'Online';
+                        store.dispatch('authenticate', isAuthenticated);
+                        store.dispatch('activateTwoFa', response.data.infoUser.isTwoFactorAuthenticationEnabled);
+            
+                        console.log("Is Authenticated:", isAuthenticated);
+                        console.log("2FA Activated:", store.getters.isTwoFaActivated);
+                        console.log("First Connection:", store.getters.firstConnection);
+                        if (isAuthenticated && store.getters.isTwoFaActivated) {
+                            showTurnOnComponent.value = true;
+                        } else if (isAuthenticated) {
+                            shouldInitSocket.value = true;
+                            if (store.getters.firstConnection) {
+                                showPopup.value = true;
+                                store.dispatch('setFirstConnection', false);
+                                router.push('/setting/ProfileModification');
+                            } else {
+                                router.push('/home');
+                            }
+                        }
                     }
-                    const isAuthenticated = response.data.infoUser.user_status === 'Online';
-                    store.dispatch('authenticate', isAuthenticated);
-                    store.dispatch('activateTwoFa', response.data.infoUser.isTwoFactorAuthenticationEnabled);
-                    
-                    if (isAuthenticated && store.getters.isTwoFaActivated) {
-                        showTurnOnComponent.value = true;
-                    }
-                    if (isAuthenticated) {
-                        shouldInitSocket.value = true;
-                    }
-                    if (isAuthenticated && !store.getters.isTwoFaActivated) {
-                        router.push('/home');
-                    }
-
-                }
             } catch (error) {
                 console.error("Erreur lors de la vérification de l'authentification:", error);
             }
@@ -58,13 +67,15 @@ export default {
             if (status) {
                 router.push('/home');
                 showTurnOnComponent.value = false;
-            }
         }
+    }
+
 
         return {
             showTurnOnComponent,
             handleTwoFaStatus,
             shouldInitSocket,
+            showPopup 
         };
     }
 };
