@@ -10,3 +10,10 @@ app.use(router);
 app.use(Notification);
 
 app.mount('#app');
+
+window.addEventListener('storage', function(event) {
+    if (event.key === 'accessToken') {
+        // Informer votre store du nouveau token
+        store.dispatch('setToken', event.newValue);
+    }
+});

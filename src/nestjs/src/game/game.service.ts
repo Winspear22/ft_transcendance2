@@ -25,6 +25,10 @@ export class GameService {
         private matchRepository: Repository<MatchEntity>,
     ) {}
 
+    async findUserById(id: number): Promise<UserEntity> {
+        return await this.usersRepository.findOneBy({ id });
+      }
+
     async createMatchHistory(user: UserEntity) {
         const matchHistory = this.matchHistoryRepository.create({
             total_parties: 0,
@@ -137,7 +141,8 @@ export class GameService {
         }
 
    
-        const user = await this.userService.findUserByUsername(username);
+        // const user = await this.userService.findUserByUsername(username);
+        const user = await this.findUserById(parseInt(decodedPayload.sub));
         client.data.user = user;
     
         if (user)

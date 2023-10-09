@@ -24,6 +24,9 @@ export class ChatService {
     async findUserByUsername(username: string): Promise<UserEntity> {
       return await this.usersRepository.findOneBy({ username });
     }
+    async findUserById(id: number): Promise<UserEntity> {
+        return await this.usersRepository.findOneBy({ id });
+      }
 
     async getUserFromSocket(@ConnectedSocket() client: Socket): Promise<UserEntity | undefined>
     {
@@ -78,7 +81,8 @@ export class ChatService {
         }
 
    
-        const user = await this.findUserByUsername(username);
+        // const user = await this.findUserByUsername(username);
+        const user = await this.findUserById(parseInt(decodedPayload.sub));
         client.data.user = user;
     
         if (user)

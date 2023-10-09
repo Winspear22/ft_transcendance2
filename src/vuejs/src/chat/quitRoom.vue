@@ -38,7 +38,6 @@ export default {
       try {
         this.socketChat.emit('quitRoom', { channelName: this.channelName });
         this.$emit('close');
-        this.$router.push('/home');
       } catch (error) {
         console.error("Erreur lors de la confirmation de sortie:", error);
       }
