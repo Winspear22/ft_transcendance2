@@ -55,7 +55,8 @@ export class ChatGuard implements CanActivate {
     }
     /*JE TROUVE L'UTILISATEUR ASSOCIE AU TOKEN*/
     console.log("username in cookie == ", username);
-    const user = await this.userService.findUserByUsername(username);
+    // const user = await this.userService.findUserByUsername(username);
+    const user = await this.userService.findUserById(parseInt(decodedPayload.sub));
     if (user)
         console.log("User connected MIDDLEWARE CHATGUARD: ", user.username);
     else
@@ -96,10 +97,18 @@ export class RoomBanGuard implements CanActivate {
     const userData = this.chatAuthService.extractAccessTokenFromCookie(accessTokenCookie);
     if (!userData) return false;
 
-    const { username } = userData;
+    // const { username } = userData;
+
+    const { username, refreshToken, accessToken } = userData;
+    const decodedPayload = this.chatAuthService.decodeAccessToken(accessToken);
+    if (!decodedPayload) {
+        console.log('Token is invalid or malformed.');
+        return false;
+    }
 
     // Trouver l'utilisateur et la room
-    const user = await this.userService.findUserByUsername(username);
+    // const user = await this.userService.findUserByUsername(username);
+    const user = await this.userService.findUserById(parseInt(decodedPayload.sub));
     const room = await this.roomService.getRoomByName(roomName);
     if (!user) {
         console.log('User does not exist.');
