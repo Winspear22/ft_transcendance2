@@ -381,7 +381,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  //User undefined qd changement de username depuis un onglet et accept d'une invit depuis un autre onglet
   @SubscribeMessage('onlineUsers')  
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
       const user = await this.gameService.getUserFromSocket(socket);
