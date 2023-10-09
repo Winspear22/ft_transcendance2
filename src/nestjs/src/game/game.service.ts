@@ -54,10 +54,8 @@ export class GameService {
         let matchHistoryArray = await this.matchHistoryRepository.find({
             relations: {
               user: true,
-            //   matches: true,
             }
           });
-        //   console.log("MATCH HISTORY ARRAY LOAD DANS CREATE MATCH avant save", matchHistoryArray);
           for (let matchHistory of matchHistoryArray.values()){
                 if (game.player1.idUser == matchHistory.user.id || game.player2.idUser == matchHistory.user.id)
                 {
@@ -80,27 +78,22 @@ export class GameService {
                     matchHistory.winrate = Math.round(matchHistory.winrate);
                     matchHistory.matches.push(match);
                     await this.matchHistoryRepository.save(matchHistory);
-                    // console.log("MATCH HISTORY LOAD DANS CREATE MATCH aprés save", matchHistory);
                     if (game.player1.idUser == matchHistory.user.id)
                     {
                         refs_client.get(game.player1.idUser).data.user.matchHistory = matchHistory;
-                        // console.log("DATA.USER SOCKETP1 ", refs_client.get(game.player1.idUser).data.user);
                     }
                     if (game.player2.idUser == matchHistory.user.id)
                     {
                         refs_client.get(game.player2.idUser).data.user.matchHistory = matchHistory;
-                        // console.log("DATA.USER SOCKETP2 ", refs_client.get(game.player2.idUser).data.user);
                     }
                 }
-            } 
-            // console.log("matchHistoryArray ",matchHistoryArray);
+            }
     }
 
     async getUserFromSocket(@ConnectedSocket() client: Socket): Promise<UserEntity | undefined>
     {
         let accessTokenCookie = client.handshake.query.Cookie;
         console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
-        console.log("COOKIE ", accessTokenCookie);
         if (!accessTokenCookie) 
         {
             console.log('Access Token Cookie is missing.');

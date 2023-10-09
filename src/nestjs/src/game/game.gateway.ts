@@ -57,8 +57,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('connection')   
   async handleConnection(@ConnectedSocket() socket: Socket) {
     // Gérez la connexion d'un joueur
-    // console.log("CONNECTION ", socket.handshake.query.Cookie);
-    // console.log("REF_USER", ref_user);
     const user = await this.gameService.getUserFromSocket(socket); 
     if (user != undefined)
     { 
