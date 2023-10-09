@@ -109,7 +109,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         ref_user.set(user[0].id, user[0]);
         ref_client.set(user[0].id, socket);
         socket.data.user = user[0];
-        console.log("UPDATE USER ", socket.data.user);
       }
     }
   }
@@ -241,7 +240,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
-    //Pb si l'utilisateur change de username apres avoir recu une invit et avant de l'accepter
     @SubscribeMessage('acceptInvitToPlayRequest')
     async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) {
@@ -387,8 +385,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('onlineUsers')  
   async sendOnlineUsers(@ConnectedSocket() socket: Socket) {
       const user = await this.gameService.getUserFromSocket(socket);
-      console.log("USER ", user);
-      console.log("SOCKET DATA USER ", socket.data.user);
       let me = await this.usersRepository.find({
         relations: {
           friends: true,
