@@ -33,7 +33,7 @@ import DisplayPong from './displayPong'
     setup() {
 
       let inactivityTimer;
-      const MAX_INACTIVITY_TIME = 10000; // 10 minutes en millisecondes
+      const MAX_INACTIVITY_TIME = 600000; // 10 minutes en millisecondes
 
       function resetInactivityTimer() {
         clearTimeout(inactivityTimer);
