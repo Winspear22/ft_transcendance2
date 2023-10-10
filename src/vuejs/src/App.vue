@@ -46,6 +46,10 @@ import DisplayPong from './displayPong'
           if (response.status === 200) {
             store.dispatch('authenticate', false);
             store.dispatch('activateTwoFa', response.data.partialUser.isTwoFactorAuthenticationEnabled);
+            store.getters.socketDm.disconnect();
+            store.getters.socketChat.disconnect();
+            store.getters.gameSocket.disconnect();
+            window.location.reload();
           }
         } catch (error) {
           console.error("Erreur lors de la déconnexion :", error);
