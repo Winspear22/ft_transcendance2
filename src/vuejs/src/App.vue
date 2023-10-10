@@ -21,8 +21,8 @@
   </template>
   
   <script>
-import axios from 'axios';
 import store from '@/store';
+import axios from 'axios';
 import { onMounted, onBeforeUnmount } from 'vue';
 import DisplayPong from './displayPong'
   
@@ -32,8 +32,16 @@ import DisplayPong from './displayPong'
     },
     setup() {
 
-      const onBeforeUnload = async () => {
+      let inactivityTimer;
+      const MAX_INACTIVITY_TIME = 600000; // 10 minutes en millisecondes
+
+      async function resetInactivityTimer() {
+        clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(logoutUser, MAX_INACTIVITY_TIME);
+      }
+      async function logoutUser() {
         try {
+          console.log("j'appel");
           const response = await axios.post('http://localhost:3000/auth/Logout', {}, { withCredentials: true });
           if (response.status === 200) {
             store.dispatch('authenticate', false);
@@ -42,14 +50,18 @@ import DisplayPong from './displayPong'
         } catch (error) {
           console.error("Erreur lors de la déconnexion :", error);
         }
-      };
+      }
 
-      onMounted(() => {
-        window.addEventListener('beforeunload', onBeforeUnload);
+      onMounted(async () => {
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keydown', resetInactivityTimer);
+        await resetInactivityTimer(); // Démarre le compteur d'inactivité initial
+        
       });
 
       onBeforeUnmount(() => {
-        window.removeEventListener('beforeunload', onBeforeUnload);
+        document.removeEventListener('mousemove', resetInactivityTimer);
+        document.removeEventListener('keydown', resetInactivityTimer);
       });
       return {};
     }

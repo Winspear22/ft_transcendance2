@@ -188,7 +188,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // ajouter protection si deja en jeu
   @SubscribeMessage('invitPlayRequest')
   async gameInvitation(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
       if (socket.data.user && name) {
@@ -261,8 +260,6 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             return;
           let idx = value.id;
           value.player2.idClient = socket.id;
-          // value.player2.idUser = socket.data.user.id;
-          // value.player2.username = socket.data.user.username;
           const p1 = await this.usersRepository.find({
             where: {
               id: value.player1.idUser,
