@@ -33,9 +33,9 @@ import DisplayPong from './displayPong'
     setup() {
 
       let inactivityTimer;
-      const MAX_INACTIVITY_TIME = 600000; // 10 minutes en millisecondes
+      const MAX_INACTIVITY_TIME = 10000; // 10 minutes en millisecondes
 
-      async function resetInactivityTimer() {
+      function resetInactivityTimer() {
         clearTimeout(inactivityTimer);
         inactivityTimer = setTimeout(logoutUser, MAX_INACTIVITY_TIME);
       }
@@ -52,10 +52,10 @@ import DisplayPong from './displayPong'
         }
       }
 
-      onMounted(async () => {
+      onMounted(() => {
         document.addEventListener('mousemove', resetInactivityTimer);
         document.addEventListener('keydown', resetInactivityTimer);
-        await resetInactivityTimer(); // Démarre le compteur d'inactivité initial
+        resetInactivityTimer(); // Démarre le compteur d'inactivité initial
         
       });
 
