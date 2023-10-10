@@ -194,10 +194,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (socket.data.user && name) {
         if (name == socket.data.user.username)
           return;
+
         for (let value of gameMap.values()) {
           if ((value.player1.idUser == socket.data.user.id || value.player2.idUser == socket.data.user.id) && value.status == "playing")
             return;
         }
+      
         const guest = await this.usersRepository.find({
           where: {
             username: name,
