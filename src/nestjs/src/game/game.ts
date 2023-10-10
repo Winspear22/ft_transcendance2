@@ -29,8 +29,8 @@ async function gameI(game: game, server: Server) {
     //     server.to(p2.idClient).emit('countdown', i);
     //   }
 
-    // while(1) 
-    while (p1.points < 3 && p2.points < 3)
+    // while (p1.points < 3 && p2.points < 3)
+    while(1) 
     {
         await sleep(10);
 

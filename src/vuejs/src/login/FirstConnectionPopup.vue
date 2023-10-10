@@ -23,15 +23,15 @@ export default {
     this.fetchUserInfo();
   },
   methods: {
+    fetchUserInfo() {
+      try {      
           if (this.userInfo.user_status === "online" && store.getters.firstConnection) {
-
-            // Après avoir affiché la pop-up, définissez firstConnection sur false
+              // Après avoir affiché la pop-up, définissez firstConnection sur false
           }
+        } catch (error) {
+          console.error('Erreur lors de la récupération des informations utilisateur:', error);
         }
-      } catch (error) {
-        console.error('Erreur lors de la récupération des informations utilisateur:', error);
       }
     },
-  },
 };
 </script>

@@ -121,7 +121,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async search(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) {
       for (let value of gameMap.values()) {
-        if ((value.player1.username == socket.data.user.username || value.player2.username == socket.data.user.username) && value.status == "playing")
+        if ((value.player1.idUser == socket.data.user.id || value.player2.idUser == socket.data.user.id) && value.status == "playing")
           return;
       }
       if (waitingGames.length >= 1)
@@ -188,11 +188,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  // ajouter protection si deja en jeu
   @SubscribeMessage('invitPlayRequest')
   async gameInvitation(@ConnectedSocket() socket: Socket, @MessageBody() name: string) {
       if (socket.data.user && name) {
         if (name == socket.data.user.username)
           return;
+        for (let value of gameMap.values()) {
+          if ((value.player1.idUser == socket.data.user.id || value.player2.idUser == socket.data.user.id) && value.status == "playing")
+            return;
+        }
         const guest = await this.usersRepository.find({
           where: {
             username: name,
@@ -228,6 +233,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             gameI.player2.username = name;
             gameI.player1.idClient = socket.id;
             gameI.player1.idUser = socket.data.user.id;
+            gameI.player2.idUser = guest[0].id;
             gameI.status = "waiting";
             gameMap.set(idx, gameI);
             this.server.to(ref_client.get(guest[0].id).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
@@ -244,13 +250,17 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) {
       for (let value of gameMap.values()) {
-        if (value.player2.username == socket.data.user.username && value.status == "waiting"){
+        if ((value.player1.idUser == socket.data.user.id || value.player2.idUser == socket.data.user.id) && value.status == "playing")
+          return;
+      }
+      for (let value of gameMap.values()) {
+        if (value.player2.idUser == socket.data.user.id && value.status == "waiting"){
           if (inGame.get(value.player1.idClient) != undefined)
             return;
           let idx = value.id;
           value.player2.idClient = socket.id;
-          value.player2.idUser = socket.data.user.id;
-          value.player2.username = socket.data.user.username;
+          // value.player2.idUser = socket.data.user.id;
+          // value.player2.username = socket.data.user.username;
           const p1 = await this.usersRepository.find({
             where: {
               id: value.player1.idUser,
@@ -284,7 +294,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async declineGameInvitation(@ConnectedSocket() socket: Socket) {
     if (socket.data.user) {
       for (let value of gameMap.values()) {
-        if (value.player2.username == socket.data.user.username && value.status == "waiting"){
+        if (value.player2.idUser == socket.data.user.id && value.status == "waiting"){
           let idx = value.id;
           gameMap.delete(idx);
         }
