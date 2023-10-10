@@ -21,13 +21,39 @@
   </template>
   
   <script>
-  import DisplayPong from './displayPong'
+import axios from 'axios';
+import store from '@/store';
+import { onMounted, onBeforeUnmount } from 'vue';
+import DisplayPong from './displayPong'
   
   export default {
     components: {
       DisplayPong
     },
-  };
+    setup() {
+
+      const onBeforeUnload = async () => {
+        try {
+          const response = await axios.post('http://localhost:3000/auth/Logout', {}, { withCredentials: true });
+          if (response.status === 200) {
+            store.dispatch('authenticate', false);
+            store.dispatch('activateTwoFa', response.data.partialUser.isTwoFactorAuthenticationEnabled);
+          }
+        } catch (error) {
+          console.error("Erreur lors de la déconnexion :", error);
+        }
+      };
+
+      onMounted(() => {
+        window.addEventListener('beforeunload', onBeforeUnload);
+      });
+
+      onBeforeUnmount(() => {
+        window.removeEventListener('beforeunload', onBeforeUnload);
+      });
+      return {};
+    }
+  }
   </script>  
 
 <style>
