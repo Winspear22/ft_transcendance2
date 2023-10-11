@@ -40,7 +40,8 @@ export default {
       rooms: [],
       selectedRoom: null,
       processedMessageIds: [],
-      listenersAttached: false
+      listenersAttached: false,
+      usersInRoom: []
     };
   },
 
@@ -53,10 +54,13 @@ export default {
   methods: {
     selectRoom(room) {
       this.selectedRoom = room;
+      if (this.socketChat) {
+        this.socketChat.emit('emitUsersInRoom', { channelName: room.roomName });
+      }
     },
 
     getSenderName(message) {
-      const user = this.selectedRoom.userDTOs.find(u => u.id === message.senderId);
+      const user = this.usersInRoom.find(u => u.id === message.senderId);
       return user ? user.username : 'Unknown User';
     },
 
@@ -96,6 +100,9 @@ export default {
 
     this.socketChat.emit('emitRooms');
     this.socketChat.on('emitRooms', this.updateRooms);
+    this.socketChat.on('usersDataInRoom', (users) => {
+      this.usersInRoom = users;
+    });
     this.socketChat.on('sendMessage', this.addMessageToRoom);
     this.listenersAttached = true;
   },
@@ -105,6 +112,7 @@ export default {
 
     this.socketChat.off('emitRooms', this.updateRooms);
     this.socketChat.off('sendMessage', this.addMessageToRoom);
+    this.socketChat.off('usersDataInRoom');
     this.processedMessageIds = [];
     this.listenersAttached = false;
   },
