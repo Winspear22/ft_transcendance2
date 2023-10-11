@@ -139,7 +139,6 @@ export class ChatGateway
     });
 
     // Envoi des rooms à l'utilisateur
-    console.log("Émission des rooms pour le client : ", client.id);
     return this.server.to(client.id).emit('emitRooms', allowedRooms);
   }
 
@@ -791,8 +790,6 @@ export class ChatGateway
       return result;
     }
 
-
-  
   //--------------------------------------------------------------------------------------//
 
   //--------------------------------------------------------------------------------------//
@@ -807,15 +804,13 @@ export class ChatGateway
   * @returns void - Cette fonction n'a pas de valeur de retour explicite.
   */
     
-  @UseGuards(ChatGuard, RoomBanGuard)
+  /*@UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('sendMessage')
   async handleMessage(@ConnectedSocket() client: Socket,
   @MessageBody() body: { channelName: string,
   senderUsername: string,
   message: string }): Promise<void> {
-    console.log("SEND MESSAGE", body.channelName, body.senderUsername, body.message)
     const sender = await this.chatService.getUserFromSocket(client);
-    //const receiver = await this.usersRepository.findOne({ where: { username: body.receiverUsername } });
     const room = await this.roomService.getRoomByName(body.channelName);
     if (room.mutedIds.includes(sender.id))
     {
@@ -826,8 +821,6 @@ export class ChatGateway
     if (body.message.length === 0) {
       return;
     }
-
-    // Créez le message avec TypeORM
     const message = new MessageEntity();
     message.room = room;
     message.senderId = sender.id;
@@ -835,11 +828,67 @@ export class ChatGateway
     message.channelId = room.id;
 
     const savedMessage = await this.messagesRepository.save(message);
-    console.log("Traitement du message du client :", client.id);
-
-    // Émettez le message aux clients
     this.server.to(savedMessage.room.roomName).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture});
-  }
+  }*/
+
+  @UseGuards(ChatGuard, RoomBanGuard)
+@SubscribeMessage('sendMessage')
+async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { channelName: string, senderUsername: string, message: string }): Promise<void> {
+    const sender = await this.chatService.getUserFromSocket(client);
+    const room = await this.roomService.getRoomByName(body.channelName);
+    if (room.mutedIds.includes(sender.id)) {
+        this.server.to(client.id).emit('sendMessage', "Error, you have been muted.");
+        return;
+    }
+
+    if (body.message.length === 0) {
+        return;
+    }
+
+    const message = new MessageEntity();
+    message.room = room;
+    message.senderId = sender.id;
+    message.text = body.message;
+    message.channelId = room.id;
+
+    const socketsInRoom = await this.server.in(body.channelName).fetchSockets();
+    for (const targetSocket of socketsInRoom)
+    {
+      const targetUserId = parseInt(targetSocket.data.user.id, 10);
+      if (targetUserId === sender.id) {
+        const mySender = targetSocket.id;
+        const senderMessage = await this.messagesRepository.save(message);
+        this.server.to(mySender).emit('sendMessage', senderMessage, { senderUsername: sender.username, senderpp: sender.profile_picture });
+        break ;
+      }
+    }
+    // Gérer d'abord l'envoi du message à l'expéditeur
+    
+      
+    // Gérer l'envoi du message aux autres utilisateurs
+    for (const targetSocket of socketsInRoom) {
+        const targetUserId = parseInt(targetSocket.data.user.id, 10);
+        const targetUser = await this.chatService.findUserById(targetUserId);
+
+        if (targetUserId !== sender.id) {
+            if (targetUser.blockedIds.includes(sender.id)) {
+                const blockedMessage = new MessageEntity();
+                blockedMessage.room = room;
+                blockedMessage.senderId = sender.id;
+                blockedMessage.text = 'You have blocked this user.';
+                blockedMessage.channelId = room.id;
+                await this.messagesRepository.save(blockedMessage);
+                this.server.to(targetSocket.id).emit('sendMessage', blockedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture });
+            } else {
+                const savedMessage = await this.messagesRepository.save(message);
+                this.server.to(targetSocket.id).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture });
+            }
+        }
+    }
+}
+
+  
+
 
   //--------------------------------------------------------------------------------------//
 

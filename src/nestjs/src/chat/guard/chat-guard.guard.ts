@@ -13,7 +13,6 @@ import { ExecutionContext } from "@nestjs/common";
 @Injectable()
 export class ChatGuard implements CanActivate {
     constructor(
-        private readonly jwtService: JwtService,
         private readonly userService: UserService,
         private readonly chatAuthService: ChatAuthService,
 
@@ -23,7 +22,6 @@ export class ChatGuard implements CanActivate {
     {
       const client = context.switchToWs().getClient();
       const accessTokenCookie = client.handshake.query.Cookie;
-      //console.log("JE SUIS ICI DANS LE GUARD");
       if (!accessTokenCookie) {
           console.log('Access Token Cookie is missing.');
           return false;
@@ -32,11 +30,6 @@ export class ChatGuard implements CanActivate {
     if (!userData)
         return false;
     const { username, refreshToken, accessToken } = userData;
-    /*JE VERIFIE SI LE TOKEN EST BLACKLISTE*/
-    /*if (await this.chatAuthService.isTokenBlacklisted(accessToken)) {
-        console.log('Token is blacklisted.');
-        return false;
-    }*/
     /*JE VERIFIE SI LE EST COMPLET*/
     const decodedPayload = this.chatAuthService.decodeAccessToken(accessToken);
     if (!decodedPayload) {
@@ -54,18 +47,14 @@ export class ChatGuard implements CanActivate {
         return false;
     }
     /*JE TROUVE L'UTILISATEUR ASSOCIE AU TOKEN*/
-    console.log("username in cookie == ", username);
-    // const user = await this.userService.findUserByUsername(username);
     const user = await this.userService.findUserById(parseInt(decodedPayload.sub));
     if (user)
-        console.log("User connected MIDDLEWARE CHATGUARD: ", user.username);
+        return true;
     else
     {
         console.log('User does not exist');
         return false;
     }
-    console.log(colors.BRIGHT + colors.BLUE + "Utilisateur est passé par le Guard ChatGuard" + colors.RESET);
-    return true;
   }
 }
 

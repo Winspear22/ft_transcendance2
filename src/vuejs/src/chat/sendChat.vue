@@ -32,6 +32,7 @@ export default {
   methods: {
     sendMessage() {
       if (this.isValidSender()) {
+        console.log("Je suis la");
         this.emitMessageToSocket();
         this.clearMessageContent();
       } else {
