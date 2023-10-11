@@ -917,7 +917,8 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
       else
       {
         this.server.to(client.id).emit("promoteAdmin", "Error, the user could not be promoted to admin.");
-        this.server.to(targetSocket.id).emit("promoteAdmin", "Vous êtes devenu admin de la room : " + body.channelName);
+        this.server.to(targetSocket.id).emit("promotedAdmin", {
+          message: "Vous êtes devenu admin de la room : " + body.channelName});
       } 
     }
     else 
@@ -944,7 +945,8 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
       if (result.success === true)
       {
         this.server.to(client.id).emit("demoteAdmin", "Succes ! User has been demoted.");
-        this.server.to(targetSocket.id).emit("demoteAdmin", "You have been demoted, you are no longer admin in the room " + body.channelName);
+        this.server.to(targetSocket.id).emit("demotedAdmin", {
+          message: "Vous n'êtes plus Admin de la salle : " + body.channelName});
       }
       else
         this.server.to(client.id).emit("demoteAdmin", "Error, the user could not be demoted.");

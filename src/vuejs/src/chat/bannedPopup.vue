@@ -31,7 +31,8 @@ mounted() {
   this.socketChat.on('muted', this.handleUnbanned);
   this.socketChat.on('unmuted', this.handleUnbanned);
   this.socketChat.on('joinRoomFail', this.handleUnbanned);
-  this.socketChat.on('promoteAdmin', this.handleUnbanned);
+  this.socketChat.on('promotedAdmin', this.handleUnbanned);
+  this.socketChat.on('demotedAdmin', this.handleUnbanned);
 },
 
 beforeDestroy() {
@@ -42,7 +43,8 @@ beforeDestroy() {
   this.socketChat.off('muted', this.handleUnbanned);
   this.socketChat.off('unmuted', this.handleUnbanned);
   this.socketChat.off('joinRoomFail', this.handleUnbanned);
-  this.socketChat.off('promoteAdmin', this.handleUnbanned);
+  this.socketChat.off('promotedAdmin', this.handleUnbanned);
+  this.socketChat.off('deomotedAdmin', this.handleUnbanned);
 },
 
 methods: {

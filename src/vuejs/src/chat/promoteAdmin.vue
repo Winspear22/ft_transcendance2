@@ -34,13 +34,11 @@
     },
   
     mounted() {
-  console.log("Component mounted");
-  this.socketChat.on('usersDataInRoom', this.handleUsersData);
-  this.socketChat.on('promoteAdmin', this.handlePromoteResponse);
-  this.fetchUsersInRoom();
-},
+      this.socketChat.on('usersDataInRoom', this.handleUsersData);
+      this.socketChat.on('promoteAdmin', this.handlePromoteResponse);
+      this.fetchUsersInRoom();
+    },
 
-  
     beforeDestroy() {
       this.socketChat.off('promoteAdmin', this.handlePromoteResponse);
       this.socketChat.off('usersDataInRoom', this.handleUsersData);
@@ -53,8 +51,8 @@
         });
       },
       closeModal() {
-      this.$emit('close');
-    },
+        this.$emit('close');
+      },
   
       handleUsersData(data) {
         this.usersData = data;
@@ -66,6 +64,7 @@
         if (!user) {
             this.adminMessage = 'Utilisateur non trouvé dans la salle.';
             this.isError = true; 
+            setTimeout(this.closeModal, 1000);
             return;
         }
     
@@ -87,7 +86,7 @@
               this.adminMessage = "Erreur inattendue";
               this.isError = true;
           }
-          setTimeout(this.closeModal, 2000);
+          setTimeout(this.closeModal, 1000);
       },
     },
 }

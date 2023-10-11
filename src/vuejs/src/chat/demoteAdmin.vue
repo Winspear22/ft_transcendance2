@@ -58,7 +58,6 @@
   
       handleUsersData(data) {
         this.usersData = data;
-        console.log("DATA ROOM : ", data);
       },
   
       demoteUserFromAdmin() {
@@ -78,6 +77,7 @@
       },
   
       handleDemoteResponse(data) {
+        console.log("demote : ", data);
           if (typeof data === "string" && data.includes("Error")) {
               this.adminMessage = "Impossible de retirer les droits d'admin à cette personne.";
               this.isError = true;
