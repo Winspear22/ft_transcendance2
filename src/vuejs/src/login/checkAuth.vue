@@ -42,9 +42,6 @@ export default {
                         store.dispatch('authenticate', isAuthenticated);
                         store.dispatch('activateTwoFa', response.data.infoUser.isTwoFactorAuthenticationEnabled);
             
-                        console.log("Is Authenticated:", isAuthenticated);
-                        console.log("2FA Activated:", store.getters.isTwoFaActivated);
-                        console.log("First Connection:", store.getters.firstConnection);
                         if (isAuthenticated && store.getters.isTwoFaActivated) {
                             showTurnOnComponent.value = true;
                         } else if (isAuthenticated) {

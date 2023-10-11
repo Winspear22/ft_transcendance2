@@ -917,7 +917,7 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
       else
       {
         this.server.to(client.id).emit("promoteAdmin", "Error, the user could not be promoted to admin.");
-        this.server.to(targetSocket.id).emit("promoteAdmin", "You have been promoted, you are an admin of the room " + body.channelName);
+        this.server.to(targetSocket.id).emit("promoteAdmin", "Vous êtes devenu admin de la room : " + body.channelName);
       } 
     }
     else 

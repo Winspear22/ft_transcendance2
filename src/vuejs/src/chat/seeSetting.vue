@@ -10,6 +10,8 @@
         <li v-if="isAdmin"><button @click="openKickUser">Kick un utilisateur</button></li>
         <li v-if="isAdmin"><button @click="openMuteUser">Mute un utilisateur</button></li>
         <li v-if="isAdmin"><button @click="openUnmuteUser">Demute un utilisateur</button></li>
+        <li v-if="isAdmin"><button @click="openPromoteUser">Promouvoir un utilisateur</button></li>
+        <li v-if="isAdmin"><button @click="openDemoteUser">Retirer les droits admin</button></li>
         <li><button @click="openSeeUser">Voir les utilisateurs</button></li>
 
       </ul>
@@ -23,6 +25,8 @@
       <KickUserModal v-if="showKickUserModal" :channelName="room.roomName" @close="showKickUserModal = false" />
       <MuteUserModal v-if="showMuteUserModal" :roomName="room.roomName" @close="showMuteUserModal = false" />
       <UnmuteUserModal v-if="showUnmuteUserModal" :channelName="room.roomName" @close="showUnmuteUserModal = false" />
+      <PromoteUserModal v-if="showPromoteUserModal" :channelName="room.roomName" @close="showPromoteUserModal = false" />
+      <DemoteUserModal v-if="showDemoteUserModal" :channelName="room.roomName" @close="showDemoteUserModal = false" />
       <SeeUserModal v-if="showSeeUserModal" :channelName="room.roomName" @close="showSeeUserModal = false" />
     </div>
   </template>
@@ -39,6 +43,8 @@
   import UnmuteUserModal from './unmuteUser.vue';
   import SeeUserModal from './seeUser.vue';
   import infoUser from '../setting/infoUser.vue';
+  import PromoteUserModal from './promoteAdmin.vue';
+  import DemoteUserModal from './demoteAdmin.vue';
   
   
   export default {
@@ -49,7 +55,7 @@
       }
     },
 
-    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal, UnbanUserModal, KickUserModal, MuteUserModal, UnmuteUserModal, SeeUserModal, infoUser },
+    components: { ChangePassword, QuitRoom, InviteRoom, BanUserModal, UnbanUserModal, KickUserModal, MuteUserModal, UnmuteUserModal, SeeUserModal, infoUser, PromoteUserModal, DemoteUserModal },
     data() {
       return {
         showMenu: false,
@@ -62,6 +68,8 @@
         showMuteUserModal: false,
         showUnmuteUserModal: false,
         showSeeUserModal: false,
+        showPromoteUserModal: false,
+        showDemoteUserModal: false,
         userId: null,
       };
     },
@@ -107,6 +115,12 @@
       },
       openSeeUser() {
         this.showSeeUserModal = true;
+      },
+      openPromoteUser() {
+        this.showPromoteUserModal = true;
+      },
+      openDemoteUser() {
+        this.showDemoteUserModal = true;
       },
     }
   }

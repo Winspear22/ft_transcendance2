@@ -73,7 +73,6 @@ export default {
         },
 
         handleUsersData(data) {
-            console.log("Data received:", data);
             this.usersData = data;
         },
 
