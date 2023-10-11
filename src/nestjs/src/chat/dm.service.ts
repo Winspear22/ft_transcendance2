@@ -307,6 +307,6 @@ export class DMService
     // Log pour indiquer que l'action a été effectuée avec succès
     console.log(colors.GREEN + "User" + blocked.username + " has been successfully blocked by " + blocker.username + colors.RESET);
     return { success: true };
-}
+  }
 
 }

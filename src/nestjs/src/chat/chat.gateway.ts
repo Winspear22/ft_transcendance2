@@ -17,6 +17,8 @@ import { UserEntity } from 'src/user/user.entity';
 import { MessageEntity } from './entities/message.entity';
 import { UserService } from 'src/user/user.service';
 import * as bcrypt from 'bcryptjs';
+import { DMGateway } from './dm.gateway';
+import { DMService } from './dm.service';
 
 @WebSocketGateway({cors: true, namespace: 'chats'})
 export class ChatGateway 
@@ -25,6 +27,8 @@ export class ChatGateway
     private readonly chatService: ChatService,
     private readonly roomService: RoomService,
     private readonly usersService: UserService,
+    private readonly dmGateway: DMGateway,
+    private readonly dmService: DMService,
     @InjectRepository(RoomEntity)
     private roomRepository: Repository<RoomEntity>,
     @InjectRepository(UserEntity)
@@ -804,7 +808,7 @@ export class ChatGateway
   * @returns void - Cette fonction n'a pas de valeur de retour explicite.
   */
     
-  /*@UseGuards(ChatGuard, RoomBanGuard)
+  @UseGuards(ChatGuard, RoomBanGuard)
   @SubscribeMessage('sendMessage')
   async handleMessage(@ConnectedSocket() client: Socket,
   @MessageBody() body: { channelName: string,
@@ -829,9 +833,9 @@ export class ChatGateway
 
     const savedMessage = await this.messagesRepository.save(message);
     this.server.to(savedMessage.room.roomName).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture});
-  }*/
+  }
 
-  @UseGuards(ChatGuard, RoomBanGuard)
+/*@UseGuards(ChatGuard, RoomBanGuard)
 @SubscribeMessage('sendMessage')
 async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { channelName: string, senderUsername: string, message: string }): Promise<void> {
     const sender = await this.chatService.getUserFromSocket(client);
@@ -885,7 +889,7 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
             }
         }
     }
-}
+}*/
 
   
 
@@ -959,5 +963,74 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
   }
 
   //--------------------------------------------------------------------------------------//
+
+  @UseGuards(ChatGuard, RoomBanGuard)
+  @SubscribeMessage('blockUserChat')
+  async BlockUsers(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() body: { channelName: string, TargetUserId: number })
+  {
+    const socketsInRoom = await this.server.in(body.channelName).fetchSockets();
+    const targetSocket = socketsInRoom.find(socket => socket.data.user.id === body.TargetUserId);
+    
+    if (targetSocket)
+    {
+      const isUserBlocked = await this.chatService.isUserBlocked(client.data.user.id, targetSocket.data.user.id);
+      if (isUserBlocked === true)
+      {
+        this.server.to(client.id).emit("blockUserChat", "You have already blocked the user " + targetSocket.data.user.username);
+        return ;
+      }
+      else
+      {
+        const areUsersFriends = await this.chatService.areUsersFriends(client.data.user.id, targetSocket.data.user.id);
+        if (areUsersFriends)
+        {
+          console.log("target id == ", targetSocket.data.user.id);
+          this.dmGateway.BlockFriend(client, { receiverId: targetSocket.data.user.id });
+          this.server.to(client.id).emit("blockUserChat", "You have blocked the user " + targetSocket.data.user.username);
+        }
+        else
+        {
+          this.dmService.blockFriend(client.data.user, targetSocket.data.user);
+          this.server.to(client.id).emit("blockUserChat", "You have blocked the user " + targetSocket.data.user.username);
+        }
+      }
+    }
+    else
+    {
+      this.server.to(client.id).emit("blockUserChat", "Error, the user you want to block is not in the room.");
+      console.log(`L'utilisateur avec l'ID ${body.TargetUserId} n'est pas présent dans la room ${body.channelName}.`);
+    }
+  }
+
+  @UseGuards(ChatGuard, RoomBanGuard)
+  @SubscribeMessage('unblockUserChat')
+  async UnblockUsers(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() body: { channelName: string, TargetUserId: number })
+  {
+    const socketsInRoom = await this.server.in(body.channelName).fetchSockets();
+    const targetSocket = socketsInRoom.find(socket => socket.data.user.id === body.TargetUserId);
+
+    if (targetSocket)
+    {
+      const isUserBlocked = await this.chatService.isUserBlocked(client.data.user, targetSocket.data.user.id);
+      if (isUserBlocked === true)
+      {
+        this.dmGateway.UnblockFriend(client, { receiverId: targetSocket.data.user.id });
+        this.server.to(client.id).emit("unblockUserChat", "You have unblocked the user " + targetSocket.data.user.username);
+      }
+      else
+      {
+        this.server.to(client.id).emit("unblockUserChat", "Error, the user " + targetSocket.data.user.username + " was not blocked in the first place.");
+      }
+    }
+    else
+    {
+      this.server.to(client.id).emit("unblockUserChat", "Error, the user you want to unblock is not in the room.");
+      console.log(`L'utilisateur avec l'ID ${body.TargetUserId} n'est pas présent dans la room ${body.channelName}.`);
+    }
+  }
 
 }

@@ -501,26 +501,35 @@ async RemoveFriend(
   {
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { id: body.receiverId } }); 
-
+    console.log("ETAPE 1");
+    console.log("Id dans l'argument == ", body.receiverId);
+    console.log("id du receiver = ", receiver.id);
     if (!sender || !receiver) {
       return;
     }
+    console.log("ETAPE 2");
+
     const receiverSocketId = this.ref_client.get(receiver.id);
     const receiverSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === receiverSocketId);
 
       // Essayez de trouver la room avec le nom basé sur les IDs de sender et receiver
     const roomName1 = `friendChat(${sender.id},${receiver.id})`;
     const roomName2 = `friendChat(${receiver.id},${sender.id})`;
-
+    console.log("room 1 = ", roomName1);
+    console.log("room 2 = ", roomName2);
     let room = await this.friendChatsRepository.findOne({ where: { room: roomName1 } });
 
     if (!room) {
       room = await this.friendChatsRepository.findOne({ where: { room: roomName2 } });
     }
+    console.log("ETAPE 3");
+
     if (!room) {
       this.server.to(client.id).emit("blockDM", "Error in the block process (unfound room).");
       return;
     }
+    console.log("ETAPE 4");
+
 
     // Supprimer les messages associés à la salle de chat
     await this.friendMessageRepository.delete({ chatId: room.id });
@@ -545,4 +554,34 @@ async RemoveFriend(
       this.server.to(receiverSocketId).emit("blockDM", "Error in the blocking proccess.");
     }
   }
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('unblockDM')
+  async UnblockFriend(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() body: { receiverId: number }
+  ): Promise<void> {
+    const sender = await this.chatService.getUserFromSocket(client);
+    const receiver = await this.usersRepository.findOne({ where: { id: body.receiverId } });
+
+    if (!sender || !receiver) {
+      return;
+    }
+
+    // Si le bloqueur a déjà bloqué l'utilisateur bloqué
+    if (sender.blockedIds && sender.blockedIds.includes(receiver.id)) {
+      sender.blockedIds = sender.blockedIds.filter(id => id !== receiver.id);
+      await this.usersRepository.save(sender);
+    } else {
+      this.server.to(client.id).emit("unblockDM", "Error: The user is not blocked.");
+      return;
+    }
+
+    // Log pour indiquer que l'action a été effectuée avec succès
+    console.log(colors.GREEN + "User" + receiver.username + " has been successfully unblocked by " + sender.username + colors.RESET);
+    this.server.to(client.id).emit("unblockDM", "You have unblocked " + receiver.username);
+    this.emitFriends(client);
+    this.emitDMs(client);
+  }
+
 }

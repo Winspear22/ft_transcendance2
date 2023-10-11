@@ -8,6 +8,7 @@ import * as colors from '../colors'
 import { ChatAuthService } from './chat-auth.service';
 //import { UserService } from 'src/user/user.service';
 import { RoomEntity } from './entities/room.entity';
+import { Friend } from 'src/user/entities/friend.entity';
 
 @Injectable()
 export class ChatService {
@@ -17,6 +18,8 @@ export class ChatService {
         private roomRepository: Repository<RoomEntity>,
         @InjectRepository(UserEntity)
         private usersRepository: Repository<UserEntity>,
+        @InjectRepository(Friend)
+        private friendsRepository: Repository<Friend>,
         private chatAuthService: ChatAuthService,
         //private userService: UserService,
     ) {}
@@ -92,5 +95,25 @@ export class ChatService {
             //this.chatGateway.handleDisconnect(client);
             return undefined;
         }
-    }   
+    }
+    
+  async areUsersFriends(userId1: number, userId2: number): Promise<boolean> {
+    const friendship1 = await this.friendsRepository.findOne({ where: { userId: userId1, friendId: userId2 } });
+    const friendship2 = await this.friendsRepository.findOne({ where: { userId: userId2, friendId: userId1 } });
+    return !!(friendship1 || friendship2);
+  }
+  
+
+  async getAllFriendsOfUser(userId: number): Promise<Friend[]> {
+      return this.friendsRepository.find({ where: [{ userId }, { friendId: userId }] });
+  }
+
+  async isUserBlocked(user: UserEntity, blockedUserId: number): Promise<boolean> {
+    const foundUser = await this.usersRepository.findOne({ where: { id: user.id }});
+    if (foundUser && foundUser.blockedIds && foundUser.blockedIds.includes(blockedUserId)) {
+        return true;
+    }
+    return false;
+  }
+
 }
