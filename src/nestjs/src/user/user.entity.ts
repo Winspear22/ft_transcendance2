@@ -39,9 +39,6 @@ export class UserEntity
   @Column({ nullable: true })
   email: string;
 
-  /*@Column('text', { default: '' })
-  login42: string;*/
-
   @Column('text', { default: 'empty' })
   profile_picture: string;
 
@@ -77,9 +74,13 @@ export class UserEntity
   @Column('int', { array: true, nullable: true })
   friendRequests: number[];
 
+  @Column({ default: 0 })
+  createdRoomsCount: number;
+
   @OneToOne(() => MatchHistoryEntity, (matchHistory) => matchHistory.user, {
     eager: true,
   })
+
   @JoinColumn()
   matchHistory: MatchHistoryEntity;
 }

@@ -62,7 +62,9 @@ export class RoomService
             mutedIds: [],
             pendingIds: []
           };
+        user.createdRoomsCount++;
         await this.roomRepository.save(newRoom);
+        await this.usersRepository.save(user);
         return { success: true };
     }    
 
@@ -119,8 +121,11 @@ export class RoomService
     if (user.id === room.owner) {
         // Si l'utilisateur est le propriétaire de la salle, supprimez tous les messages du canal 
         // et ensuite le canal lui-même
+        user.createdRoomsCount--;
+        await this.usersRepository.save(user);
         await this.messagesRepository.delete({ channelId: room.id });
         await this.roomRepository.delete({ id: room.id });
+        
         return { success: true };
     } else {
         // Si l'utilisateur n'est pas le propriétaire, retirez-le des listes 'users' et 'userDTOs'

@@ -247,21 +247,25 @@ export class ChatGateway
         this.server.emit('createRoom', "Channel name is invalid. It should be 2-12 characters long and alphanumeric only.'");
         return { success: false, error: 'Channel name is invalid. It should be 2-12 characters long and alphanumeric only.' };
       }
+      if (client.data.user.createdRoomsCount < 6)
+      {
+        // Création de la salle en utilisant le service roomService
+        const result = await this.roomService.createRoom(data, client);
 
-      // Création de la salle en utilisant le service roomService
-      const result = await this.roomService.createRoom(data, client);
+        // Notification aux clients du résultat de la création
+        if (result.success) {
+          this.server.to(client.id).emit('createRoom', "Channel created : " + data.channelName );
+          this.emitAvailableRooms(client);
+          this.emitRooms(client);
+          this.emitRoomInvitation(client);
 
-      // Notification aux clients du résultat de la création
-      if (result.success) {
-        this.server.emit('createRoom', "Channel created : " + data.channelName );
-        this.emitAvailableRooms(client);
-        this.emitRooms(client);
-        this.emitRoomInvitation(client);
-
-      } else {
-        this.server.emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
-      }
-      return result;
+        } else {
+          this.server.to(client.id).emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
+        }
+        return result;
+    }
+    this.server.to(client.id).emit('createRoom', "Error. Channel " + data.channelName + " was not created. You already created " + client.data.user.createdRoomsCount);
+    return false;
   }
 
   @UseGuards(ChatGuard)
