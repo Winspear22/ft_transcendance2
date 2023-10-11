@@ -276,6 +276,17 @@ export class DMService
     // Vérifier si l'utilisateur essaie de se bloquer lui-même
     if (blocker.username == blocked.username) 
       return { success: false, error: "You can't block yourself" };
+    // Si l'utilisateur bloqué a envoyé une demande d'ami au bloqueur, retirez-la
+    if (blocked.friendRequests && blocked.friendRequests.includes(blocker.id)) {
+      blocked.friendRequests = blocked.friendRequests.filter(id => id !== blocker.id);
+      await this.usersRepository.save(blocked);
+  }
+
+  // Si le bloqueur a envoyé une demande d'ami à l'utilisateur bloqué, retirez-la
+  if (blocker.friendRequests && blocker.friendRequests.includes(blocked.id)) {
+      blocker.friendRequests = blocker.friendRequests.filter(id => id !== blocked.id);
+      await this.usersRepository.save(blocker);
+  }
 
     // Vérifier si les utilisateurs sont amis
     const friendRelations = await this.getFriendId(blocker.username, blocked.username);
@@ -292,17 +303,6 @@ export class DMService
       blocker.blockedIds.push(blocked.id);
     await this.usersRepository.save(blocker);
 
-    // Si l'utilisateur bloqué a envoyé une demande d'ami au bloqueur, retirez-la
-    if (blocked.friendRequests && blocked.friendRequests.includes(blocker.id)) {
-        blocked.friendRequests = blocked.friendRequests.filter(id => id !== blocker.id);
-        await this.usersRepository.save(blocked);
-    }
-
-    // Si le bloqueur a envoyé une demande d'ami à l'utilisateur bloqué, retirez-la
-    if (blocker.friendRequests && blocker.friendRequests.includes(blocked.id)) {
-        blocker.friendRequests = blocker.friendRequests.filter(id => id !== blocked.id);
-        await this.usersRepository.save(blocker);
-    }
 
     // Log pour indiquer que l'action a été effectuée avec succès
     console.log(colors.GREEN + "User" + blocked.username + " has been successfully blocked by " + blocker.username + colors.RESET);

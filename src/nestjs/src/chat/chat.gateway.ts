@@ -971,8 +971,8 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
   @MessageBody() body: { channelName: string, TargetUserId: number })
   {
     const socketsInRoom = await this.server.in(body.channelName).fetchSockets();
+
     const targetSocket = socketsInRoom.find(socket => socket.data.user.id === body.TargetUserId);
-    
     if (targetSocket)
     {
       const isUserBlocked = await this.chatService.isUserBlocked(client.data.user.id, targetSocket.data.user.id);
@@ -989,6 +989,10 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
           console.log("target id == ", targetSocket.data.user.id);
           this.dmGateway.BlockFriend(client, { receiverId: targetSocket.data.user.id });
           this.server.to(client.id).emit("blockUserChat", "You have blocked the user " + targetSocket.data.user.username);
+          const socket = targetSocket as unknown as Socket;
+
+          this.dmGateway.emitFriendRequests(client);
+          this.dmGateway.emitFriendRequests(socket);
         }
         else
         {
