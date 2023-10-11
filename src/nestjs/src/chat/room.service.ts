@@ -437,20 +437,95 @@ async unmuteUserRoom(body: {
     return { success: true };
   }
 
-  /*async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
-    const rooms = await this.roomRepository.find({ 
-      where: {
-        users: In([userId])  // Trouver des rooms où l'utilisateur est présent
-      }
-    });
+  async promoteUserInRoom(userId: number,  channelName: string, targetUserId: number ) {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
 
-    rooms.forEach(room => {
-      const userDTOToUpdate = room.userDTOs.find(dto => dto.id === userId);
-      if (userDTOToUpdate) {
-        userDTOToUpdate.username = newUsername; // Mettez à jour l'username
-      }
-    });
+    if (!user) {
+        return { success: false, error: 'User not found' };
+    }
 
-    await this.roomRepository.save(rooms); // Sauvegardez les rooms modifiés
-  } */
+    const room = await this.roomRepository.findOne({
+        where: { roomName: channelName },
+        select: ['users', 'owner', 'admins', 'id'],
+    });
+    if (!room) {
+        return { success: false, error: 'Room not found' };
+    }
+
+    if (user.id !== room.owner) {
+        return { success: false, error: 'You are not the owner of this room' };
+    }
+
+    const targetUser = await this.usersRepository.findOne({ where: { id: targetUserId } });
+    if (!targetUser) {
+        return { success: false, error: 'Target user not found' };
+    }
+
+    if (!room.users.includes(targetUser.id)) {
+        return { success: false, error: 'Target user is not a member of this room' };
+    }
+
+    if (room.admins.includes(targetUser.id)) {
+        return { success: false, error: 'Target user is already an admin of this room' };
+    }
+
+    if (room.owner === targetUser.id) {
+        return { success: false, error: 'Target user is the owner of the room' };
+    }
+
+    room.admins.push(targetUser.id);
+    await this.roomRepository.save(room);
+
+    return ({ success: true });
+  }
+
+  async demoteUserInRoom(userId: number, roomName: string, targetUserId: number) {
+    // Trouver l'utilisateur propriétaire
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+        return { success: false, error: 'User not found' };
+    }
+
+    // Trouver la salle
+    const room = await this.roomRepository.findOne({
+        where: { roomName: roomName },
+        select: ['users', 'owner', 'admins', 'id'],
+    });
+    if (!room) {
+        return { success: false, error: 'Room not found' };
+    }
+
+    // Vérifier si l'utilisateur est le propriétaire de la salle
+    if (user.id !== room.owner) {
+        return { success: false, error: 'You are not the owner of this room' };
+    }
+
+    // Trouver l'utilisateur cible
+    const targetUser = await this.usersRepository.findOne({ where: { id: targetUserId } });
+    if (!targetUser) {
+        return { success: false, error: 'Target user not found' };
+    }
+
+    // Vérifier si l'utilisateur cible est membre de la salle
+    if (!room.users.includes(targetUser.id)) {
+        return { success: false, error: 'Target user is not a member of this room' };
+    }
+
+    // Vérifier si l'utilisateur cible est déjà un admin de la salle
+    if (!room.admins.includes(targetUser.id)) {
+        return { success: false, error: 'Target user is not an admin of this room' };
+    }
+
+    if (userId === targetUserId && room.admins.includes(user.id)) {
+      return { success: false, error: 'An admin cannot demote themselves' };
+    }
+
+    // Retirer l'utilisateur cible des admins de la salle
+    room.admins = room.admins.filter(id => id !== targetUser.id);
+    await this.roomRepository.save(room);
+
+    return { success: true };
+  }
+
+
 }

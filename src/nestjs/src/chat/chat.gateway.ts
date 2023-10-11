@@ -836,4 +836,73 @@ export class ChatGateway
     // Émettez le message aux clients
     this.server.to(savedMessage.room.roomName).emit('sendMessage', savedMessage, { senderUsername: sender.username, senderpp: sender.profile_picture});
   }
+
+  //--------------------------------------------------------------------------------------//
+
+  //--------------------------------------------------------------------------------------//
+  //----------------------------PROMOTION/DEMOTION DES ADMINS-----------------------------//
+  //--------------------------------------------------------------------------------------//
+
+  @UseGuards(ChatGuard, RoomBanGuard)
+  @SubscribeMessage('promoteAdmin')
+  async PromoteAdmins(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() body: { channelName: string, TargetUserId: number }) 
+  {
+    const socketsInRoom = await this.server.in(body.channelName).fetchSockets();
+    //const userExists = socketsInRoom.some(socket => socket.data.user.id === body.TargetUserId);
+    const targetSocket = socketsInRoom.find(socket => socket.data.user.id === body.TargetUserId);
+    //console.log(userExists);
+    //console.log("body === ", body);
+
+    if (targetSocket) 
+    {
+      console.log(`L'utilisateur avec l'ID ${body.TargetUserId} est présent dans la room ${body.channelName}.`);
+      const result = await this.roomService.promoteUserInRoom(client.data.user.id, body.channelName, body.TargetUserId);
+      if (result.success === true)
+        this.server.to(client.id).emit("promoteAdmin", "Succes ! User has been promoted to admin.");
+      else
+      {
+        this.server.to(client.id).emit("promoteAdmin", "Error, the user could not be promoted to admin.");
+        this.server.to(targetSocket.id).emit("promoteAdmin", "You have been promoted, you are an admin of the room " + body.channelName);
+      } 
+    }
+    else 
+    {
+      this.server.to(client.id).emit("promoteAdmin", "Error, the user you want to promote is not in the room.");
+      console.log(`L'utilisateur avec l'ID ${body.TargetUserId} n'est pas présent dans la room ${body.channelName}.`);
+    }
+  }
+
+  @UseGuards(ChatGuard, RoomBanGuard)
+  @SubscribeMessage('demoteAdmin')
+  async DemoteAdmins(
+  @ConnectedSocket() client: Socket,
+  @MessageBody() body: { channelName: string, TargetUserId: number }) 
+  {
+    const socketsInRoom = await this.server.in(body.channelName).fetchSockets();
+    //const userExists = socketsInRoom.some(socket => socket.data.user.id === body.TargetUserId);
+    const targetSocket = socketsInRoom.find(socket => socket.data.user.id === body.TargetUserId);
+
+    if (targetSocket) 
+    {
+      console.log(`L'utilisateur avec l'ID ${body.TargetUserId} est présent dans la room ${body.channelName}.`);
+      const result = await this.roomService.demoteUserInRoom(client.data.user.id, body.channelName, body.TargetUserId);
+      if (result.success === true)
+      {
+        this.server.to(client.id).emit("demoteAdmin", "Succes ! User has been demoted.");
+        this.server.to(targetSocket.id).emit("demoteAdmin", "You have been demoted, you are no longer admin in the room " + body.channelName);
+      }
+      else
+        this.server.to(client.id).emit("demoteAdmin", "Error, the user could not be demoted.");
+    } 
+    else 
+    {
+      this.server.to(client.id).emit("demoteAdmin", "Error, the user you want to demote is not in the room.");
+      console.log(`L'utilisateur avec l'ID ${body.TargetUserId} n'est pas présent dans la room ${body.channelName}.`);
+    }
+  }
+
+  //--------------------------------------------------------------------------------------//
+
 }
