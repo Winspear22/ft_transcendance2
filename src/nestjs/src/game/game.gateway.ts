@@ -196,8 +196,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           return;
 
         for (let value of gameMap.values()) {
-          if ((value.player1.idUser == socket.data.user.id || value.player2.idUser == socket.data.user.id) && value.status == "playing")
+          if ((value.player1.idUser == socket.data.user.id || value.player2.idUser == socket.data.user.id) && value.status == "playing") {
             return;
+          }
         }
       
         const guest = await this.usersRepository.find({
@@ -228,6 +229,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
               this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
               return;
             }
+          }
+          for (let value of gameMap.values()) {
+            if ((value.player1.idUser == guest[0].id || value.player2.idUser == guest[0].id) &&  value.status == "playing")
+              this.server.to(socket.id).emit('invitPlayRequestError', "Error. Could not invit " + name + " is playing");
           }
           // Création de la partie
           if (guest[0].user_status == "Online") {

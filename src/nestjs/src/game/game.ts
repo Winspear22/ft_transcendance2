@@ -30,7 +30,7 @@ async function gameI(game: game, server: Server) {
     //   }
 
     while(1) 
-    // while (p1.points < 3 && p2.points < 3)
+    // while (p1.points < 1 && p2.points < 1)
     {
         await sleep(10);
 
