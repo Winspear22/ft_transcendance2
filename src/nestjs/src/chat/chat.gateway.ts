@@ -63,8 +63,7 @@ export class ChatGateway
   @SubscribeMessage('Connection')
   async handleConnection(@ConnectedSocket() client: Socket) 
   {
-        const user = await this.chatService.getUserFromSocket(client);
-
+    const user = await this.chatService.getUserFromSocket(client);
     if (!user) {
       console.log(colors.BRIGHT + colors.RED, "Erreur. Socket id : " + colors.WHITE + client.id + colors.RED + " n'a pas pu se connecter." + colors.RESET);
       return this.handleDisconnect(client);
@@ -76,9 +75,11 @@ export class ChatGateway
     this.ref_client.set(user.id, client.id);
     this.ref_Socket.set(client, client.id);
     this.ref_socket_userid.set(client, user.id);
-    this.emitRooms(client);
-    this.emitAvailableRooms(client);
-    this.emitRoomInvitation(client);
+    await this.emitRooms(client);
+    await this.emitAvailableRooms(client);
+    await this.emitRoomInvitation(client);
+    await this.getBlockedIds(client);
+
     return true;
   }
 
@@ -222,6 +223,13 @@ export class ChatGateway
     return uniqueUsersData;
   }
 
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitBlockedIds')
+  async getBlockedIds(@ConnectedSocket() client: Socket)
+  {
+    return this.server.to(client.id).emit("emitBlockedIds", client.data.user.blockedIds);
+  }
+
   
 
 
@@ -258,9 +266,9 @@ export class ChatGateway
         // Notification aux clients du résultat de la création
         if (result.success) {
           this.server.to(client.id).emit('createRoom', "Channel created : " + data.channelName );
-          this.emitAvailableRooms(client);
-          this.emitRooms(client);
-          this.emitRoomInvitation(client);
+          await this.emitAvailableRooms(client);
+          await this.emitRooms(client);
+          await this.emitRoomInvitation(client);
 
         } else {
           this.server.to(client.id).emit('createRoom', "Error. Channel " + data.channelName + " was not created.");
@@ -304,9 +312,9 @@ export class ChatGateway
       await this.roomRepository.save((await room));
       this.server.to(client.id).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
       this.server.in(channelName).emit('changeRoomPassword', "The password of the room " + channelName + " was modified.");
-      this.emitAvailableRooms(client);
-      this.emitRooms(client);
-      this.emitRoomInvitation(client);
+      await this.emitAvailableRooms(client);
+      await this.emitRooms(client);
+      await this.emitRoomInvitation(client);
 
       return ;
     }  else {
@@ -337,12 +345,12 @@ export class ChatGateway
         this.server.to(client.id).emit('quitRoom', "You have left the room " + data.channelName);
         this.server.to(data.channelName).emit('quitRoom', client.data.user.username + " has left the room " + data.channelName);
         client.leave(data.channelName);
-        this.emitAvailableRooms(client);
+        await this.emitAvailableRooms(client);
         const room = await this.roomService.getRoomByName(data.channelName);
         if (room == undefined)
           usersInRoom.forEach(socket => { this.emitRooms(socket) });
         else
-          this.emitRooms(client);
+          await this.emitRooms(client);
       }
       return result;
   }
@@ -368,9 +376,9 @@ export class ChatGateway
         this.server.to(client.id).emit('joinRoom', "Room joined : " + data.channelName);
         this.server.to(data.channelName).emit('joinRoom', client.data.user.username + " just joined the room " + data.channelName);
         client.join(data.channelName);
-        this.emitAvailableRooms(client);
-        this.emitRooms(client);
-        this.emitRoomInvitation(client);
+        await this.emitAvailableRooms(client);
+        await this.emitRooms(client);
+        await this.emitRoomInvitation(client);
 
         return (result);
       }
@@ -520,9 +528,9 @@ export class ChatGateway
 
       this.server.to(inviterSocket.id).emit("acceptRoomInvitation", `Your invitation to join the room ${room.roomName} has been accepted by ${user.username}.`);
       this.server.to(client.id).emit("acceptRoomInvitationOk", `You have joined the room ${room.roomName} successfully.`);
-      this.emitAvailableRooms(client);
-      this.emitRooms(client);
-      this.emitRoomInvitation(client);
+      await this.emitAvailableRooms(client);
+      await this.emitRooms(client);
+      await this.emitRoomInvitation(client);
       return true;
   }
 
@@ -548,7 +556,7 @@ export class ChatGateway
       await this.roomRepository.save(room);
       const inviterSocketId = this.ref_client.get(inviter.id);
       const inviterSocket = [...this.ref_Socket.keys()].find(socket => this.ref_Socket.get(socket) === inviterSocketId);
-      this.emitRoomInvitation(client);
+      await this.emitRoomInvitation(client);
       this.server.to(inviterSocket.id).emit("declineRoomInvitation", `${user.username} chose not to join your room.`);
       return this.server.to(client.id).emit("declineRoomInvitation", `You have declined the invitation for room ${room.roomName}.`);
   }
@@ -987,16 +995,22 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
         if (areUsersFriends)
         {
           console.log("target id == ", targetSocket.data.user.id);
-          this.dmGateway.BlockFriend(client, { receiverId: targetSocket.data.user.id });
+          await this.dmGateway.BlockFriend(client, { receiverId: targetSocket.data.user.id });
           this.server.to(client.id).emit("blockUserChat", "You have blocked the user " + targetSocket.data.user.username);
           const socket = targetSocket as unknown as Socket;
 
           this.dmGateway.emitFriendRequests(client);
           this.dmGateway.emitFriendRequests(socket);
+          this.getBlockedIds(client);
         }
         else
         {
-          this.dmService.blockFriend(client.data.user, targetSocket.data.user);
+          await this.dmService.blockFriend(client.data.user, targetSocket.data.user);
+          const socket = targetSocket as unknown as Socket;
+
+          this.dmGateway.emitFriendRequests(client);
+          this.dmGateway.emitFriendRequests(socket);
+          this.getBlockedIds(client);
           this.server.to(client.id).emit("blockUserChat", "You have blocked the user " + targetSocket.data.user.username);
         }
       }
@@ -1022,11 +1036,13 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
       const isUserBlocked = await this.chatService.isUserBlocked(client.data.user, targetSocket.data.user.id);
       if (isUserBlocked === true)
       {
-        this.dmGateway.UnblockFriend(client, { receiverId: targetSocket.data.user.id });
+        await this.dmGateway.UnblockFriend(client, { receiverId: targetSocket.data.user.id });
+        await this.getBlockedIds(client);
         this.server.to(client.id).emit("unblockUserChat", "You have unblocked the user " + targetSocket.data.user.username);
       }
       else
       {
+        await this.getBlockedIds(client);
         this.server.to(client.id).emit("unblockUserChat", "Error, the user " + targetSocket.data.user.username + " was not blocked in the first place.");
       }
     }

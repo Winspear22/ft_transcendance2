@@ -135,9 +135,6 @@ export class AuthController {
           const user = req.user as UserEntity;
           // const user = await this.userService.findUserById(userId.id);//req.user as UserEntity;
           const cookie = req.cookies['PongAccessAndRefreshCookie'];
-          console.log("AUTHCONTROLLER ",user);
-          console.log("AUTHCONTROLLER ",cookie); 
-          
           return res.status(HttpStatus.OK).json({ success: true, user, cookie });
       } catch (error) {
           console.error(error);

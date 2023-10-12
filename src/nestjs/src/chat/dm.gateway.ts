@@ -63,12 +63,14 @@ export class DMGateway
     this.ref_client.set(user.id, client.id);
     this.ref_socket.set(client, client.id);
     // Renvoie les DMrooms avec tous les messages et les utilisateurs présents à l'intérieur
-    this.emitDMs(client);
+    await this.emitDMs(client);
     // Renvoie tous les Friends que l'utilisateur a.
-    this.emitFriends(client);
+    await this.emitFriends(client);
     console.log(colors.BRIGHT + colors.CYAN, "User : " +  colors.WHITE + user.username + colors .CYAN +" just connected." + colors.RESET);
     // Ajoute les sockets dans deux maps différentes : c'est juste pour m'aider à répertorier les users
-    this.emitFriendRequests(client);
+    await this.emitFriendRequests(client);
+    await this.getBlockedIds(client);
+
     console.log("-------------------------------------------------");
     console.log("----------------CONNEXION AU DM------------------");
     console.log("-------------------------------------------------");
@@ -195,6 +197,15 @@ export class DMGateway
     return this.server.to(client.id).emit('emitFriendRequests', friendRequestUsers);
   }
 
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitBlockedIds')
+  async getBlockedIds(@ConnectedSocket() client: Socket)
+  {
+    console.log(colors.BRIGHT + colors.GREEN + "Je suis ici !!!" + colors.RESET);
+
+    return this.server.to(client.id).emit("emitBlockedIds", client.data.user.blockedIds);
+  }
+
   //--------------------------------------------------------------------------------------//
   //------------------------------------GESTION DES DMS-----------------------------------//
   //--------------------------------------------------------------------------------------//
@@ -300,8 +311,7 @@ export class DMGateway
       return;
     }
     const receiverSocketId = this.ref_client.get(receiver.id);
-    console.log(receiverSocketId);
-    console.log(this.ref_client);
+
     // On crée dans la base de données la demande en ami (avec tous les checks nécéssaires).
     const ret = await this.DMsService.sendFriendRequest(client.data.user.username, body.receiverUsername);
     // Si tout s'est bien passé on emit aux deux sockets qu'une demande d'ami a été envoyée ou réceptionnée (en fonction de qui est l'envoyeur ou le réceptionneur)
@@ -341,7 +351,7 @@ export class DMGateway
     if (!sender || !receiver) {
       return;
     }
-    const isUserBlocked = this.chatService.isUserBlocked(sender, receiver.id);
+    const isUserBlocked = await this.chatService.isUserBlocked(sender, receiver.id);
     if (isUserBlocked)
     {
       this.server.to(client.id).emit("acceptFriendRequest", "Error, you could not accept " + receiver.username + "'s friend request.");
@@ -364,12 +374,12 @@ export class DMGateway
       // Si tout a bien été récupéré
       if (chat && senderSocket && receiverSocket) {
         //On join la conversatio
-        this.emitFriends(client);
-        this.emitFriends(receiverSocket);
+        await this.emitFriends(client);
+        await this.emitFriends(receiverSocket);
         senderSocket.join(chat.chat.room);
         receiverSocket.join(chat.chat.room);
-        this.emitDMs(client);
-        this.emitDMs(receiverSocket);
+        await this.emitDMs(client);
+        await this.emitDMs(receiverSocket);
         //on emit que la conversation a été join
         this.server.to(client.id).emit("acceptFriendRequest", "You have joined the room :", chat.chat.room );
         this.server.to(receiverSocketId).emit("acceptFriendRequest", "You have joined the room :", chat.chat.room);
@@ -404,12 +414,13 @@ export class DMGateway
     if (!sender || !receiver) {
       return;
     }
-    const isUserBlocked = this.chatService.isUserBlocked(sender, receiver.id);
+    const isUserBlocked = await this.chatService.isUserBlocked(sender, receiver.id);
     if (isUserBlocked)
     {
       this.server.to(client.id).emit("refuseFriendRequest", "Error, you could not accept " + receiver.username + "'s friend request.");
       return ;
     }
+
     const receiverSocketId = this.ref_client.get(receiver.id);
     console.log(receiverSocketId);
     console.log(this.ref_client);
@@ -475,10 +486,10 @@ async RemoveFriend(
   if (receiverSocketId !== undefined) {
     this.server.to(client.id).emit("removeFriend", "Vous avez supprimé : " + receiver.username);
     this.server.to(receiverSocketId).emit("removeFriend", "You have been unfriended by " + sender.username);
-    this.emitFriends(client);
-    this.emitFriends(receiverSocket);
-    this.emitDMs(client);
-    this.emitDMs(receiverSocket);
+    await this.emitFriends(client);
+    await this.emitFriends(receiverSocket);
+    await this.emitDMs(client);
+    await this.emitDMs(receiverSocket);
   }
   else {
     this.server.to(client.id).emit("removeFriend", "Error in the friend removal process.");
@@ -503,13 +514,10 @@ async RemoveFriend(
   {
     const sender = await this.chatService.getUserFromSocket(client);
     const receiver = await this.usersRepository.findOne({ where: { id: body.receiverId } }); 
-    console.log("ETAPE 1");
-    console.log("Id dans l'argument == ", body.receiverId);
-    console.log("id du receiver = ", receiver.id);
     if (!sender || !receiver) {
       return;
     }
-    console.log("ETAPE 2");
+    console.log("ETAPE 1");
 
     const receiverSocketId = this.ref_client.get(receiver.id);
     const receiverSocket = [...this.ref_socket.keys()].find(socket => this.ref_socket.get(socket) === receiverSocketId);
@@ -517,22 +525,18 @@ async RemoveFriend(
       // Essayez de trouver la room avec le nom basé sur les IDs de sender et receiver
     const roomName1 = `friendChat(${sender.id},${receiver.id})`;
     const roomName2 = `friendChat(${receiver.id},${sender.id})`;
-    console.log("room 1 = ", roomName1);
-    console.log("room 2 = ", roomName2);
     let room = await this.friendChatsRepository.findOne({ where: { room: roomName1 } });
 
     if (!room) {
       room = await this.friendChatsRepository.findOne({ where: { room: roomName2 } });
     }
-    console.log("ETAPE 3");
+    console.log("ETAPE 2");
 
     if (!room) {
       this.server.to(client.id).emit("blockDM", "Error in the block process (unfound room).");
       return;
     }
-    console.log("ETAPE 4");
-
-
+    console.log("ETAPE 3");
     // Supprimer les messages associés à la salle de chat
     await this.friendMessageRepository.delete({ chatId: room.id });
     
@@ -545,13 +549,15 @@ async RemoveFriend(
     if (receiverSocketId !== undefined) {
       this.server.to(client.id).emit("blockDM", "You have blocked and unfriended " + receiver.username);
       this.server.to(receiverSocketId).emit("blockDM", "You have been blocked and unfriended by " + sender.username);
-      this.emitFriendRequests(client);
-      this.emitFriendRequests(receiverSocket);
-      this.emitFriends(client);
-      this.emitFriends(receiverSocket);
-      this.emitDMs(client);
-      this.emitDMs(receiverSocket);
-
+      await this.emitFriendRequests(client);
+      await this.emitFriendRequests(receiverSocket);
+      await this.emitFriends(client);
+      await this.emitFriends(receiverSocket);
+      await this.emitDMs(client);
+      await this.emitDMs(receiverSocket);
+      await this.getBlockedIds(client);
+      await this.getBlockedIds(receiverSocket);
+      console.log(colors.BRIGHT + colors.YELLOW + "Je suis ici !!!" + colors.RESET);
     }
     else
     {
@@ -585,8 +591,9 @@ async RemoveFriend(
     // Log pour indiquer que l'action a été effectuée avec succès
     console.log(colors.GREEN + "User" + receiver.username + " has been successfully unblocked by " + sender.username + colors.RESET);
     this.server.to(client.id).emit("unblockDM", "You have unblocked " + receiver.username);
-    this.emitFriends(client);
-    this.emitDMs(client);
+    await this.emitFriends(client);
+    await this.emitDMs(client);
+    await this.getBlockedIds(client);
   }
 
 }
