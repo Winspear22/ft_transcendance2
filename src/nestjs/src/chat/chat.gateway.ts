@@ -184,7 +184,7 @@ export class ChatGateway
       return await this.server.to(client.id).emit('emitRoomInvitation', invitedRooms);
   }
 
-  @UseGuards(ChatGuard)
+  /*@UseGuards(ChatGuard)
   @SubscribeMessage('emitUsersInRoom')
   async getUsersInRoom(@MessageBody() data: { channelName: string }): Promise<any[]> {
     console.log("j'essaye d'envoyer les usr");
@@ -221,6 +221,27 @@ export class ChatGateway
   
     // Retournez également le tableau uniqueUsersData
     return uniqueUsersData;
+  }*/
+
+  @UseGuards(ChatGuard)
+  @SubscribeMessage('emitUsersInRoom')
+  async getUsersInRoom(@MessageBody() data: { channelName: string }): Promise<UserEntity[]> {
+    // Obtenez la pièce en utilisant le nom du canal
+    const room = await this.roomService.getRoomByName(data.channelName);
+  
+    if (!room) {
+      throw new Error(`Room with name ${data.channelName} not found`);
+    }
+  
+    // Récupérer les détails des utilisateurs à partir de leurs ids
+    const usersPromises = room.users.map(userId => this.usersService.findUserById(userId));
+    const users = await Promise.all(usersPromises);
+  
+    // Émettez cet événement à tous les clients de cette salle avec le tableau d'utilisateurs
+    this.server.to(data.channelName).emit('usersDataInRoom', users);
+    console.log("USERS IN ROOM EMIT", users);
+  
+    return users;
   }
 
   @UseGuards(ChatGuard)
