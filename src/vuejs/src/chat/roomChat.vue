@@ -20,7 +20,7 @@
       </h3>
       <div class="messages" v-if="selectedRoom.messages.length > 0" ref="messagesContainer">
         <div v-for="message in selectedRoom.messages" :key="message.id">
-          <span>{{ getSenderName(message) }}: {{ message.text }}</span>
+          <span>{{ getSenderName(message) }}: {{ getMessageText(message) }}</span>
         </div>
       </div>
       <send-chat :selected-room="selectedRoom"></send-chat>
@@ -41,7 +41,8 @@ export default {
       selectedRoom: null,
       processedMessageIds: [],
       listenersAttached: false,
-      usersInRoom: []
+      usersInRoom: [],
+      blockedUsers: []
     };
   },
 
@@ -63,9 +64,16 @@ export default {
       const user = this.usersInRoom.find(u => u.id === message.senderId);
       return user ? user.username : 'Unknown User';
     },
+    updateBlockedUsers(users) {
+        this.blockedUsers = users;
+    },
 
     isNewMessage(messageId) {
       return !this.processedMessageIds.includes(messageId);
+    },
+    getMessageText(message) {
+        const isBlocked = this.blockedUsers.some(user => user.id === message.senderId);
+        return isBlocked ? "message bloqué" : message.text;
     },
 
     updateRooms(rooms) {
@@ -98,6 +106,8 @@ export default {
       return;
     }
 
+    this.socketChat.emit('emitBlockedIds');
+    this.socketChat.on('emitBlockedIds', this.updateBlockedUsers);
     this.socketChat.emit('emitRooms');
     this.socketChat.on('emitRooms', this.updateRooms);
     this.socketChat.on('usersDataInRoom', (users) => {
@@ -115,6 +125,7 @@ export default {
     this.socketChat.off('usersDataInRoom');
     this.processedMessageIds = [];
     this.listenersAttached = false;
+    this.socketChat.off('emitBlockedIds', this.updateBlockedUsers);
   },
 
   watch: {
