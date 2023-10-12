@@ -21,13 +21,14 @@ let ref_user: Map<number, UserEntity> = new Map();
 let ref_client : Map<number, Socket> = new Map();
 let waitingGames: Array<number> = new Array();
 let gameMap: Map<number, game> = new Map();
+let invitGameMap: Map<number, game> = new Map();
 let inGame: Map<string, number> = new Map();
 
 let idx_games = 0;
  
 @WebSocketGateway({cors: true, namespace: 'game'})
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(
+  constructor (
     private userService: UserService,
     private readonly gameService: GameService,
     @InjectRepository(UserEntity)
@@ -204,7 +205,8 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             username: name,
           }
         });
-        if (guest.length > 0) {
+
+        if (guest.length > 0) { 
           // Offline
           if (guest[0].user_status == "Offline")
           {
@@ -220,7 +222,9 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
           for (let value of gameMap.values()) {
             if (value.player1.idUser == socket.data.user.id && value.player2.username == name && value.status == "waiting")
             {
+              const idx = value.id;
               this.server.to(ref_client.get(guest[0].id).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
+              this.server.to(ref_client.get(guest[0].id).id).emit("invit_idx_game", idx);
               this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
               return;
             }
@@ -238,6 +242,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
             gameI.status = "waiting";
             gameMap.set(idx, gameI);
             this.server.to(ref_client.get(guest[0].id).id).emit("invitPlayRequestSuccess", "Invitation to play from " + socket.data.user.username);
+            this.server.to(ref_client.get(guest[0].id).id).emit("invit_idx_game", idx);
             this.server.to(socket.id).emit('invitPlayRequestSuccess', "Your invitation has been sent to " + name);
             return;
           }
@@ -248,14 +253,25 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     @SubscribeMessage('acceptInvitToPlayRequest')
-    async acceptGameInvitation(@ConnectedSocket() socket: Socket) {
+    async acceptGameInvitation(@ConnectedSocket() socket: Socket, @MessageBody() data: any) {
     if (socket.data.user) {
+
       for (let value of gameMap.values()) {
         if ((value.player1.idUser == socket.data.user.id || value.player2.idUser == socket.data.user.id) && value.status == "playing")
-          return;
+          return; 
       }
+
       for (let value of gameMap.values()) {
-        if (value.player2.idUser == socket.data.user.id && value.status == "waiting"){
+        if (value.player2.idUser == socket.data.user.id && value.id != data.idx && value.status == "waiting")
+        {
+          let id = value.id;
+          gameMap.delete(id);
+        }
+      }
+
+      for (let value of gameMap.values()) {
+
+        if (value.player2.idUser == socket.data.user.id && value.id == data.idx && value.status == "waiting"){
           if (inGame.get(value.player1.idClient) != undefined)
             return;
           let idx = value.id;
@@ -290,10 +306,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('declineInvitToPlayRequest')
-  async declineGameInvitation(@ConnectedSocket() socket: Socket) {
+  async declineGameInvitation(@ConnectedSocket() socket: Socket, @MessageBody() data: any) {
     if (socket.data.user) {
       for (let value of gameMap.values()) {
-        if (value.player2.idUser == socket.data.user.id && value.status == "waiting"){
+        if (value.player2.idUser == socket.data.user.id && value.id == data.idx && value.status == "waiting"){
           let idx = value.id;
           gameMap.delete(idx);
         }
