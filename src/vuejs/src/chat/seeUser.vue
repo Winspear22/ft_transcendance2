@@ -14,9 +14,13 @@
             </template>
             <template v-else-if="isFriend(user)">
                 <router-link :to="`/friend-profile/${user.username}`">{{ user.username }}</router-link>
+                <BlockUser :channelName="channelName" :user="user" :currentUserId="currentUserInfo ? currentUserInfo.id : null" />
+                <UnblockUser :channelName="channelName" :user="user" :currentUserId="currentUserInfo ? currentUserInfo.id : null" />
             </template>
             <template v-else>
                 <router-link :to="`/online-profile/${user.username}`">{{ user.username }}</router-link>
+                <BlockUser :channelName="channelName" :user="user" :currentUserId="currentUserInfo ? currentUserInfo.id : null" />
+                <UnblockUser :channelName="channelName" :user="user" :currentUserId="currentUserInfo ? currentUserInfo.id : null" />
             </template>
         </li>
       </ul>
@@ -31,12 +35,16 @@
 <script>
 import { mapGetters } from 'vuex';
 import infoUser from '../setting/infoUser';
+import BlockUser from './blockUser.vue';
+import UnblockUser from './unblockUser.vue';
 
 
 export default {
     props: ['channelName'],
     components: {
         infoUser,
+        BlockUser,
+        UnblockUser
     },
     data() {
         return {

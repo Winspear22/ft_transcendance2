@@ -999,7 +999,7 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
       const isUserBlocked = await this.chatService.isUserBlocked(client.data.user.id, targetSocket.data.user.id);
       if (isUserBlocked === true)
       {
-        this.server.to(client.id).emit("blockUserChat", "You have already blocked the user " + targetSocket.data.user.username);
+        this.server.to(client.id).emit("blockUserChat", "Cet utilisateur est deja bloqué " + targetSocket.data.user.username);
         return ;
       }
       else
@@ -1009,7 +1009,7 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
         {
           console.log("target id == ", targetSocket.data.user.id);
           await this.dmGateway.BlockFriend(client, { receiverId: targetSocket.data.user.id });
-          this.server.to(client.id).emit("blockUserChat", "You have blocked the user " + targetSocket.data.user.username);
+          this.server.to(client.id).emit("blockUserChat", "Vous avez bloqué " + targetSocket.data.user.username);
           const socket = targetSocket as unknown as Socket;
 
           this.dmGateway.emitFriendRequests(client);
@@ -1024,13 +1024,13 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
           this.dmGateway.emitFriendRequests(client);
           this.dmGateway.emitFriendRequests(socket);
           this.getBlockedIds(client);
-          this.server.to(client.id).emit("blockUserChat", "You have blocked the user " + targetSocket.data.user.username);
+          this.server.to(client.id).emit("blockUserChat", "Vous avez bloqué " + targetSocket.data.user.username);
         }
       }
     }
     else
     {
-      this.server.to(client.id).emit("blockUserChat", "Error, the user you want to block is not in the room.");
+      this.server.to(client.id).emit("blockUserChat", "Erreur lors du blockage de cet utilisateur.");
       console.log(`L'utilisateur avec l'ID ${body.TargetUserId} n'est pas présent dans la room ${body.channelName}.`);
     }
   }
