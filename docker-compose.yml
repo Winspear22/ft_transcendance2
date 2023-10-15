@@ -70,5 +70,5 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: /home/adnen/Desktop/VolumeTranscendance2
+      device: /Users/administrateur/42/data
   image-data:  # <-- Nouveau volume pour les images
