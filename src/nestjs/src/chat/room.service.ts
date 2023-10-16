@@ -340,7 +340,7 @@ export class RoomService
 
   async muteUserRoom(body: { 
   username: string; 
-  roomName: string; 
+  channelName: string; 
   targetUsername: string; 
   duration: number }) 
   {
@@ -353,7 +353,7 @@ export class RoomService
   if (!user) 
       return { success: false, error: 'User not found' };
   // Récupère la salle à partir de la base de données
-  const room = await this.roomRepository.findOne({ where: { roomName: body.roomName }});
+  const room = await this.roomRepository.findOne({ where: { roomName: body.channelName }});
   // Vérifie si la salle existe
   if (!room)
       return { success: false, error: 'Room not found' };
@@ -406,7 +406,7 @@ export class RoomService
 
 async unmuteUserRoom(body: { 
   username: string, 
-  roomName: string, 
+  channelName: string, 
   targetUsername: string}) 
   {
     // Récupère l'utilisateur demandeur à partir de la base de données
@@ -414,7 +414,7 @@ async unmuteUserRoom(body: {
     
     if (!user) return { success: false, error: 'User not found' };
 
-    const room = await this.roomRepository.findOne({ where: { roomName: body.roomName }});
+    const room = await this.roomRepository.findOne({ where: { roomName: body.channelName }});
     
     if (!room) return { success: false, error: 'Room not found' };
     

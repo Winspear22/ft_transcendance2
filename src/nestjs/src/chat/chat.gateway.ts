@@ -759,7 +759,7 @@ export class ChatGateway
    @SubscribeMessage('muteUser')
    async muteUser(@MessageBody() data: {
    username: string; 
-   roomName: string; 
+   channelName: string; 
    targetUsername: string; 
    duration: number }, 
    @ConnectedSocket() client: Socket) 
@@ -776,9 +776,9 @@ export class ChatGateway
         success: true
       });
        this.server.to(targetSocketId).emit('muted', {
-        message : "Vous etes mise en sourdine par un admin " + data.duration + "s sur " + data.roomName + "." });
+        message : "Vous etes mise en sourdine par un admin " + data.duration + "s sur " + data.channelName + "." });
  
-       this.server.to(data.roomName).emit('userMuted', {
+       this.server.to(data.channelName).emit('userMuted', {
            message: `${data.targetUsername} has been muted for ${data.duration} seconds.`,
            targetUsername: data.targetUsername,
            duration: data.duration
@@ -808,10 +808,11 @@ export class ChatGateway
   async unmuteUser(
     @MessageBody() data: {
     username: string,
-    roomName: string,
+    channelName: string,
     targetUsername: string}, 
     @ConnectedSocket() client: Socket) 
     {
+      console.log("data.roomName : ", data.channelName, "data : ", data);
       const result = await this.roomService.unmuteUserRoom(data);
       
       if (result.success) {
@@ -820,9 +821,9 @@ export class ChatGateway
 
           this.server.to(client.id).emit('unmuteUser', "User " + data.targetUsername + " has been unmuted");
           this.server.to(targetSocketId).emit('unmuted', {
-            message: "Vous avez ete demute par un admistrateur sur " + data.roomName} );
+            message: "Vous avez ete demute par un admistrateur sur " + data.channelName} );
 
-          this.server.to(data.roomName).emit('userUnmuted', {
+          this.server.to(data.channelName).emit('userUnmuted', {
               message: `${data.targetUsername} has been unmuted.`,
               targetUsername: data.targetUsername
           });
