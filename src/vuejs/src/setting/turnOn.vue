@@ -52,6 +52,11 @@ export default {
         handleUserInfo(userInfo) {
             this.username = userInfo.username;
         },
+        closePopup() {
+            console.log("close");
+            this.$emit('closePopup');
+        }, 
+
         moveToNextInput(event, n) {
             this.code = this.code.slice(0, n-1) + event.target.value + this.code.slice(n);
             if (event.target.value.length === 1 && n < 6) {
@@ -63,7 +68,7 @@ export default {
             }
         },
         validate() {
-            axios.post('http://made-f0cr5s6:3000/auth/turn-on', { TfaCode: this.code, username: this.username }, {withCredentials: true}) // Remplacez 'votreNomDutilisateur' par la valeur appropriée
+            axios.post(process.env.VUE_APP_HOSTNAME + '/auth/turn-on', { TfaCode: this.code, username: this.username }, {withCredentials: true}) // Remplacez 'votreNomDutilisateur' par la valeur appropriée
                 .then(response => {
                     if (response.data.message === '2FA enabled') {
                         this.twoFaEnabled = true; 
@@ -99,7 +104,7 @@ export default {
 }
 
 .popup-content {
- background: white;
+ background: #2459d5;
  padding: 20px;
  border-radius: 8px;
  width: 80%;
@@ -112,9 +117,21 @@ export default {
  justify-content: space-between;
 }
 
+.close-popup {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 24px; 
+    z-index: 10;
+    background-color: transparent;
+}
+
+
 input {
  width: 30px;
  text-align: center;
+ background: #2fe8ee;
  padding: 5px 10px;
  -webkit-appearance: none; /* Pour Chrome et Safari */
  -moz-appearance: textfield; /* Pour Firefox */

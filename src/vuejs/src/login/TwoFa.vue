@@ -21,7 +21,7 @@ export default {
 
         async function verifyTwoFa() {
             try {
-                const response = await axios.post('http://made-f0cr5s6:3000/auth/verify-two-fa', { code: twoFaCode.value });
+                const response = await axios.post(process.env.VUE_APP_HOSTNAME + '/auth/verify-two-fa', { code: twoFaCode.value });
                 if (response.data.success) {
                     showPopup.value = false;
                     emit('twoFaStatusChanged', true);

@@ -17,6 +17,17 @@
             <p>Total Défaites: {{ friendProfile.matchHistory.total_défaite }}</p>
             <p>Winrate: {{ friendProfile.matchHistory.winrate }}%</p>
         </div>
+        <ul v-if="friendProfile.matchHistory">
+                <li v-for="(match, index) in friendProfile.matchHistory.matches" :key="index">
+                <div>
+                    <span>{{ match.player1 }}</span>
+                    <span>{{ match.player1_points }}</span>
+                    <span>-</span>
+                    <span>{{ match.player2_points }}</span>
+                    <span>{{ match.player2 }}</span>
+                </div>
+                </li>
+        </ul>
         <!-- Ajouter comme ami -->
         <AddFromProfileButton :profileUsername="friendProfile.username || username" />
         <ReceivingFriend></ReceivingFriend>

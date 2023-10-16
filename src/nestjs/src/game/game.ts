@@ -23,14 +23,14 @@ async function gameI(game: game, server: Server) {
     const MAXPADDLEY = CANVASHEIGHT - GRID - (GRID * 5);
     const PADDLESPEED = 6;
 
-    // for (let i = 5; i >= 0; i--) {
-    //     await sleep(1000);
-    //     server.to(p1.idClient).emit('countdown', i);
-    //     server.to(p2.idClient).emit('countdown', i);
-    //   }
+    for (let i = 3; i >= 0; i--) {
+        await sleep(1000);
+        server.to(p1.idClient).emit('countdown', i);
+        server.to(p2.idClient).emit('countdown', i);
+      }
 
-    while(1) 
-    // while (p1.points < 3 && p2.points < 3)
+    // while(1) 
+    while (p1.points < 3 && p2.points < 3)
     {
         await sleep(10);
 

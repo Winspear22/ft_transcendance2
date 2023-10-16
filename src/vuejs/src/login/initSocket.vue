@@ -27,9 +27,9 @@ mounted() {
     return;
   }
 
-  const socketDm = io('http://made-f0cr5s6:3000/dms', { query: { Cookie: cookie }});
-  const socketChat = io('http://made-f0cr5s6:3000/chats', { query: { Cookie: cookie }});
-  const gameSocket = io('http://made-f0cr5s6:3000/game', { query: { Cookie: cookie }});
+  const socketDm = io(process.env.VUE_APP_HOSTNAME + '/dms', { query: { Cookie: cookie }});
+  const socketChat = io(process.env.VUE_APP_HOSTNAME + '/chats', { query: { Cookie: cookie }});
+  const gameSocket = io(process.env.VUE_APP_HOSTNAME + '/game', { query: { Cookie: cookie }});
 
   this.setsocketDm(socketDm);
   this.setsocketChat(socketChat);

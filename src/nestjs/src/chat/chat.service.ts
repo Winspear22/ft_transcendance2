@@ -37,7 +37,7 @@ export class ChatService {
   async getUserFromSocket(@ConnectedSocket() client: Socket): Promise<UserEntity | undefined>
   {
       let accessTokenCookie = client.handshake.query.Cookie;
-      console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
+      //console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.GREEN, client.connected, colors.RESET);
       if (!accessTokenCookie) 
       {
           console.log('Access Token Cookie is missing!!!');

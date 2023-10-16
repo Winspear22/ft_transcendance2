@@ -14,17 +14,17 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
     super({
       clientID: process.env.FORTYTWO_CLIENT_ID,
       clientSecret: process.env.FORTYTWO_CLIENT_SECRET,
-      callbackURL: process.env.IP_REDIRECT,//'http://made-f0cr5s6:3000/auth/login/42/return', // this is the redirect URI provided in 42 API
-      passReqToCallBack: true, // allows us to pass back the entire request to the callback
-      scopes: ['profile'], // the information we want to obtain from the user.
+      callbackURL: 'http://' + process.env.VUE_APP_HOSTNAME2 + ':3000/auth/login/42/return',
+      passReqToCallBack: true,
+      scopes: ['profile'],
     });
   }
 
   async validate(
-    accessToken: string, // useful to interact with 42 services
+    accessToken: string,
     refreshToken: string,
-    profile: Profile, // Profile is an object with all the user informations
-    cb: VerifyCallback, // a callback function where we will pass the user object and use it later to register it in the database and sign the JWT
+    profile: Profile,
+    cb: VerifyCallback,
   ): Promise<any> {
 
     const userDet = {
@@ -32,7 +32,7 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
       providerId: profile.id,
       name: profile.displayName,
       email: profile.emails[0].value,
-      picture: "1.png",//profile._json.image.link,
+      picture: "1.png",
       login: profile._json.login,
     };
     let user = await this.userService.findUserBy42Id(userDet.providerId);

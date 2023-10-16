@@ -33,7 +33,7 @@ export default {
         formData.append('file', this.selectedFile);
 
         try {
-          const response = await axios.post('http://made-f0cr5s6:3000/user/change/pp', formData, { withCredentials: true });
+          const response = await axios.post(process.env.VUE_APP_HOSTNAME + '/user/change/pp', formData, { withCredentials: true });
           if (response && response.status === 201) {
             this.showValidationPopup = true;
           }

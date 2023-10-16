@@ -29,12 +29,12 @@
     methods: {
       async updateUsername() {
         try {
-          const response = await axios.post('http://made-f0cr5s6:3000/user/change/username', { username: this.newUsername }, { withCredentials: true });
+          const response = await axios.post(process.env.VUE_APP_HOSTNAME + '/user/change/username', { username: this.newUsername }, { withCredentials: true });
           if (response.status === 201) {
                 this.showValidationPopup = true;
                 store.getters.gameSocket.emit('updateUser', this.newUsername);
                 try {
-                  const response = await axios.get('http://made-f0cr5s6:3000/auth/getUserInfo', { withCredentials: true });
+                  const response = await axios.get(process.env.VUE_APP_HOSTNAME + '/auth/getUserInfo', { withCredentials: true });
                   if (response.data.success) {
                     await store.dispatch('setToken', response.data.cookie);
                     store.getters.gameSocket.disconnect();

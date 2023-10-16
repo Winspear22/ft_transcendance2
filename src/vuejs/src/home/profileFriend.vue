@@ -16,6 +16,17 @@
             <p>Total Victoires: {{ friendProfile.matchHistory.total_victoire }}</p>
             <p>Total Défaites: {{ friendProfile.matchHistory.total_défaite }}</p>
             <p>Winrate: {{ friendProfile.matchHistory.winrate }}%</p>
+            <ul v-if="friendProfile.matchHistory">
+                <li v-for="(match, index) in friendProfile.matchHistory.matches" :key="index">
+                <div>
+                    <span>{{ match.player1 }}</span>
+                    <span>{{ match.player1_points }}</span>
+                    <span>-</span>
+                    <span>{{ match.player2_points }}</span>
+                    <span>{{ match.player2 }}</span>
+                </div>
+                </li>
+            </ul>
         </div>
         <RemoveFriendButton :username="friendProfile.username || username" />
     </div>

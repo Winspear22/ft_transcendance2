@@ -10,7 +10,8 @@
 export default {
   setup() {
     function login() {
-      window.location.href = 'http://made-f0cr5s6:3000/auth/42/login';
+      console.log("BUTTONLOGIN ==", process.env.VUE_APP_HOSTNAME);
+      window.location.href = process.env.VUE_APP_HOSTNAME + '/auth/42/login';
     }
 
     return {

@@ -216,15 +216,14 @@ export class UserService {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
       console.log(colors.GREEN + colors.BRIGHT, "----------------NORMAL REDIRECTD--------------", colors.RESET);
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-
-      return res.redirect(process.env.IP_FRONTEND);
+      return res.redirect('http://' + process.env.VUE_APP_HOSTNAME2 + ':8080/home');
     }
     else
     {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
       console.log(colors.GREEN + colors.BRIGHT, "------------------2FA REDIRECTD---------------", colors.RESET);
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-      return res.redirect(process.env.IP_FRONTEND);
+      return res.redirect('http://' + process.env.VUE_APP_HOSTNAME2 + ':8080/home');
     }
   }
 
@@ -270,7 +269,7 @@ export class UserService {
       sameSite: 'lax', // est une mesure de securite de type lax
       httpOnly: false, // gere l'accessibilite du cookie par le naviguateur et javascript, true : inaccessible / false : accessible
       secure: false, // doit etre mis sur false, sinon on ne peut pas envoyer sur des adresses http, que https
-      domain: 'made-f0cr5s6', // site sur lequel le cookie est fonctionnel et sur lequel il peut etre envoye
+      domain: process.env.VUE_APP_HOSTNAME2,//'made-f0cr5s6', // site sur lequel le cookie est fonctionnel et sur lequel il peut etre envoye
       maxAge: 900000000, // periode de vie du cookie en miliseconde, ici 10 jours
       path: '/', // signifie que le cookie sera envoye dans chacune des requetes http sur le site made-f0cr5s6 en d'autres termes on sera authentifie partout
     });

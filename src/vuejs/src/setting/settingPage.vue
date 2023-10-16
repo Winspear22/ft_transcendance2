@@ -12,6 +12,17 @@
       <p>Total Défaites: {{ uMatchHistory.total_défaite }}</p>
       <p>Winrate: {{ uMatchHistory.winrate }}%</p>
     </div>
+    <ul v-if="uMatchHistory">
+                <li v-for="(match, index) in uMatchHistory.matches" :key="index">
+                <div>
+                    <span>{{ match.player1 }}</span>
+                    <span>{{ match.player1_points }}</span>
+                    <span>-</span>
+                    <span>{{ match.player2_points }}</span>
+                    <span>{{ match.player2 }}</span>
+                </div>
+                </li>
+    </ul>
     <buttonQrcode class="spacing" :userInfo="userInformation"></buttonQrcode>
     <router-link class="spacing" :to="{ name: 'ProfileModification' }">Modifier le profil</router-link>
     <buttonLogout></buttonLogout>

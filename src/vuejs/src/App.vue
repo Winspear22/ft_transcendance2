@@ -41,7 +41,7 @@ import DisplayPong from './displayPong'
       }
       async function logoutUser() {
         try {
-          const response = await axios.post(process.env.APP_VUE_HOSTNAME + '/auth/Logout', {}, { withCredentials: true });
+          const response = await axios.post('http://' + process.env.VUE_APP_HOSTNAME + ':3000/auth/Logout', {}, { withCredentials: true });
           if (response.status === 200) {
             store.dispatch('authenticate', false);
             store.dispatch('activateTwoFa', response.data.partialUser.isTwoFactorAuthenticationEnabled);
