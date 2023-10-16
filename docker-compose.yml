@@ -43,6 +43,7 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgresql:5432/${POSTGRES_DB}
     volumes:
       - ./src/nestjs:/app
+      - image-data:/app/vuejs/uploads
     networks:
       - dataflow_network
 
@@ -53,12 +54,11 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./src/vuejs:/app
+      - image-data:/app/vuejs/uploads
     ports:
-      #- "4200:4200"
       - "8080:8080"
     networks:
       - dataflow_network
-
 
 networks:
   dataflow_network:
@@ -71,3 +71,4 @@ volumes:
       type: none
       o: bind
       device: ../volume_adaloui
+  image-data:
