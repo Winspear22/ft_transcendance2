@@ -258,7 +258,7 @@ export class UserService {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
       return res.redirect(process.env.IP_FRONTEND);
-      //return res.redirect('http://localhost:8080/home);
+      //return res.redirect('http://made-f0cr5s6:8080/home);
     }
     else
     {
@@ -269,7 +269,7 @@ export class UserService {
       //res.status(200).json(message);
       return res.redirect(process.env.IP_FRONTEND);
      
-      //const url = `http://localhost:8080/tfa`;
+      //const url = `http://made-f0cr5s6:8080/tfa`;
       //res.redirect(url);
     }
   }
@@ -317,9 +317,9 @@ export class UserService {
       sameSite: 'lax', // est une mesure de securite de type lax
       httpOnly: false, // gere l'accessibilite du cookie par le naviguateur et javascript, true : inaccessible / false : accessible
       secure: false, // doit etre mis sur false, sinon on ne peut pas envoyer sur des adresses http, que https
-      domain: 'localhost', // site sur lequel le cookie est fonctionnel et sur lequel il peut etre envoye
+      domain: 'made-f0cr5s6', // site sur lequel le cookie est fonctionnel et sur lequel il peut etre envoye
       maxAge: 900000000, // periode de vie du cookie en miliseconde, ici 10 jours
-      path: '/', // signifie que le cookie sera envoye dans chacune des requetes http sur le site localhost en d'autres termes on sera authentifie partout
+      path: '/', // signifie que le cookie sera envoye dans chacune des requetes http sur le site made-f0cr5s6 en d'autres termes on sera authentifie partout
     });
   }
 

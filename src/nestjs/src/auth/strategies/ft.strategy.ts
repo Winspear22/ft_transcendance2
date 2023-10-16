@@ -14,7 +14,7 @@ export class IntraStrategy extends PassportStrategy(Strategy, '42') {
     super({
       clientID: process.env.FORTYTWO_CLIENT_ID,
       clientSecret: process.env.FORTYTWO_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/auth/login/42/return', // this is the redirect URI provided in 42 API
+      callbackURL: 'http://made-f0cr5s6:3000/auth/login/42/return', // this is the redirect URI provided in 42 API
       passReqToCallBack: true, // allows us to pass back the entire request to the callback
       scopes: ['profile'], // the information we want to obtain from the user.
     });

@@ -360,7 +360,7 @@ export class RoomService
   // Vérifie si l'utilisateur demandeur est propriétaire ou administrateur de la salle
   if (room.owner !== user.id && !room.admins.includes(user.id))
       return { success: false, error: 'You are not an admin' };
-  // Récupère l'utilisateur cible à partir de la base de données
+  // Récupère l'utilisateur cible à partir de la base de données  
   const targetUser = await this.usersRepository.findOne({ where: { username: body.targetUsername } });
   // Vérifie si l'utilisateur cible existe
   if (!targetUser)
@@ -371,6 +371,8 @@ export class RoomService
   // Vérifie si l'utilisateur cible est dans la salle
   if (!room.users.includes(targetUser.id))
       return { success: false, error: 'Target user is not in this room' };
+  if (room.mutedIds.includes(targetUser.id))
+    return { success: false, error: 'Target already muted'};
   // Si l'utilisateur cible est un administrateur, vérifie si l'utilisateur demandeur est le propriétaire
   if (room.admins.includes(targetUser.id)) {
       if (room.owner === user.id) {

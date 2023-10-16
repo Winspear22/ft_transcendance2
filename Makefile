@@ -1,57 +1,53 @@
 all: up
-
-up: sync
-	sudo docker compose up --build
-
-sync:
-	./syncFolder.sh &
+up:
+	docker-compose up --build
 
 down:
-	sudo docker-compose down
+	docker-compose down
 
 rm:
-	sudo docker-compose rm
+	docker-compose rm
 
 rmi:
-	sudo docker-compose down --rmi all
+	docker-compose down --rmi all
 
 fclean:
-	sudo docker-compose -f docker-compose.yml down \
-	&& sudo docker system prune -a --force \
-	&& sudo rm -Rf /Users/administrateur/42/data/*
+	 docker-compose -f docker-compose.yml down \
+	&&  docker system prune -a --force \
+	&&  rm -Rf ../volume_adaloui/*
 
 show:
-	sudo docker container ps -a
+	 docker container ps -a
 show_network:
-	sudo docker network ls
+	 docker network ls
 
 volume_show:
-	sudo docker volume ls
+	 docker volume ls
 
 volume_delete:
-	sudo docker volume prune
+	 docker volume prune
 volume_delete2:
 	bash
-	sudo docker volume rm $(docker volume ls -q)
+	docker volume rm $(docker volume ls -q)
 	exit
 post:
-	sudo docker exec -it postgresql bash -l
+	 docker exec -it postgresql bash -l
 pgadmin:
-	sudo docker exec -it pgadmin sh
+	 docker exec -it pgadmin sh
 node:
-	sudo docker exec -it nestjs bash -l
+	 docker exec -it nestjs bash -l
 vuejs:
-	sudo docker exec -it vuejs bash -l
+	 docker exec -it vuejs bash -l
 
 retry:
 	make down
 	make volume_delete
-	sudo find /Users/administrateur/42/data-mindepth 1 -delete
+	 find ../volume_adaloui -mindepth 1 -delete
 	make fclean
 	make up
 inspect:
-	sudo docker inspect postgresql | grep "IPAddress"
+	 docker inspect postgresql | grep "IPAddress"
 
 .PHONY: up down rm rmi show volume_show volume_delete \
-post pgadmin pgadmin_sudo fclean inspect retry all show_network \
+post pgadmin pgadmin fclean inspect retry all show_network \
 volume_delete2

@@ -16,7 +16,7 @@ export default {
     methods: {
         async generateTwoFa() {
             try {
-                const response = await axios.post('http://localhost:3000/auth/generate', {}, {withCredentials: true});
+                const response = await axios.post('http://made-f0cr5s6:3000/auth/generate', {}, {withCredentials: true});
                 this.$emit('qrCodeGenerated', response.data.qrCode); 
             } catch (error) {
                 console.error("Erreur lors de la génération du QR Code:", error);

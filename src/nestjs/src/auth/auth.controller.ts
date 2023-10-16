@@ -260,6 +260,4 @@ export class AuthController {
     console.log(response);
     res.status(200).json(response);
   }
-  /* A SUPPRIMER AVANT LE PUSH FINAL*/
-
 }

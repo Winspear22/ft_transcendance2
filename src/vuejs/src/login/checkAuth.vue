@@ -33,7 +33,7 @@ export default {
 
         async function authenticate() {
             try {
-                const response = await axios.get('http://localhost:3000/auth/check-auth', { withCredentials: true });
+                const response = await axios.get('http://made-f0cr5s6:3000/auth/check-auth', { withCredentials: true });
                     if (response.data.success) {
                         if (response.data.cookie) {
                             store.dispatch('setToken', response.data.cookie);

@@ -14,7 +14,7 @@ export default {
         ...mapActions(['activateTwoFa']),
         async deactivateTwoFa() {
             try {
-                const response = await axios.post('http://localhost:3000/auth/deactivate', {}, {withCredentials: true});
+                const response = await axios.post('http://made-f0cr5s6:3000/auth/deactivate', {}, {withCredentials: true});
                 if (response.status === 200) {
                     this.activateTwoFa(false);
                     this.$emit('resetQrCode');
