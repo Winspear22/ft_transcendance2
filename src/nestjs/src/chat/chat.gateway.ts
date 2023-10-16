@@ -1072,7 +1072,7 @@ async handleMessage(@ConnectedSocket() client: Socket, @MessageBody() body: { ch
       {
         await this.dmGateway.UnblockFriend(client, { receiverId: targetSocket.data.user.id });
         this.getBlockedIds(client);
-        this.server.to(client.id).emit("unblockUserChat", "You have unblocked the user " + targetSocket.data.user.username);
+        this.server.to(client.id).emit("unblockUserChat", "Vous avez débloqué l'utilisateur suivant : " + targetSocket.data.user.username);
       }
       else
       {

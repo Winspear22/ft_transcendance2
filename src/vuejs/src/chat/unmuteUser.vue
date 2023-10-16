@@ -63,7 +63,7 @@ export default {
 
         this.socketChat.emit('unmuteUser', {
             username: this.currentUserInfo.username,
-            roomName: this.roomName,
+            channelName: this.roomName,
             targetUsername: this.targetUsername
         });
     },
