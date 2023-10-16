@@ -74,7 +74,6 @@ export default {
           });
       },
       handleMuteResponse(data) {
-        console.log("data", data);
         if (data.error) {
           this.inviteMessage = "Erreur lors de la mise en sourdine de l'utilisateur: " + data.error;
         } else if (data.message && data.success) {

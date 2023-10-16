@@ -15,7 +15,6 @@ export class AuthService {
 
   public async generateTwoFactorAuthenticationSecret(user: UserEntity) {
     const secret = authenticator.generateSecret();
-    console.log("secret == ", secret);
     const otpauthUrl = authenticator.keyuri(
       user.email,
       process.env.TWO_FACTOR_AUTHENTICATION_APP_NAME,
@@ -39,11 +38,4 @@ export class AuthService {
     // generate the QrCode that will be used to add our application to the google authenticator app.
     return toDataURL(otpAuthUrl);
   }
-
-
-  async WriteCommandsNames(name: string)
-  {
-    console.log(colors.GREEN + colors.BRIGHT, '---' + name + '---', colors.BRIGHT);  
-  }
-
 }

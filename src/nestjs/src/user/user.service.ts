@@ -71,44 +71,7 @@ export class UserService {
     return newUser;
   }
 
-  async createUser2(userDet: any): Promise<UserEntity> {
-    const newUser = this.usersRepository.create({
-      username: userDet.login,
-      email: userDet.email,
-      profile_picture: userDet?.picture,
-      isTwoFactorAuthenticationEnabled: false,
-      user_status: 'Online',
-      blockedIds: [],
-      friends: [],
-      friendRequests: []
-      //id42: userDet.providerId,
-      //provider: userDet.provider,
-    });
-    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
-    console.log(colors.GREEN + colors.BRIGHT, "------------------USER2 CREATED---------------", colors.RESET);
-    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
-    this.DisplayUserIdentity(newUser);
-    await this.usersRepository.save(newUser);
-    //On ecrit l'id apres le save car c'est la fonction save qui attribut l'id.
-    console.log(colors.GREEN + colors.BRIGHT, 'My User simple ID === ', colors.WHITE + colors.BRIGHT + newUser.id);
-    console.log(colors.YELLOW + colors.BRIGHT, "==============================================", colors.RESET);
-    return newUser;
-  }
 
-  generateRandomPseudo(): string {
-    const prefixes = [
-        'Super', 'Mega', 'Ultra', 'Hyper', 'Alpha', 'Omega', 'Ninja', 'Pirate', 'Ghost', 'Laser'
-    ];
-
-    const suffixes = [
-        'Tiger', 'Phoenix', 'Dragon', 'Warrior', 'Knight', 'Shadow', 'Light', 'Hunter', 'Bear', 'Lion'
-    ];
-
-    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
-    const randomSuffix = suffixes[Math.floor(Math.random() * suffixes.length)];
-
-    return `${randomPrefix}${randomSuffix}`;
-}
   /*=====================================================================*/
   /*-----------------------------2FA METHODES----------------------------*/
   /*=====================================================================*/
@@ -134,7 +97,6 @@ export class UserService {
       );
       return verif;
     } catch (error) {
-      console.log(colors.BRIGHT + colors.RED + "La fontion authenticator a rate", + colors.RESET);
       console.error(error);
       return false;
     }
@@ -243,13 +205,11 @@ export class UserService {
       const salt = await bcrypt.genSalt(saltRounds);
       const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
       this.FindAndUpdateUser((await User).username, { MyHashedRefreshToken: hashedRefreshToken });
-      console.log(colors.GREEN + colors.BRIGHT + "User hashed refresh token : " + colors.FG_WHITE + hashedRefreshToken + colors.RESET);
       this.CreateNewAccessCookie(
         {
           username: (await User).username,
           accessToken: tokens.access_token,
-          refreshToken: hashedRefreshToken,//tokens.refresh_token,
-          //avatar: (await User).profile_picture
+          refreshToken: hashedRefreshToken,
         },
         res,
       );
@@ -258,19 +218,13 @@ export class UserService {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
 
       return res.redirect(process.env.IP_FRONTEND);
-      //return res.redirect('http://made-f0cr5s6:8080/home);
     }
     else
     {
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
       console.log(colors.GREEN + colors.BRIGHT, "------------------2FA REDIRECTD---------------", colors.RESET);
       console.log(colors.YELLOW + colors.BRIGHT,"==============================================", colors.RESET);
-      //const message = "auth ok";
-      //res.status(200).json(message);
       return res.redirect(process.env.IP_FRONTEND);
-     
-      //const url = `http://made-f0cr5s6:8080/tfa`;
-      //res.redirect(url);
     }
   }
 
@@ -292,7 +246,7 @@ export class UserService {
         {
           username: (await User).username,
           accessToken: tokens.access_token,
-          refreshToken: hashedRefreshToken,//tokens.refresh_token,
+          refreshToken: hashedRefreshToken,
           avatar: (await User).profile_picture
         },
         res,
@@ -300,7 +254,6 @@ export class UserService {
     }
   }
 
-  /*Ne PAS OUBLIER DE REMETTRE A LA VALUE D'AVANT POUR L'ACCESS TOKEN : 60 * 15 * 20*/
   async CreateAndSignTokens(id: string, username: string) 
   {
     const [new_access_token, new_refresh_token] = await Promise.all([
@@ -331,18 +284,15 @@ export class UserService {
     if (User === undefined)
       throw new ForbiddenException('Error. Forbidden access : no user present in request.');
       
-      //const RefreshTokenVerify = await bcrypt.compare(User.MyHashedRefreshToken, RefreshTokenInRequest);
       const hashedRefreshTokenInRequest = await bcrypt.hash(RefreshTokenInRequest, User.MyHashedRefreshToken);
       const RefreshTokensMatch = await bcrypt.compare(User.MyHashedRefreshToken, hashedRefreshTokenInRequest);
       if (RefreshTokensMatch == true)
     {
       const tokens = await this.CreateAndSignTokens(User.id.toString(), User.username);
-      const saltRounds = 12; // Nombre de cryptage de password
+      const saltRounds = 12;
       const salt = await bcrypt.genSalt(saltRounds);
       const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
       this.FindAndUpdateUser((await User).username, { MyHashedRefreshToken: hashedRefreshToken });
-      console.log(colors.CYAN + colors.BRIGHT,"Selected user new refresh token : " + colors.GREEN + User.MyHashedRefreshToken + colors.RESET);
-
       return tokens;
     }
     else
@@ -360,11 +310,6 @@ export class UserService {
     console.log(colors.BLUE + colors.BRIGHT,"Selected user email : " + colors.WHITE + user.email + colors.RESET);
     console.log(colors.BLUE + colors.BRIGHT,"Selected user profile picture : " + colors.WHITE + user.profile_picture + colors.RESET);
     console.log(colors.BLUE + colors.BRIGHT,"Selected user 2FA option : " + colors.WHITE + user.isTwoFactorAuthenticationEnabled + colors.RESET);
-    if (await this.getUserStatusByUsername(user.username) == "Online")
-      console.log(colors.BLUE + colors.BRIGHT,"Selected user connection status : " + colors.GREEN + user.user_status + colors.RESET);
-    else
-      console.log(colors.BLUE + colors.BRIGHT,"Selected user connection status : " + colors.RED + user.user_status + colors.RESET);
-
     console.log(colors.BLUE + colors.BRIGHT,"Selected user 42 ID : " + colors.WHITE + user.id42 + colors.RESET);
   }
 
@@ -379,7 +324,6 @@ export class UserService {
       if (user.profile_picture !== dto.avatar && dto.avatar !== '') {
         await this.usersRepository.save(user);
       }
-
       const tokens = await this.CreateAndSignTokens(user.id.toString(), user.username);//this.signTokens(user.user_id, user.login);
       await this.CreateNewRefreshTokens(user.username, user.MyHashedRefreshToken);
       this.CreateNewAccessCookie(
@@ -390,18 +334,16 @@ export class UserService {
         },
         res,
       ); 
-      // Send the response as JSON with status 200
-      console.log("JE SUIS iciiiiiiii");
-
       return { faEnabled: user.isTwoFactorAuthenticationEnabled, tokens, avatar: user.profile_picture };
-    } catch (e: any) {
+    } 
+    catch (e: any) 
+    {
       throw e;
     }
   }
 
   async loginWith2fa(user: string, res: Response): Promise<object> {
     try {
-      console.log("JE SUIS LAAAAAAAAAAAA");
       const usr = await this.findUserByUsername(user);
       return this.signin(
         {
@@ -413,7 +355,7 @@ export class UserService {
         res,
       );
     } catch (e) {
-      console.log('TFA EROOOOR ', e);
+      console.log('2FA Error ', e);
     }
   }
 
@@ -427,54 +369,6 @@ export class UserService {
     return (partialUser);
 
   }
-
-   /*async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
-     const rooms = await this.roomRepository.find({ 
-       where: {
-         users: In([userId])  // Trouver des rooms où l'utilisateur est présent
-       }
-     });
-     console.log("Je suis dans le changemznt de DTO");     
-     rooms.forEach(room => {
-      console.log("Before:", room);
-      const userDTOToUpdate = room.userDTOs.find(dto => dto.id === userId);
-      if (userDTOToUpdate) {
-        userDTOToUpdate.username = newUsername;
-      }
-      console.log("After:", room);
-     });     
-     await this.roomRepository.save(rooms); // Sauvegardez les rooms modifiés
-   }*/
-
-   async updateUserDTOUsername(userId: number, newUsername: string): Promise<void> {
-    const rooms = await this.roomRepository.find({
-      where: {
-        users: In([userId])  // Trouver des rooms où l'utilisateur est présent
-      }
-    });
-  
-    console.log("Je suis dans le changement de DTO");
-    
-    rooms.forEach(room => {
-      // Clone le tableau userDTOs
-      const updatedDTOs = [...room.userDTOs];
-  
-      // Trouver le DTO correspondant à l'utilisateur
-      const userDTOToUpdate = updatedDTOs.find(dto => dto.id === userId);
-      
-      if (userDTOToUpdate) {
-        userDTOToUpdate.username = newUsername; // Mettez à jour l'username
-        console.log("DTO mis à jour:", userDTOToUpdate);
-      }
-      
-      // Affectez le tableau cloné (avec la mise à jour) à room.userDTOs
-      room.userDTOs = updatedDTOs;
-    });
-  
-    // Sauvegardez les rooms modifiés
-    await this.roomRepository.save(rooms);
-  }
-  
 
   async UpdateUserUsernameSettings(user: UserEntity,
   @Res({passthrough: true}) res: Response,
@@ -499,14 +393,12 @@ export class UserService {
       const saltRounds = 12;
       const salt = await bcrypt.genSalt(saltRounds);
       const hashedRefreshToken = await bcrypt.hash(tokens.refresh_token, salt);
-      console.log("Je suis dans change name : ", user.id, username);
-      //await this.updateUserDTOUsername(user.id, username); 
       this.FindAndUpdateUser((await user).username, { MyHashedRefreshToken: hashedRefreshToken });
       this.CreateNewAccessCookie(
       {
         username: (await user).username,
         accessToken: tokens.access_token,
-        refreshToken: hashedRefreshToken,//tokens.refresh_token,
+        refreshToken: hashedRefreshToken,
       },
       res,
       );
@@ -532,59 +424,6 @@ export class UserService {
       res.json({message: "Error. Could not change user email"})
     }
   }
-  /* MANIERE POUR FAIRE AVEC LE DOSSIER UPLOADS*/
-
-  /*deleteOldImage(path: string) 
-  {
-		var fs = require('fs');
-    console.log(colors.RED + "Je suis ici." + colors.RESET);
-
-		fs.stat(path, function (err, stats) 
-    {
-		  console.log(stats);
-			if (err) {
-				return console.error(err);
-			}
-			fs.unlinkSync(path);
-		})
-	}*/
-
-  /*async UploadAndSaveImage(@UploadedFile() file,
-    user: UserEntity): Promise<ImageDto> 
-  {	
-    console.log(colors.RED + "Je suis ici." + colors.RESET);
-    console.log(file?.filename);
-    if (!file?.filename)
-			throw new ForbiddenException('Error. Only image files are allowed !');
-    //if (user.profile_picture.startsWith('uploads/'))
-        this.deleteOldImage(user.profile_picture);
-		user.profile_picture = file.filename;
-		try 
-    {
-			await this.FindAndUpdateUser(user.username, {profile_picture: user.profile_picture});
-		} 
-    catch (e) 
-    {
-			console.log(e);
-			throw e;
-		}
-    const image = {
-      filename: file.filename,
-      path: file.path
-    };		
-    return image;
-	}
-
-  async getImage(@Res() res, profilePicture: string): Promise<Observable<object>> {
-		let fs = require('fs');
-		let files = fs.readdirSync('./uploads/');
-		if (Object.values(files).indexOf(profilePicture) === -1) {
-			return of(res.sendFile(join(process.cwd(), process.env.DEFAULT_PROFILE_PICTURE)));
-		}
-		return of(res.sendFile(join(process.cwd(), './uploads/' + profilePicture)));
-	}*/
-
-  /*MANIERE POUR FAIRE AVEC LE CONTENEUR*/
 
   async UploadAndSaveImage(@UploadedFile() file, user: UserEntity): Promise<ImageDto> {
     console.log(file?.filename);
@@ -610,22 +449,20 @@ export class UserService {
         path: file.path
     };
     return image;
-}
+  }
+  
+  deleteOldImage(imagePath: string) 
+  {
+    var fs = require('fs');
 
+    const fullPath = path.resolve(UPLOADS_PATH, imagePath);
 
-deleteOldImage(imagePath: string) 
-{
-  var fs = require('fs');
-
-  const fullPath = path.resolve(UPLOADS_PATH, imagePath);
-
-  fs.stat(fullPath, function (err, stats) {
-      if (err) {
-          return console.error(err);
-      }
-      fs.unlinkSync(fullPath);
-  });
-}
-
-
+    fs.stat(fullPath, function (err, stats) 
+    {
+        if (err) {
+            return console.error(err);
+        }
+        fs.unlinkSync(fullPath);
+    });
+  }
 }

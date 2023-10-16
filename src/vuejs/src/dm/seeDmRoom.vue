@@ -9,18 +9,18 @@
         :class="{ active: activeTabIndex === index }"
         class="chat-item"> 
           <span class="chat-name">{{ getChatName(chat) }}</span>
-        <block-dm-button :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
+          <block-dm-button v-if="userInfo" :chat="chat" :user-info="userInfo" @block="blockDM"></block-dm-button>
       </div>
     </div>
 
     <div class="vertical-separator"></div>
 
     <div class="selected-chat">
-      <see-conv v-if="chats[activeTabIndex]" 
+      <see-conv v-if="chats[activeTabIndex] && userInfo" 
                 :chat="chats[activeTabIndex]" 
                 :user-info="userInfo"></see-conv>
 
-      <send-dm v-if="chats[activeTabIndex]" 
+      <send-dm v-if="chats[activeTabIndex] && userInfo" 
                :chat="chats[activeTabIndex]" 
                :user-info="userInfo"></send-dm>
     </div>

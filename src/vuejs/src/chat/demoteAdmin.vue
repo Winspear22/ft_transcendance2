@@ -34,7 +34,6 @@
     },
   
     mounted() {
-      console.log("Component mounted");
       this.socketChat.on('usersDataInRoom', this.handleUsersData);
       this.socketChat.on('demoteAdmin', this.handleDemoteResponse);
       this.fetchUsersInRoom();
@@ -77,7 +76,6 @@
       },
   
       handleDemoteResponse(data) {
-        console.log("demote : ", data);
           if (typeof data === "string" && data.includes("Error")) {
               this.adminMessage = "Impossible de retirer les droits d'admin à cette personne.";
               this.isError = true;

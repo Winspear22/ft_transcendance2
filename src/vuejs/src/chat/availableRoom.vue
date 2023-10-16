@@ -34,8 +34,6 @@ methods: {
     this.socketChat.on('emitAvailableRooms', (response) => {
       if (response.success && response.channels) {
           this.availableRooms = response.channels;
-          //console.log("this.socketChat.id ", this.socketChat.id)
-          //console.log("availableRooms ", this.availableRooms);
       }
    });
   }

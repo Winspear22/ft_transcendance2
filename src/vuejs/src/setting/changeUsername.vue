@@ -31,7 +31,6 @@
         try {
           const response = await axios.post('http://made-f0cr5s6:3000/user/change/username', { username: this.newUsername }, { withCredentials: true });
           if (response.status === 201) {
-            console.log("Username changed successfully.");
                 this.showValidationPopup = true;
                 store.getters.gameSocket.emit('updateUser', this.newUsername);
                 try {

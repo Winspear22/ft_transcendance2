@@ -99,13 +99,11 @@ methods: {
   },
   async infosGame() {
     store.getters.gameSocket.on('w_idx', (data) => {
-      console.log(data);
       this.w_idx = data;
     });
     store.getters.gameSocket.on("theGame", data => {
       this.laGame.game = data.gameI;
       this.laGame.idx = data.idx;
-      console.log("ta game ", this.laGame);
       this.ready = true;
     });
   },

@@ -7,54 +7,47 @@ import { decode, TokenExpiredError } from 'jsonwebtoken';  // Ne pas oublier d'i
 @Injectable()
 export class ChatAuthService {
 
-    constructor(
-        private readonly userService: UserService,
-        private readonly jwtService: JwtService
-    ) {}
+  constructor(
+      private readonly jwtService: JwtService
+  ) {}
 
-    extractAccessTokenFromCookie(cookie: string): any 
+  extractAccessTokenFromCookie(cookie: string): any 
+  {
+    try
     {
-        try
-        {
-            const decodedCookie = decodeURIComponent(cookie); 
-            return JSON.parse(decodedCookie);
-        }
-        catch (error)
-        {
-            console.log("Error. Cookie could not be decoded.");
-            return (undefined);
-        }
-        //const decodedCookie = decodeURIComponent(cookie); 
+        const decodedCookie = decodeURIComponent(cookie); 
+        return JSON.parse(decodedCookie);
     }
-
-    /*async isTokenBlacklisted(token: string): Promise<boolean> 
+    catch (error)
     {
-        return await this.userService.isTokenBlacklisted(token);
-    }*/
-
-    decodeAccessToken(token: string): JwtPayload | null 
-    {
-        const decodedPayload = decode(token) as JwtPayload;
-        return decodedPayload || null;
+        console.log("Error. Cookie could not be decoded.");
+        return (undefined);
     }
+  }
 
-    hasTokenExpired(expiry: number): boolean 
-    {
-        const currentTime = Math.floor(Date.now() / 1000);
-        return expiry < currentTime;
-    }
+  decodeAccessToken(token: string): JwtPayload | null 
+  {
+      const decodedPayload = decode(token) as JwtPayload;
+      return decodedPayload || null;
+  }
 
-    async verifyToken(accessToken: string, secret: string): Promise<JwtPayload | null> 
-    {
-        try {
-            return await this.jwtService.verifyAsync(accessToken, { secret });
-        } catch (error) {
-            if (error instanceof TokenExpiredError) {
-                console.log('Token has expired.');
-            } else {
-                console.log('Token is invalid:', error.message);
-            }
-            return null;
-        }
-    }
+  hasTokenExpired(expiry: number): boolean 
+  {
+      const currentTime = Math.floor(Date.now() / 1000);
+      return expiry < currentTime;
+  }
+
+  async verifyToken(accessToken: string, secret: string): Promise<JwtPayload | null> 
+  {
+      try {
+          return await this.jwtService.verifyAsync(accessToken, { secret });
+      } catch (error) {
+          if (error instanceof TokenExpiredError) {
+              console.log('Token has expired.');
+          } else {
+              console.log('Token is invalid:', error.message);
+          }
+          return null;
+      }
+  }
 }

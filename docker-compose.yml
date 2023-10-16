@@ -49,6 +49,8 @@ services:
 
   vuejs:
     container_name: vuejs
+    env_file:
+      - .env
     build:
       context: ./src/vuejs
       dockerfile: Dockerfile

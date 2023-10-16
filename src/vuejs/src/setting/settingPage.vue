@@ -46,7 +46,6 @@ export default {
         store.getters.gameSocket.emit('matchHistory');
         store.getters.gameSocket.on('matchHistory', (matchHistory) => {
             uMatchHistory.value = matchHistory;
-            console.log("matchHistory ", uMatchHistory);
         });
         store.getters.gameSocket.on('goToGame', () => {
             router.push('/game');

@@ -57,7 +57,7 @@ export class DMGateway
     const user = await this.chatService.getUserFromSocket(client);
     if (user == undefined)
     {
-      console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
+    //  console.log(colors.BRIGHT + colors.RED, "Error. Socket id : " + colors.WHITE + client.id + colors.RED + " could not connect." + colors.RESET);
       return this.handleDisconnect(client);
     }
     this.ref_client.set(user.id, client.id);
@@ -66,18 +66,17 @@ export class DMGateway
     this.emitDMs(client);
     // Renvoie tous les Friends que l'utilisateur a.
     this.emitFriends(client);
-    console.log(colors.BRIGHT + colors.CYAN, "User : " +  colors.WHITE + user.username + colors .CYAN +" just connected." + colors.RESET);
+    //console.log(colors.BRIGHT + colors.CYAN, "User : " +  colors.WHITE + user.username + colors .CYAN +" just connected." + colors.RESET);
     // Ajoute les sockets dans deux maps différentes : c'est juste pour m'aider à répertorier les users
     this.emitFriendRequests(client);
     this.getBlockedIds(client);
 
-    console.log("-------------------------------------------------");
-    console.log("----------------CONNEXION AU DM------------------");
-    console.log("-------------------------------------------------");
-    console.log(colors.BRIGHT + colors.CYAN + "Je suis l'utilisateur " + colors.WHITE + user.username + colors.CYAN + " avec la socket.id : " + colors.WHITE + client.id);
+    //console.log("-------------------------------------------------");
+    //console.log("----------------CONNEXION AU DM------------------");
+    //console.log("-------------------------------------------------");
+    //console.log(colors.BRIGHT + colors.CYAN + "Je suis l'utilisateur " + colors.WHITE + user.username + colors.CYAN + " avec la socket.id : " + colors.WHITE + client.id);
     return true;
   }
-
 
   // Phase de deconnexion : a chaque fois qu'un utilisateur va se déconnecter, il va passer par là
   // Sa socket sera déconnectée par client.disconnect()
@@ -91,7 +90,7 @@ export class DMGateway
     // Suppression de ref_socket
     for (let [socket, id] of this.ref_socket.entries()) {
         if (socket === client) {
-            console.log(colors.CYAN, "La Socket " + colors.WHITE + socket.id + colors.CYAN + " a ete supprimee de la map ref_socket!")
+            //console.log(colors.CYAN, "La Socket " + colors.WHITE + socket.id + colors.CYAN + " a ete supprimee de la map ref_socket!")
             this.ref_socket.delete(socket);
             break;
         }
@@ -101,10 +100,10 @@ export class DMGateway
     const user = await this.chatService.getUserFromSocket(client);
     if (user) {
         this.ref_client.delete(user.id);
-        console.log(colors.CYAN, "L'utilisateur avec l'ID " + colors.WHITE + user.id + colors.CYAN + " a été supprimé de la map ref_client!")
+    //    console.log(colors.CYAN, "L'utilisateur avec l'ID " + colors.WHITE + user.id + colors.CYAN + " a été supprimé de la map ref_client!")
     }
 
-    console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
+    //console.log("User connected : ", colors.WHITE, client.id, " connection status : ", colors.FG_RED, client.connected, colors.RESET);
   }
 
   // Phase de renvoi des DMrooms 
@@ -130,7 +129,7 @@ export class DMGateway
     friendChats.forEach(friendChat => {
         client.join(friendChat.room);
     });
-    console.log("Je suis connecté : ", client.rooms);
+    //console.log("Je suis connecté : ", client.rooms);
     return await this.server.to(client.id).emit('emitDM', friendChats);
   }
 
